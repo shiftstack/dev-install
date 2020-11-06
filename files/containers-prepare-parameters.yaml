@@ -1,0 +1,6 @@
+parameter_defaults:
+  ContainerImagePrepare:
+    - set:
+        namespace: registry-proxy.engineering.redhat.com/rh-osbs
+        name_prefix: rhosp16-openstack-
+        tag: latest

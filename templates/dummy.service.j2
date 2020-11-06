@@ -1,0 +1,12 @@
+[Unit]
+Description=Setup {{ interface_name }} interface
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/create_if {{ interface_name }} {{ interface_cidr }}
+RemainAfterExit=false
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

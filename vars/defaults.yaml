@@ -1,0 +1,6 @@
+---
+rhos_release: latest-released
+hostname: standalone.shiftstack
+localdomain: shiftstack
+control_plane_cidr: 192.168.24.0/24
+public_cidr: 192.168.25.0/24

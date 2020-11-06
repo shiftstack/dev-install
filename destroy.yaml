@@ -1,0 +1,29 @@
+---
+- hosts: standalone
+  become: true
+  become_user: root
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - name: Destroy the OpenStack
+    shell: |
+      if type pcs &> /dev/null; then
+          pcs cluster destroy
+      fi
+      if type podman &> /dev/null; then
+          podman rm -af
+          podman rmi -af
+      fi
+      rm -rf \
+          /var/lib/tripleo-config \
+          /var/lib/config-data /var/lib/container-config-scripts \
+          /var/lib/container-puppet \
+          /var/lib/heat-config \
+          /var/lib/ceph \
+          /var/lib/image-serve \
+          /var/lib/containers \
+          /etc/systemd/system/tripleo* \
+          /var/lib/mysql/*
+      systemctl daemon-reload

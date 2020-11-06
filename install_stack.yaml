@@ -1,0 +1,40 @@
+---
+- hosts: standalone
+  become: true
+  become_user: stack
+  gather_facts: true
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - set_fact:
+
+  - name: Create standalone_parameters.yaml
+    template:
+      src: standalone_parameters.yaml.j2
+      dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
+    vars:
+      control_plane_ip: "{{ control_plane_cidr | nthhost(1) }}"
+      public_interface: dummy1
+
+  - name: Create containers-prepare-parameters.yaml
+    copy:
+      src: "files/containers-prepare-parameters.yaml"
+      dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+
+  # https://github.com/openstack/tripleo-operator-ansible/tree/master/roles/tripleo_deploy
+  - name: Execute tripleo deploy
+    shell: |
+      sudo openstack tripleo deploy \
+        --templates \
+        --local-ip={{ control_plane_host_prefix }} \
+        --control-virtual-ip {{ public_ip }} \
+        -e /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml \
+        -r /usr/share/openstack-tripleo-heat-templates/roles/Standalone.yaml \
+        -e $HOME/containers-prepare-parameters.yaml \
+        -e $HOME/standalone_parameters.yaml \
+        --output-dir $HOME \
+        --standalone | tee $HOME/tripleo-deploy.log
+    vars:
+      control_plane_host_prefix: "{{ control_plane_cidr | nthhost(1) }}/{{ control_plane_cidr | ipaddr('prefix') }}"
+      public_ip: "{{ public_cidr | nthhost(1) }}"

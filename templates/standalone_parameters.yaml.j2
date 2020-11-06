@@ -1,0 +1,32 @@
+#vi:syntax=yaml
+
+parameter_defaults:
+  CloudName: {{ control_plane_ip }}
+  # default gateway
+  ControlPlaneStaticRoutes:
+    - ip_netmask: 0.0.0.0/0
+      next_hop: {{ ansible_default_ipv4.gateway }}
+      default: true
+  Debug: true
+  DeploymentUser: {{ ansible_env.USER }}
+  DnsServers:
+{% for nameserver in ansible_dns.nameservers %}
+    - {{ nameserver }}
+{% endfor %}
+  # needed for vip & pacemaker
+  KernelIpNonLocalBind: 1
+  DockerInsecureRegistryAddress:
+    - {{ control_plane_ip }}:8787
+  NeutronPublicInterface: {{ public_interface }}
+  # domain name used by the host
+  NeutronDnsDomain: {{ localdomain }}
+  # re-use ctlplane bridge for public net, defined in the standalone
+  # net config (do not change unless you know what you're doing)
+  NeutronBridgeMappings: datacentre:br-ctlplane
+  NeutronPhysicalBridge: br-ctlplane
+  # enable to force metadata for public net
+  #NeutronEnableForceMetadata: true
+  StandaloneEnableRoutedNetworks: false
+  StandaloneHomeDir: {{ ansible_env.HOME }}
+  InterfaceLocalMtu: 1500
+  SELinuxMode: permissive
