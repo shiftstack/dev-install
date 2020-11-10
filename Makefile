@@ -1,9 +1,8 @@
-
-host ?= osp
+host ?= my_osp_host
 
 
 inventory:
-	echo -e "[standalone]\n$(host)" > $@
+	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)" > $@
 
 local-overrides.yaml:
 	echo -e "# Override default variables by putting them in this file\nfoo:" > $@
