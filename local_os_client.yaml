@@ -54,7 +54,27 @@
       dest: "{{ cloudsyamlpath }}"
       content: "{{ cloudsyaml | to_nice_yaml }}"
 
+  - name: Install openstack client locally
+    pip:
+      name: python-openstackclient
+      extra_args: --user
+
+  - name: Write sshuttle script
+    template:
+      src: sshuttle-standalone.sh.j2
+      dest: scripts/sshuttle-standalone.sh
+      mode: 0755
+
+  - name: Write openstack environment script
+    template:
+      src: env.sh.j2
+      dest: scripts/env.sh
+      mode: 0644
+
   - debug:
       msg:
       - "{{ cloudsyamlpath }} has been updated."
       - "To connect to your cloud set OS_CLOUD={{ cloudname }} and update your local routes."
+      - "For convenience:"
+      - "  `scripts/sshuttle-standalone.sh` will start a correctly configure sshuttle."
+      - "  `source scripts/env.sh` will set OS_CLOUD correctly."

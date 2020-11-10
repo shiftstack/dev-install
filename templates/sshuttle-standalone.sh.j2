@@ -1,0 +1,12 @@
+#!/bin/sh
+
+remote=root@{{ standalone_host }}
+
+pidfile=/run/sshuttle-standalone-${USER}.pid
+[ -r "${pidfile}" ] && pid=$(cat "${pidfile}")
+
+exec sudo --preserve-env=SSH_AUTH_SOCK,SSH_AGENT_PID -- sh -c "
+        [ ! -z \"${pid}\" ] && /usr/bin/kill ${pid}
+        sshuttle --pidfile=\"${pidfile}\" -D --dns \
+            -r \"${remote}\" 192.168.24.0/24 192.168.25.0/24 >/dev/null 2>&1
+"
