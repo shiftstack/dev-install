@@ -1,6 +1,9 @@
 # The installation target used when initializing the local ansible inventory.
 # N.B. This is *only* used when initializing the local ansible inventory file.
 #      Specifically it is not used if the inventory file already exists.
+#
+# It is recommended to run:
+#   make config host=<myhost>
 host ?= my_osp_host
 
 ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook -i inventory -e @local-overrides.yaml
@@ -9,11 +12,14 @@ ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook -i inventory -e @local-ove
 # Targets which initialize local state
 #
 
+.PHONY: config
+config: inventory local-overrides.yaml
+
 inventory:
-	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)" > $@
+	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n" > $@
 
 local-overrides.yaml:
-	echo -e "# Override default variables by putting them in this file\ncloudname: standalone" > $@
+	echo -e "# Override default variables by putting them in this file\ncloudname: standalone\nstandalone_host: $(host)" > $@
 
 
 #
