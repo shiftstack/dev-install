@@ -1,0 +1,60 @@
+---
+- hosts: standalone
+  become: true
+  become_user: stack
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - name: Read clouds.yaml from standalone host
+    slurp:
+      src: /home/stack/.config/openstack/clouds.yaml
+    register: cloudsyaml
+
+  - set_fact:
+        cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
+
+- hosts: localhost
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - setup:
+      filter: ansible_env
+
+  - name: Ensure ~/.config/openstack dir exists
+    file:
+      path: "{{ ansible_env.HOME }}/.config/openstack"
+      state: directory
+
+  - name: Set path of local clouds.yaml
+    set_fact:
+      cloudsyamlpath: "{{ ansible_env.HOME }}/.config/openstack/clouds.yaml"
+
+  - name: Initialise cloudsyaml
+    block:
+    - name: Read local cloudsyaml
+      set_fact:
+        cloudsyaml: "{{ lookup('file', cloudsyamlpath) | from_yaml }}"
+    rescue:
+      - name: Initialise empty cloudsyaml
+        set_fact:
+          cloudsyaml: "{{ {'clouds': {}} }}"
+
+  - name: Merge remote clouds.yaml into local clouds.yaml entry {{ cloudname }}
+    set_fact:
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {cloudname: standalone}}, recursive=true) }}"
+    vars:
+      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] }}"
+
+  - name: Update local clouds.yaml
+    copy:
+      dest: "{{ cloudsyamlpath }}"
+      content: "{{ cloudsyaml | to_nice_yaml }}"
+
+  - debug:
+      msg:
+      - "{{ cloudsyamlpath }} has been updated."
+      - "To connect to your cloud set OS_CLOUD={{ cloudname }} and update your local routes."

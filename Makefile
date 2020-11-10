@@ -13,7 +13,7 @@ inventory:
 	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)" > $@
 
 local-overrides.yaml:
-	echo -e "# Override default variables by putting them in this file\nfoo:" > $@
+	echo -e "# Override default variables by putting them in this file\ncloudname: standalone" > $@
 
 
 #
@@ -27,6 +27,10 @@ prepare_host: inventory local-overrides.yaml
 .PHONY: install_stack
 install_stack: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) install_stack.yaml
+
+.PHONY: local_os_client
+local_os_client: inventory local-overrides.yaml
+	$(ANSIBLE_CMD) local_os_client.yaml
 
 .PHONY: destroy
 destroy: inventory local-overrides.yaml
