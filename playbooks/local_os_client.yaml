@@ -62,13 +62,13 @@
   - name: Write sshuttle script
     template:
       src: sshuttle-standalone.sh.j2
-      dest: scripts/sshuttle-standalone.sh
+      dest: ../scripts/sshuttle-standalone.sh
       mode: 0755
 
   - name: Write openstack environment script
     template:
       src: env.sh.j2
-      dest: scripts/env.sh
+      dest: ../scripts/env.sh
       mode: 0644
 
   - debug:

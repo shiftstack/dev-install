@@ -28,16 +28,16 @@ local-overrides.yaml:
 
 .PHONY: prepare_host
 prepare_host: inventory local-overrides.yaml
-	$(ANSIBLE_CMD) prepare_host.yaml
+	$(ANSIBLE_CMD) playbooks/prepare_host.yaml
 
 .PHONY: install_stack
 install_stack: inventory local-overrides.yaml
-	$(ANSIBLE_CMD) install_stack.yaml
+	$(ANSIBLE_CMD) playbooks/install_stack.yaml
 
 .PHONY: local_os_client
 local_os_client: inventory local-overrides.yaml
-	$(ANSIBLE_CMD) local_os_client.yaml
+	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
 .PHONY: destroy
 destroy: inventory local-overrides.yaml
-	$(ANSIBLE_CMD) destroy.yaml
+	$(ANSIBLE_CMD) playbooks/destroy.yaml
