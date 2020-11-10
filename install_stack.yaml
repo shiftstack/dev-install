@@ -7,8 +7,6 @@
 
   tasks:
 
-  - set_fact:
-
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2
