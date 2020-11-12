@@ -7,8 +7,8 @@
 
   - name: Create flavors
     shell: |
-      if ! openstack flavor show tiny; then
-          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public tiny
+      if ! openstack flavor show m1.tiny; then
+          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public m1.tiny
       fi
       if ! openstack flavor show m1.medium; then
           openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
