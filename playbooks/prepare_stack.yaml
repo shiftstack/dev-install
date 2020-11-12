@@ -1,0 +1,194 @@
+---
+- hosts: localhost
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - name: Create flavors
+    shell: |
+      if ! openstack flavor show tiny; then
+          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public tiny
+      fi
+      if ! openstack flavor show m1.medium; then
+          openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
+      fi
+      if ! openstack flavor show m1.large; then
+          openstack flavor create --ram 8192 --disk 20 --vcpu 4 --public m1.large
+      fi
+      if ! openstack flavor show m1.xlarge; then
+          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
+      fi
+    environment:
+      OS_CLOUD: "{{ cloudname }}"
+
+  - name: Create public network
+    shell: |
+      if ! openstack network show public; then
+          openstack network create --external --share --provider-physical-network datacentre --provider-network-type flat public
+      fi
+      if ! openstack subnet show public-subnet; then
+          openstack subnet create public-subnet --subnet-range "{{ public_cidr }}" \
+              --no-dhcp --gateway "{{ public_cidr | nthhost(1) }}" \
+              --allocation-pool "start={{ public_cidr | nthhost(10) }},end={{ public_cidr | nthhost(250) }}" \
+              --network public
+      fi
+    environment:
+      OS_CLOUD: "{{ cloudname }}"
+
+  - name: Create openshift user without any admin privileges
+    shell: |
+      if ! openstack project show openshift; then
+          openstack project create openshift
+      fi
+      if ! openstack user show openshift; then
+          openstack user create --password 'password' openshift
+      fi
+      openstack role add --user openshift --project openshift _member_
+      openstack role add --user openshift --project openshift swiftoperator
+      openstack quota set --secgroups 100 --secgroup-rules 1000 openshift
+    environment:
+      OS_CLOUD: "{{ cloudname }}"
+
+  - name: Configure resources for openshift user
+    shell: |
+      if ! openstack keypair show default; then
+          openstack keypair create --public-key ~/.ssh/id_rsa.pub default
+      fi
+      openstack object store account set --property Temp-URL-Key=superkey
+      if ! openstack network show private; then
+          openstack network create --internal private
+      fi
+      if ! openstack subnet show private-subnet; then
+          openstack subnet create private-subnet --subnet-range 192.168.24.0/24 --network private
+      fi
+      # create basic security group to allow ssh/ping/dns
+      openstack security group list
+      if ! openstack security group show basic; then
+          openstack security group create basic
+      fi
+      if ! openstack security group rule list basic | grep "22:22"; then
+          openstack security group rule create basic --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0
+      fi
+      if ! openstack security group rule list basic | grep "icmp"; then
+          openstack security group rule create --protocol icmp basic
+      fi
+      if ! openstack security group rule list basic | grep "53:53"; then
+          openstack security group rule create --protocol udp --dst-port 53:53 basic
+      fi
+    environment:
+      OS_CLOUD: "{{ cloudname }}_openshift"
+
+- hosts: standalone
+  become: true
+  become_user: stack
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - setup:
+      filter: ansible_env
+
+  - name: Set images directory
+    set_fact:
+      images_dir: "{{ ansible_env.HOME }}/images"
+
+  - name: Create images directory
+    file:
+      path: "{{ images_dir }}"
+      state: directory
+
+  - name: Get URL of latest RHCOS image
+    block:
+    # NOTE(mdbooth): My first attempt to do this involved something like
+    #  set_fact:
+    #    rhcos_meta: "{{ lookup('url', rhcos_meta_url) | from_json }}"
+    #
+    # which would have been much nicer, but this gave an unfathomable ansible
+    # error and I eventually gave up and did this instead.
+
+    - name: Fetch rhcos release info
+      get_url:
+        url: "{{ rhcos_meta_url }}"
+        dest: "{{ images_dir }}"
+        force: yes
+      register: rhcos_meta
+
+    - name: Read rhcos release info
+      slurp:
+        src: "{{ rhcos_meta.dest }}"
+      register: rhcos_meta
+
+    - set_fact:
+        rhcos_url: "{{ dict['baseURI'] }}{{ dict['images']['openstack']['path'] }}"
+      vars:
+        dict: "{{ rhcos_meta.content | b64decode | from_json }}"
+    when: rhcos_url is undefined
+
+  - name: Extract Cirros filename
+    set_fact:
+      cirros_filename: "{{ cirros_url | urlsplit('path') | basename }}"
+
+  - name: Extract RHCOS compressed filename
+    set_fact:
+      rhcos_compressed_filename: "{{ rhcos_url | urlsplit('path') | basename }}"
+
+  - name: Download Cirros image
+    get_url:
+      url: "{{ cirros_url }}"
+      dest: "{{ images_dir }}/{{ cirros_filename }}"
+    register: cirros
+
+  - name: Download compressed RHCOS image
+    get_url:
+      url: "{{ rhcos_url }}"
+      dest: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
+    register: rhcos
+
+  # NOTE(mdbooth): Bizarrely, unarchive can't do this
+  - name: Uncompress RHCOS image
+    shell: |
+      set -ex -o pipefail
+
+      uncompressed=${rhcos_compressed_path%%.gz}
+      if [ ! -f "${uncompressed}" ]; then
+        gzip -dfc "${rhcos_compressed_path}" > "${uncompressed}"
+      fi
+      echo ${uncompressed}
+    environment:
+      rhcos_compressed_path: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
+    register: uncompress
+
+  - name: Extract uncompressed RHCOS filename
+    set_fact:
+      rhcos_uncompressed_path: "{{ uncompress.stdout }}"
+
+  - name: Import Cirros image
+    shell: |
+      if ! openstack image show cirros >/dev/null; then
+          openstack image create cirros --container-format bare --disk-format qcow2 --public \
+            --file "{{ cirros.dest }}"
+      fi
+    environment:
+      OS_CLOUD: standalone
+
+  - name: Import RHCOS image
+    shell: |
+      set -ex -o pipefail
+
+      # Get hash of existing rhcos image if we have one. Be careful not to fail
+      # if it doesn't exist, just set an empty variable.
+      os_hash_value=$(openstack image show rhcos -c properties -f json | jq -re '.properties.os_hash_value' || echo)
+
+      # Delete the rhcos image if its checksum doesn't match what we downloaded
+      if [ ! -z "${os_hash_value}" ] && \
+         ! echo "${os_hash_value} {{ rhcos_uncompressed_path }}" | sha512sum -c; then
+        openstack image delete rhcos
+      fi
+
+      if ! openstack image show rhcos >/dev/null; then
+        openstack image create rhcos --container-format bare --disk-format qcow2 --public --file "{{ rhcos_uncompressed_path }}"
+      fi
+    environment:
+      OS_CLOUD: standalone

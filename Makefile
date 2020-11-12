@@ -39,6 +39,10 @@ install_stack: inventory local-overrides.yaml
 local_os_client: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
+.PHONY: prepare_stack
+prepare_stack: inventory local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/prepare_stack.yaml
+
 .PHONY: destroy
 destroy: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/destroy.yaml
