@@ -19,6 +19,7 @@
       state: installed
       name: 
       - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
+      disable_gpg_check: True
 
   - name: Configure rhos release "{{ rhos_release }}"
     shell: rhos-release "{{ rhos_release }}"
