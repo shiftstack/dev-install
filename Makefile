@@ -5,8 +5,9 @@
 # It is recommended to run:
 #   make config host=<myhost>
 host ?= my_osp_host
+ansible_args ?=
 
-ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook -i inventory -e @local-overrides.yaml
+ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory -e @local-overrides.yaml
 
 #
 # Targets which initialize local state
