@@ -7,6 +7,13 @@
 
   tasks:
 
+  - name: Install the tripleo client
+    yum:
+      name:
+      - python3-tripleoclient
+    become: true
+    become_user: root
+
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2

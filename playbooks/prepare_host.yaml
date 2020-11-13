@@ -87,8 +87,3 @@
     shell: |
       update-ca-trust enable
       update-ca-trust extract
-
-  - name: Install the tripleo client
-    yum:
-      name:
-      - python3-tripleoclient
