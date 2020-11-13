@@ -21,6 +21,11 @@
     yum:
       name: '*'
       state: latest
+    register: yum
+
+  - name: Reboot if we updated packages
+    reboot:
+    when: yum.changed
 
   - name: Set hostname to "{{ hostname }}"
     hostname:
