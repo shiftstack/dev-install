@@ -6,13 +6,6 @@
   vars_files: vars/defaults.yaml
 
   tasks:
-    #  - debug:
-    #      msg: "{{ cidr }}"
-    #    vars:
-    #      cidr: "{{ control_plane_cidr | nthhost(1) }}/{{ control_plane_cidr | ipaddr('prefix') }}"
-    #
-    #  - fail:
-    #      msg: blah
 
   - name: install rhos-release
     yum:
