@@ -60,7 +60,7 @@
           openstack network create --internal private
       fi
       if ! openstack subnet show private-subnet >/dev/null; then
-          openstack subnet create private-subnet --subnet-range 192.168.24.0/24 --network private
+          openstack subnet create private-subnet --subnet-range {{ private_cidr }} --network private
       fi
       # create basic security group to allow ssh/ping/dns
       if ! openstack security group show basic >/dev/null; then
