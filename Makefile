@@ -17,7 +17,7 @@ ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i invento
 config: inventory local-overrides.yaml
 
 inventory:
-	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n" > $@
+	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: root\n" > $@
 
 local-overrides.yaml:
 	echo -e "# Override default variables by putting them in this file\ncloudname: standalone\nstandalone_host: $(host)" > $@
