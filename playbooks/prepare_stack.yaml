@@ -52,19 +52,18 @@
 
   - name: Configure resources for openshift user
     shell: |
-      if ! openstack keypair show default; then
+      if ! openstack keypair show default >/dev/null; then
           openstack keypair create --public-key ~/.ssh/id_rsa.pub default
       fi
       openstack object store account set --property Temp-URL-Key=superkey
-      if ! openstack network show private; then
+      if ! openstack network show private >/dev/null; then
           openstack network create --internal private
       fi
-      if ! openstack subnet show private-subnet; then
+      if ! openstack subnet show private-subnet >/dev/null; then
           openstack subnet create private-subnet --subnet-range 192.168.24.0/24 --network private
       fi
       # create basic security group to allow ssh/ping/dns
-      openstack security group list
-      if ! openstack security group show basic; then
+      if ! openstack security group show basic >/dev/null; then
           openstack security group create basic
       fi
       if ! openstack security group rule list basic | grep "22:22"; then
