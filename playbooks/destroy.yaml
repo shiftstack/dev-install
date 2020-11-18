@@ -23,7 +23,9 @@
           /var/lib/heat-config \
           /var/lib/ceph \
           /var/lib/image-serve \
-          /var/lib/containers \
           /etc/systemd/system/tripleo* \
           /var/lib/mysql/*
       systemctl daemon-reload
+      # Don't cleanup containers. It's basically just a cache and re-downloading
+      # it dominates reinstallation time.
+      # /var/lib/containers
