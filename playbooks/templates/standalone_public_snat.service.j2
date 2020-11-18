@@ -1,0 +1,12 @@
+[Unit]
+Description=Add SNAT rule for public network
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=iptables -t nat -A POSTROUTING -s {{ cidr }} -o {{ exit_if }} -j SNAT --to {{ exit_ip }}
+RemainAfterExit=true
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

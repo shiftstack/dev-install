@@ -2,7 +2,7 @@
 - hosts: standalone
   become: true
   become_user: root
-  gather_facts: false
+  gather_facts: true
   vars_files: vars/defaults.yaml
 
   tasks:
@@ -80,6 +80,18 @@
       interface_name: br-ctlplane
       cidr: "{{ public_cidr }}"
 
+  - name: Create systemd unit to add SNAT rule for public network
+    template:
+      src: "standalone_public_snat.service.j2"
+      dest: "/etc/systemd/system/standalone_public_snat.service"
+      owner: root
+      group: root
+      mode: '0644'
+    vars:
+      cidr: "{{ public_cidr }}"
+      exit_if: "{{ ansible_default_ipv4.interface }}"
+      exit_ip: "{{ ansible_default_ipv4.address }}"
+
   - name: Activate systemd units
     systemd:
       name: "{{ item }}.service"
@@ -89,6 +101,7 @@
     loop:
     - standalone_dummy0
     - standalone_public_route
+    - standalone_public_snat
 
   - name: Fetch the Red Hat root certificate
     get_url:
