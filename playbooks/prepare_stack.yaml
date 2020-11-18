@@ -75,6 +75,12 @@
       if ! openstack security group rule list basic | grep "53:53"; then
           openstack security group rule create --protocol udp --dst-port 53:53 basic
       fi
+      # Create a router for the private network
+      if ! openstack router show router >/dev/null; then
+          openstack router create private-subnet-external
+          openstack router set private-subnet-external --external-gateway public
+          openstack router add subnet private-subnet-external private-subnet
+      fi
     environment:
       OS_CLOUD: "{{ cloudname }}_openshift"
 
