@@ -1,0 +1,14 @@
+[Unit]
+Description=Add route for {{ cidr }} to {{ interface_name }} interface
+After=network-online.target
+
+[Service]
+Type=exec
+ExecStart=ip route replace {{ cidr }} dev {{ interface_name }} scope link
+RemainAfterExit=true
+StandardOutput=journal
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

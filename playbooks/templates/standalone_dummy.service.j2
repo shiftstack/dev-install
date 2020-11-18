@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/create_if {{ interface_name }} {{ interface_cidr }}
-RemainAfterExit=false
+ExecStart=/usr/local/bin/standalone_create_if {{ interface_name }}
+RemainAfterExit=true
 StandardOutput=journal
 
 [Install]
