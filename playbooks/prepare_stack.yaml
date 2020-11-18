@@ -46,7 +46,35 @@
       fi
       openstack role add --user openshift --project openshift _member_
       openstack role add --user openshift --project openshift swiftoperator
-      openstack quota set --secgroups 100 --secgroup-rules 1000 openshift
+
+      # Unlimited quota
+      openstack quota set \
+          --cores -1 \
+          --fixed-ips -1 \
+          --injected-file-size -1 \
+          --injected-files -1 \
+          --instances -1 \
+          --key-pairs -1 \
+          --properties -1 \
+          --ram -1 \
+          --server-groups -1 \
+          --server-group-members -1 \
+          --backups -1 \
+          --backup-gigabytes -1 \
+          --per-volume-gigabytes -1 \
+          --snapshots -1 \
+          --volumes -1 \
+          --floating-ips -1 \
+          --secgroup-rules -1 \
+          --secgroups -1 \
+          --networks -1 \
+          --subnets -1 \
+          --ports -1 \
+          --routers -1 \
+          --rbac-policies -1 \
+          --subnetpools -1 \
+          openshift
+
     environment:
       OS_CLOUD: "{{ cloudname }}"
 
