@@ -27,9 +27,13 @@
     reboot:
     when: yum.changed
 
-  - name: Set hostname to "{{ hostname }}"
+  - name: Set FQDN
+    set_fact:
+      fqdn: "{{ hostname }}.{{ clouddomain }}"
+
+  - name: Set hostname to "{{ fqdn }}"
     hostname:
-      name: "{{ hostname }}"
+      name: "{{ fqdn }}"
 
   - name: Allow 'wheel' group to have passwordless sudo
     lineinfile:
