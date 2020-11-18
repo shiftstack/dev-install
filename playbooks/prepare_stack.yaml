@@ -104,7 +104,7 @@
           openstack security group rule create --protocol udp --dst-port 53:53 basic
       fi
       # Create a router for the private network
-      if ! openstack router show router >/dev/null; then
+      if ! openstack router show private-subnet-external >/dev/null; then
           openstack router create private-subnet-external
           openstack router set private-subnet-external --external-gateway public
           openstack router add subnet private-subnet-external private-subnet
