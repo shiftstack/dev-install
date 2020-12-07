@@ -1,9 +1,14 @@
 ---
-- hosts: localhost
+- hosts: standalone
+  become: true
+  become_user: stack
   gather_facts: false
   vars_files: vars/defaults.yaml
 
   tasks:
+
+  - setup:
+      filter: ansible_env
 
   - name: Create flavors
     shell: |
@@ -20,7 +25,7 @@
           openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
       fi
     environment:
-      OS_CLOUD: "{{ cloudname }}"
+      OS_CLOUD: standalone
 
   - name: Create public network
     shell: |
@@ -34,7 +39,7 @@
               --network public
       fi
     environment:
-      OS_CLOUD: "{{ cloudname }}"
+      OS_CLOUD: standalone
 
   - name: Create openshift user without any admin privileges
     shell: |
@@ -76,7 +81,41 @@
           openshift
 
     environment:
-      OS_CLOUD: "{{ cloudname }}"
+      OS_CLOUD: standalone
+
+  - name: Read clouds.yaml
+    slurp:
+      src: &cloudsyamlpath /home/stack/.config/openstack/clouds.yaml
+    register: cloudsyaml
+
+  - name: Parse cloud.yaml
+    set_fact:
+      cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
+
+  - name: Extract standalone cloud config
+    set_fact:
+      standalone: "{{ cloudsyaml['clouds']['standalone'] }}"
+
+  - name: Add shiftstack entry to clouds.yaml
+    set_fact:
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {'openshift': openshift}}, recursive=true) }}"
+    vars:
+      openshift:
+        auth:
+          auth_url: "{{ standalone['auth']['auth_url'] }}"
+          password: password
+          project_domain_name: Default
+          project_name: openshift
+          user_domain_name: Default
+          username: openshift
+        cacert: "{{ standalone['cacert'] }}"
+        identity_api_version: "{{ standalone['identity_api_version'] }}"
+        region_name: "{{ standalone['region_name'] }}"
+
+  - name: Write updated clouds.yaml
+    copy:
+      dest: *cloudsyamlpath
+      content: "{{ cloudsyaml | to_nice_yaml }}"
 
   - name: Configure resources for openshift user
     shell: |
@@ -110,18 +149,7 @@
           openstack router add subnet private-subnet-external private-subnet
       fi
     environment:
-      OS_CLOUD: "{{ cloudname }}_openshift"
-
-- hosts: standalone
-  become: true
-  become_user: stack
-  gather_facts: false
-  vars_files: vars/defaults.yaml
-
-  tasks:
-
-  - setup:
-      filter: ansible_env
+      OS_CLOUD: openshift
 
   - name: Set images directory
     set_fact:

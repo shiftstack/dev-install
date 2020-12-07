@@ -43,25 +43,12 @@
         set_fact:
           cloudsyaml: "{{ {'clouds': {}} }}"
 
-  - name: Extract standalone cloud config
-    set_fact:
-      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] }}"
-
   - name: Merge remote clouds.yaml into local clouds.yaml entry {{ cloudname }}
     set_fact:
       cloudsyaml: "{{ cloudsyaml | combine({'clouds': {cloudname: standalone, cloudname + '_openshift': openshift}}, recursive=true) }}"
     vars:
-      openshift:
-        auth:
-          auth_url: "{{ standalone['auth']['auth_url'] }}"
-          password: password
-          project_domain_name: Default
-          project_name: openshift
-          user_domain_name: Default
-          username: openshift
-        cacert: ''
-        identity_api_version: '3'
-        region_name: regionOne
+      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] }}"
+      openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] }}"
 
   - name: Update local clouds.yaml
     copy:
