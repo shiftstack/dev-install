@@ -9,6 +9,20 @@ ansible_args ?=
 
 ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory -e @local-overrides.yaml
 
+usage:
+	@echo 'Usage:'
+	@echo
+	@echo 'make config host=<standalone host>'
+	@echo 'make osp_full'
+	@echo
+	@echo 'Individual install phase targets:'
+	@echo '  prepare_host: Host configuration required before installing standalone, including rhos-release'
+	@echo '  install_stack: Install TripleO standalone'
+	@echo '  prepare_stack: Configure defaults in OSP and create shiftstack user'
+	@echo
+	@echo 'Utility targets:'
+	@echo '  local_os_client: Configure local clouds.yaml to use standalone cloud'
+
 #
 # Targets which initialize local state
 #
@@ -27,6 +41,9 @@ local-overrides.yaml:
 # Deploy targets
 #
 
+.PHONY: osp_full
+osp_full: prepare_host install_stack prepare_stack
+
 .PHONY: prepare_host
 prepare_host: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_host.yaml
@@ -35,13 +52,13 @@ prepare_host: inventory local-overrides.yaml
 install_stack: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/install_stack.yaml
 
-.PHONY: local_os_client
-local_os_client: inventory local-overrides.yaml
-	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
-
 .PHONY: prepare_stack
 prepare_stack: inventory local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_stack.yaml
+
+.PHONY: local_os_client
+local_os_client: inventory local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
 .PHONY: destroy
 destroy: inventory local-overrides.yaml
