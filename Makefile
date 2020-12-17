@@ -7,7 +7,7 @@
 host ?= my_osp_host
 ansible_args ?=
 
-ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory -e @local-overrides.yaml
+ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory.yaml -e @local-overrides.yaml
 
 usage:
 	@echo 'Usage:'
@@ -28,9 +28,9 @@ usage:
 #
 
 .PHONY: config
-config: inventory local-overrides.yaml
+config: inventory.yaml local-overrides.yaml
 
-inventory:
+inventory.yaml:
 	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: root\n" > $@
 
 local-overrides.yaml:
@@ -45,21 +45,21 @@ local-overrides.yaml:
 osp_full: prepare_host install_stack prepare_stack
 
 .PHONY: prepare_host
-prepare_host: inventory local-overrides.yaml
+prepare_host: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_host.yaml
 
 .PHONY: install_stack
-install_stack: inventory local-overrides.yaml
+install_stack: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/install_stack.yaml
 
 .PHONY: prepare_stack
-prepare_stack: inventory local-overrides.yaml
+prepare_stack: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_stack.yaml
 
 .PHONY: local_os_client
-local_os_client: inventory local-overrides.yaml
+local_os_client: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
 .PHONY: destroy
-destroy: inventory local-overrides.yaml
+destroy: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/destroy.yaml
