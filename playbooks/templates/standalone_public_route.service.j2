@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=exec
-ExecStart=ip route replace {{ cidr }} dev {{ interface_name }} scope link
+ExecStart=/usr/sbin/ip route replace {{ cidr }} dev {{ interface_name }} scope link
 RemainAfterExit=true
 StandardOutput=journal
 Restart=on-failure
