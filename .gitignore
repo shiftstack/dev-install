@@ -1,4 +1,4 @@
-/inventory
+/inventory.yaml
 /local-overrides.yaml
 /scripts/env.sh
 /scripts/sshuttle-standalone.sh
