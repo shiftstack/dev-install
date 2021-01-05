@@ -24,7 +24,9 @@
           /var/lib/ceph \
           /var/lib/image-serve \
           /etc/systemd/system/tripleo* \
-          /var/lib/mysql/*
+          /var/lib/mysql/* \
+          /etc/openstack/ \
+          /home/stack/.config/openstack
       systemctl daemon-reload
       # Don't cleanup containers. It's basically just a cache and re-downloading
       # it dominates reinstallation time.
