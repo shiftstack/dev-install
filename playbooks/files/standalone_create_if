@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-
-if_name="${1}"
-
-if ! ip link show "$if_name"; then
-	ip link add "$if_name" type dummy
-fi

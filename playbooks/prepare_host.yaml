@@ -48,27 +48,12 @@
       name: stack
       groups: wheel
 
-  - name: Copy custom network script
-    copy:
-      src: "files/{{ item }}"
-      dest: "/usr/local/bin/"
-      owner: root
-      group: root
-      mode: '0755'
-    loop:
-    - standalone_create_if
-
-  # Assign the public (provider) IP with a /24 route to dummy0, as the standalone
-  # deploy doesn't configure this automatically.
-  - name: Create systemd unit for dummy interface
-    template:
-      src: "standalone_dummy.service.j2"
-      dest: "/etc/systemd/system/standalone_{{ interface_name }}.service"
-      owner: root
-      group: root
-      mode: '0644'
-    vars:
-      interface_name: dummy0
+  # The nmcli ansible module doesn't support the 'dummy' type
+  - name: Create dummy0 interface
+    shell: |
+      if ! nmcli connection show dummy0; then
+        nmcli connection add con-name dummy0 ifname dummy0 type dummy ipv4.method disabled ipv6.method disabled
+      fi
 
   # NOTE(mdbooth): This task will spin indefinitely until the br-ctlplane
   # interface is added. There must be a better way to do this. Adding this route
@@ -103,7 +88,6 @@
       state: started
       daemon_reload: yes
     loop:
-    - standalone_dummy0
     - standalone_public_route
     - standalone_public_snat
 
