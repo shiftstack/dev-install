@@ -10,7 +10,7 @@
   - name: install rhos-release
     yum:
       state: installed
-      name: 
+      name:
       - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
       disable_gpg_check: True
 
