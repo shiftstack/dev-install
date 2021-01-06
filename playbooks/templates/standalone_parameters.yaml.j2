@@ -1,7 +1,7 @@
 #vi:syntax=yaml
 
 parameter_defaults:
-  CloudName: {{ control_plane_ip }}
+  CloudName: {{ external_ip }}
   # default gateway
   ControlPlaneStaticRoutes:
     - ip_netmask: 0.0.0.0/0

@@ -19,7 +19,6 @@
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
     vars:
-      control_plane_ip: "{{ control_plane_cidr | nthhost(1) }}"
       public_interface: dummy0
 
   - name: Create containers-prepare-parameters.yaml
