@@ -45,11 +45,25 @@ This will configure your local clouds.yaml with 2 entries:
 
 You can change the name of these entries by editing `local-overrides.yaml` and setting `cloudname` to something else.
 
-We use [sshuttle](https://github.com/sshuttle/sshuttle) to provide remote access. `make local_os_client` writes a script to `scripts/sshuttle-standalone.sh` in the dev-install directory with appropriate arguments.
-
 ## Network configuration
 
-dev-install doesn't touch any of the network interfaces on the standalone host. Instead it creates a dummy interface called `dummy0` which is used by the standalone host. External connectivity is automatically configured for OpenStack using the physical interface.
+dev-install's OSP installation doesn't touch any of the network interfaces on the standalone host. Instead it creates a dummy interface called `dummy0` which is used by the standalone host. External connectivity is automatically configured for OpenStack using the physical interface.
+
+There are 2 ways to get external access to the public endpoints of the deployed
+OSP: sshuttle or an additional external IP.
+
+### External IP
+
+If you are able to route more than 1 IP to the external interface of your host, this is the simplest and fastest method to use. For example, if you are using a DSAL host and you requested additional FIPs for your host, you can use one of these FIPS.
+
+To use External IP for access, define `external_ip` in `local-overrides.yaml`. This will:
+* Add the external IP to your external interface
+* Configure DNAT to redirect traffic for that IP to OSP
+* Configure OSP public endpoints to use `external_ip`
+
+### Shuttle
+
+If you cannot use External IP, you can also use [sshuttle](https://github.com/sshuttle/sshuttle) to route traffic to OSP from your workstation over ssh. `make local_os_client` writes a script to `scripts/sshuttle-standalone.sh` in the dev-install directory with appropriate arguments.
 
 ## Sizing
 

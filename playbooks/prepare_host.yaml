@@ -91,6 +91,38 @@
     - standalone_public_route
     - standalone_public_snat
 
+  - name: Configure access via external IP
+    block:
+
+    # Note that we don't mess with DHCP on this interface. We're just adding an
+    # additional static IP. Again, the nmcli ansible module doesn't let us do
+    # this.
+    - name: Add external ip to external interface
+      shell: |
+        nmcli connection modify "{{ external_if }}" ipv4.addresses "{{ external_ip }}"
+        nmcli connection down "{{ external_if }}"
+        nmcli connection up "{{ external_if }}"
+      vars:
+        external_if: "{{ ansible_default_ipv4.interface }}"
+
+    - name: Create systemd unit to add DNAT rule for external_ip
+      template:
+        src: "standalone_external_dnat.service.j2"
+        dest: "/etc/systemd/system/standalone_external_dnat.service"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Activate systemd unit
+      systemd:
+        name: "{{ item }}.service"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      loop:
+      - standalone_external_dnat
+    when: external_ip != control_plane_ip
+
   - name: Fetch the Red Hat root certificate
     get_url:
       dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt

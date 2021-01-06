@@ -1,0 +1,15 @@
+[Unit]
+Description=Add DNAT rule for external access
+After=network-online.target
+
+[Service]
+Type=oneshot
+# For external traffic to public endpoints
+ExecStart=/usr/sbin/iptables -t nat -A PREROUTING -d {{ external_ip }} -j DNAT --to-destination {{ public_ip }}
+# For local traffic to public endpoints
+ExecStart=/usr/sbin/iptables -t nat -A OUTPUT -d {{ external_ip }} -j DNAT --to-destination {{ public_ip }}
+RemainAfterExit=true
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

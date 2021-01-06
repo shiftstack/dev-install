@@ -26,6 +26,19 @@
       src: "files/containers-prepare-parameters.yaml"
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
+  - name: Substitute external_ip in EndpointMap from no-tls-endpoints-public-ip.yaml
+    command:
+      argv:
+      - sed
+      - "s/\\(Public: .* host: \\)\\(IP_ADDRESS\\)/\\1'{{ external_ip }}'/"
+      - /usr/share/openstack-tripleo-heat-templates/environments/ssl/no-tls-endpoints-public-ip.yaml
+    register: endpointmap
+
+  - name: Write substituted EndpointMap to use-external_ip-for-public.yaml
+    copy:
+      dest: "{{ ansible_env.HOME }}/use-external_ip-for-public.yaml"
+      content: "{{ endpointmap.stdout }}"
+
   # NOTE(mdbooth): The deploy step consistently fails to return. It fails in a
   # manner consistent with a hung SSH connection. The following dance is an
   # effort to never have a very long-running ansible task which might hang.
@@ -45,8 +58,7 @@
       mode: 0755
     vars:
       stack_home: "{{ ansible_env.HOME }}"
-      control_plane_host_prefix: "{{ control_plane_cidr | nthhost(1) }}/{{ control_plane_cidr | ipaddr('prefix') }}"
-      public_ip: "{{ public_cidr | nthhost(1) }}"
+      control_plane_host_prefix: "{{ control_plane_ip }}/{{ control_plane_cidr | ipaddr('prefix') }}"
     become: true
     become_user: root
 
