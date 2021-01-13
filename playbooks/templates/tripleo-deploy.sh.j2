@@ -2,8 +2,8 @@
 
 sudo openstack tripleo deploy \
     --templates \
-    --local-ip={{ control_plane_host_prefix }} \
-    --control-virtual-ip {{ public_ip }} \
+    --local-ip={{ control_plane_ip }} \
+    --control-virtual-ip {{ public_api }} \
     -e /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml \
     -r /usr/share/openstack-tripleo-heat-templates/roles/Standalone.yaml \
     -e {{ stack_home }}/containers-prepare-parameters.yaml \

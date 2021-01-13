@@ -2,9 +2,35 @@
 rhos_release: 17
 hostname: standalone
 clouddomain: shiftstack
-control_plane_cidr: 192.168.24.0/24
+
+control_plane_ip: 192.168.24.1
+
+# The public network is used for all user traffic. It is used for:
+# * The public API endpoint
+# * The public provider network, and floating IP allocation pool
+
+# The entire routable cidr of the public network, even if we can't use all of it.
 public_cidr: 192.168.25.0/24
-private_cidr: 192.168.100.0/24
+# The IP address of the public api endpoint, which must be within public_cidr
+public_api: "{{ public_cidr | nthhost(1) }}"
+# The IP of the gateway used by the public provider network, which must be
+# within public_cidr.
+public_gateway: "{{ public_api }}"
+# The range of allocatable FIPs within public_cidr
+public_fip_pool_start: "{{ public_cidr | nthhost(2) }}"
+public_fip_pool_end: "{{ public_cidr | nthhost(-2) }}"
+
+# If public_if is `dummy0`, a dummy interface will be created. If it is anything
+# else, we assume it is an existing physical interface.
+
+# By default dev-install will configure networking on a dummy0 interface, so
+# 'public' IPs will only be routable from the host, or via sshuttle. However, if
+# you have an additional pool of publicly routable IPs on the hosts's external
+# network we can configure these as the public endpoints and OSP floating IPs.
+public_uses_external_nic: false
+
+# A cidr to use when creating a default private network for the openshift user
+user_private_cidr: 192.168.100.0/24
 
 cirros_url: http://download.cirros-cloud.net/0.5.1/cirros-0.5.1-x86_64-disk.img
 rhcos_meta_url: https://raw.githubusercontent.com/openshift/installer/master/data/data/rhcos.json
