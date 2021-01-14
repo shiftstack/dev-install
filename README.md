@@ -45,11 +45,55 @@ This will configure your local clouds.yaml with 2 entries:
 
 You can change the name of these entries by editing `local-overrides.yaml` and setting `cloudname` to something else.
 
-We use [sshuttle](https://github.com/sshuttle/sshuttle) to provide remote access. `make local_os_client` writes a script to `scripts/sshuttle-standalone.sh` in the dev-install directory with appropriate arguments.
-
 ## Network configuration
 
-dev-install doesn't touch any of the network interfaces on the standalone host. Instead it creates a dummy interface called `dummy0` which is used by the standalone host. External connectivity is automatically configured for OpenStack using the physical interface.
+dev-install will create a new OVS bridge called br-ex and move your external
+interface on to that bridge. It will also create a new interface called dummy0
+which will be added to the br-ctlplane bridge when it is created by TripleO.
+From here there are 2 network configuration options.
+
+### Internal-only networking (default)
+
+With no further configuration, dev-install will configure the `public` provider
+network on br-ctlplane with subnet 192.168.25.0/24. The OSP public endpoint will
+use 192.168.25.1.
+
+For remote access to this network you can use
+[sshuttle](https://github.com/sshuttle/sshuttle). `make local_os_client` writes
+a script to `scripts/sshuttle-standalone.sh` in the dev-install directory with
+appropriate arguments.
+
+### Externally routable public network
+
+This is the best configuration when you can route multiple IP addresses to the
+external interface of your host, for example a lab system where you control the
+whole subnet, or a DSAL system where you requested additional FIPs.
+
+dev-install will create the `public` provider network on br-ex, bridged to your
+external nic. You need to override several parameters in local-overrides.yaml to
+provide your networking details. For example, on my DSAL system I have:
+
+```
+public_cidr: 10.46.26.0/23
+public_api: 10.46.27.66
+public_gateway: 10.46.27.254
+public_fip_pool_start: 10.46.27.67
+public_fip_pool_end: 10.46.27.75
+public_uses_external_nic: true
+```
+
+In this case, my external NIC is on the subnet `10.46.26.0/23`. The host has a
+primary IP in that range, and the default gateway for the subnet is
+`10.46.27.254`.
+
+In addition, I have an allocation of 10 FIPs in the range
+`10.46.27.66`-`10.46.27.75` (NOTE: these are also in the same subnet). I have
+used the first of these, `10.46.27.66` as OSP's public API endpoint. The rest
+will be used as the allocation pool of OSP's public provider network. That is,
+floating IPs allocated by OSP are externally routable.
+
+Finally, set `public_uses_external_nic` to tell dev-install to configure
+external networking.
 
 ## Sizing
 

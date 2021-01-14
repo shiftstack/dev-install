@@ -19,8 +19,7 @@
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
     vars:
-      control_plane_ip: "{{ control_plane_cidr | nthhost(1) }}"
-      public_interface: dummy0
+      public_bridge: "{{ 'br-ex' if public_uses_external_nic else 'br-ctlplane' }}"
 
   - name: Create containers-prepare-parameters.yaml
     copy:
@@ -46,8 +45,6 @@
       mode: 0755
     vars:
       stack_home: "{{ ansible_env.HOME }}"
-      control_plane_host_prefix: "{{ control_plane_cidr | nthhost(1) }}/{{ control_plane_cidr | ipaddr('prefix') }}"
-      public_ip: "{{ public_cidr | nthhost(1) }}"
     become: true
     become_user: root
 

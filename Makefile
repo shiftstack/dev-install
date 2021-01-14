@@ -17,6 +17,7 @@ usage:
 	@echo
 	@echo 'Individual install phase targets:'
 	@echo '  prepare_host: Host configuration required before installing standalone, including rhos-release'
+	@echo '  network: Host networking configuration required before installing standalone'
 	@echo '  install_stack: Install TripleO standalone'
 	@echo '  prepare_stack: Configure defaults in OSP and create shiftstack user'
 	@echo
@@ -42,11 +43,15 @@ local-overrides.yaml:
 #
 
 .PHONY: osp_full
-osp_full: prepare_host install_stack prepare_stack
+osp_full: prepare_host network install_stack prepare_stack
 
 .PHONY: prepare_host
 prepare_host: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_host.yaml
+
+.PHONY: network
+network: inventory.yaml local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/network.yaml
 
 .PHONY: install_stack
 install_stack: inventory.yaml local-overrides.yaml

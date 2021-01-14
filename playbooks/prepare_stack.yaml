@@ -34,8 +34,8 @@
       fi
       if ! openstack subnet show public-subnet; then
           openstack subnet create public-subnet --subnet-range "{{ public_cidr }}" \
-              --no-dhcp --gateway "{{ public_cidr | nthhost(1) }}" \
-              --allocation-pool "start={{ public_cidr | nthhost(10) }},end={{ public_cidr | nthhost(250) }}" \
+              --no-dhcp --gateway "{{ public_gateway }}" \
+              --allocation-pool "start={{ public_fip_pool_start }},end={{ public_fip_pool_end }}" \
               --network public
       fi
     environment:
@@ -127,7 +127,7 @@
           openstack network create --internal private
       fi
       if ! openstack subnet show private-subnet >/dev/null; then
-          openstack subnet create private-subnet --subnet-range {{ private_cidr }} --network private
+          openstack subnet create private-subnet --subnet-range {{ user_private_cidr }} --network private
       fi
       # create basic security group to allow ssh/ping/dns
       if ! openstack security group show basic >/dev/null; then

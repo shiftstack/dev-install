@@ -10,7 +10,7 @@
   - name: install rhos-release
     yum:
       state: installed
-      name: 
+      name:
       - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
       disable_gpg_check: True
 
@@ -47,65 +47,6 @@
     user:
       name: stack
       groups: wheel
-
-  - name: Copy custom network script
-    copy:
-      src: "files/{{ item }}"
-      dest: "/usr/local/bin/"
-      owner: root
-      group: root
-      mode: '0755'
-    loop:
-    - standalone_create_if
-
-  # Assign the public (provider) IP with a /24 route to dummy0, as the standalone
-  # deploy doesn't configure this automatically.
-  - name: Create systemd unit for dummy interface
-    template:
-      src: "standalone_dummy.service.j2"
-      dest: "/etc/systemd/system/standalone_{{ interface_name }}.service"
-      owner: root
-      group: root
-      mode: '0644'
-    vars:
-      interface_name: dummy0
-
-  # NOTE(mdbooth): This task will spin indefinitely until the br-ctlplane
-  # interface is added. There must be a better way to do this. Adding this route
-  # to the dummy0 interface doesn't work: you can't route to floating IPs.
-  - name: Create systemd unit to add public route to br-ctlplane
-    template:
-      src: "standalone_public_route.service.j2"
-      dest: "/etc/systemd/system/standalone_public_route.service"
-      owner: root
-      group: root
-      mode: '0644'
-    vars:
-      interface_name: br-ctlplane
-      cidr: "{{ public_cidr }}"
-
-  - name: Create systemd unit to add SNAT rule for public network
-    template:
-      src: "standalone_public_snat.service.j2"
-      dest: "/etc/systemd/system/standalone_public_snat.service"
-      owner: root
-      group: root
-      mode: '0644'
-    vars:
-      cidr: "{{ public_cidr }}"
-      exit_if: "{{ ansible_default_ipv4.interface }}"
-      exit_ip: "{{ ansible_default_ipv4.address }}"
-
-  - name: Activate systemd units
-    systemd:
-      name: "{{ item }}.service"
-      enabled: yes
-      state: started
-      daemon_reload: yes
-    loop:
-    - standalone_dummy0
-    - standalone_public_route
-    - standalone_public_snat
 
   - name: Fetch the Red Hat root certificate
     get_url:
