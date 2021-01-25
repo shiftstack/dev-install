@@ -20,9 +20,6 @@ public_gateway: "{{ public_api }}"
 public_fip_pool_start: "{{ public_cidr | nthhost(2) }}"
 public_fip_pool_end: "{{ public_cidr | nthhost(-2) }}"
 
-# If public_if is `dummy0`, a dummy interface will be created. If it is anything
-# else, we assume it is an existing physical interface.
-
 # By default dev-install will configure networking on a dummy0 interface, so
 # 'public' IPs will only be routable from the host, or via sshuttle. However, if
 # you have an additional pool of publicly routable IPs on the hosts's external
