@@ -3,6 +3,10 @@ rhos_release: 17
 hostname: standalone
 clouddomain: shiftstack
 
+# The name of the cloud in *local* clouds.yaml. On the host it will always be
+# called `standalone`.
+local_cloudname: standalone
+
 control_plane_ip: 192.168.24.1
 
 # The public network is used for all user traffic. It is used for:

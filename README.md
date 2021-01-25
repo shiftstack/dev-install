@@ -43,7 +43,8 @@ This will configure your local clouds.yaml with 2 entries:
 * `standalone` - The admin user
 * `standalone_openshift` - The appropriately configured non-admin openshift user
 
-You can change the name of these entries by editing `local-overrides.yaml` and setting `cloudname` to something else.
+You can change the name of these entries by editing `local-overrides.yaml` and
+setting `local_cloudname` to something else.
 
 ## Network configuration
 
