@@ -117,39 +117,40 @@
       dest: *cloudsyamlpath
       content: "{{ cloudsyaml | to_nice_yaml }}"
 
-  - name: Configure resources for openshift user
-    shell: |
-      if ! openstack keypair show default >/dev/null; then
-          openstack keypair create --public-key ~/.ssh/id_rsa.pub default
-      fi
-      openstack object store account set --property Temp-URL-Key=superkey
-      if ! openstack network show private >/dev/null; then
-          openstack network create --internal private
-      fi
-      if ! openstack subnet show private-subnet >/dev/null; then
-          openstack subnet create private-subnet --subnet-range {{ user_private_cidr }} --network private
-      fi
-      # create basic security group to allow ssh/ping/dns
-      if ! openstack security group show basic >/dev/null; then
-          openstack security group create basic
-      fi
-      if ! openstack security group rule list basic | grep "22:22"; then
-          openstack security group rule create basic --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0
-      fi
-      if ! openstack security group rule list basic | grep "icmp"; then
-          openstack security group rule create --protocol icmp basic
-      fi
-      if ! openstack security group rule list basic | grep "53:53"; then
-          openstack security group rule create --protocol udp --dst-port 53:53 basic
-      fi
-      # Create a router for the private network
-      if ! openstack router show private-subnet-external >/dev/null; then
-          openstack router create private-subnet-external
-          openstack router set private-subnet-external --external-gateway public
-          openstack router add subnet private-subnet-external private-subnet
-      fi
-    environment:
-      OS_CLOUD: openshift
+  # NOTE: the following commands are generally not needed.
+  # - name: Configure resources for openshift user
+  #   shell: |
+  #     if ! openstack keypair show default >/dev/null; then
+  #         openstack keypair create --public-key ~/.ssh/id_rsa.pub default
+  #     fi
+  #     openstack object store account set --property Temp-URL-Key=superkey
+  #     if ! openstack network show private >/dev/null; then
+  #         openstack network create --internal private
+  #     fi
+  #     if ! openstack subnet show private-subnet >/dev/null; then
+  #         openstack subnet create private-subnet --subnet-range {{ user_private_cidr }} --network private
+  #     fi
+  #     # create basic security group to allow ssh/ping/dns
+  #     if ! openstack security group show basic >/dev/null; then
+  #         openstack security group create basic
+  #     fi
+  #     if ! openstack security group rule list basic | grep "22:22"; then
+  #         openstack security group rule create basic --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0
+  #     fi
+  #     if ! openstack security group rule list basic | grep "icmp"; then
+  #         openstack security group rule create --protocol icmp basic
+  #     fi
+  #     if ! openstack security group rule list basic | grep "53:53"; then
+  #         openstack security group rule create --protocol udp --dst-port 53:53 basic
+  #     fi
+  #     # Create a router for the private network
+  #     if ! openstack router show private-subnet-external >/dev/null; then
+  #         openstack router create private-subnet-external
+  #         openstack router set private-subnet-external --external-gateway public
+  #         openstack router add subnet private-subnet-external private-subnet
+  #     fi
+  #   environment:
+  #     OS_CLOUD: openshift
 
   - name: Set images directory
     set_fact:
