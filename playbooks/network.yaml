@@ -1,0 +1,139 @@
+---
+- hosts: standalone
+  become: true
+  become_user: root
+  gather_facts: true
+  vars_files: vars/defaults.yaml
+
+  tasks:
+
+  - name: Install ovs tools
+    yum:
+      state: installed
+      name:
+      - rhosp-openvswitch
+      - NetworkManager-ovs
+      - nmstate
+    register: installovs
+
+  - name: Restart NetworkManager to load ovs plugin
+    systemd:
+      name: "NetworkManager.service"
+      enabled: yes
+      state: restarted
+    when: installovs.changed
+
+  - name: Start openvswitch
+    systemd:
+      name: openvswitch.service
+      enabled: yes
+      state: started
+
+  - name: Check for existing nmstate file
+    stat:
+      path: &nmstate /root/osp-nmstate.json
+    register: nmstate_file
+  
+  - name: Create nmstate file
+    block:
+
+    - name: Read nmstate of the public interface
+      command: nmstatectl show "{{ ansible_default_ipv4.interface }}" --json
+      register: nmstatectl
+
+    - set_fact:
+        public_if_state: "{{ (nmstatectl.stdout | from_json)['interfaces'][0] }}"
+
+    - name: Generate nmstate to move "{{ ansible_default_ipv4.interface }}" to br-ex
+      copy:
+        dest: *nmstate
+        content: "{{ network_state | to_json }}"
+      vars:
+        network_state:
+          interfaces:
+          - name: "{{ ansible_default_ipv4.interface }}"
+            type: "{{ public_if_state.type }}"
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+          - name: "ovs-{{ ansible_default_ipv4.interface }}"
+            type: ovs-interface
+            state: up
+            ipv4: "{{ public_if_state.ipv4 }}"
+            ipv6: "{{ public_if_state.ipv6 }}"
+            mac-address: "{{ public_if_state['mac-address'] }}"
+          - name: br-ex
+            type: ovs-bridge
+            state: up
+            bridge:
+              port:
+              - name: "ovs-{{ ansible_default_ipv4.interface }}"
+              - name: "{{ ansible_default_ipv4.interface }}"
+          - name: dummy0
+            type: dummy
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+
+    when: not nmstate_file.stat.exists
+
+  - name: Read nmstate
+    slurp:
+      src: *nmstate
+    register: nmstate_data
+
+  - name: Set nmstate
+    command: nmstatectl set --no-commit --timeout 60
+    args:
+      stdin: "{{ nmstate_data.content | b64decode | string }}"
+    register: nmstateset
+
+  # Doing this in 2 steps means that we'll automatically rollback if we break
+  # networking such that ansible can no longer connect
+  - name: Commit the new network state
+    command: nmstatectl commit "{{ checkpoint }}"
+    vars:
+      checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"
+
+  - name: Configure routing for dummy0 when used as public interface
+    block:
+    # NOTE(mdbooth): This task will spin indefinitely until the br-ctlplane
+    # interface is added. There must be a better way to do this. Adding this route
+    # to the dummy0 interface doesn't work: you can't route to floating IPs.
+    - name: Create systemd unit to add public route to br-ctlplane
+      template:
+        src: "standalone_public_route.service.j2"
+        dest: "/etc/systemd/system/standalone_public_route.service"
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        interface_name: br-ctlplane
+        cidr: "{{ public_cidr }}"
+
+    - name: Create systemd unit to add SNAT rule for public network
+      template:
+        src: "standalone_public_snat.service.j2"
+        dest: "/etc/systemd/system/standalone_public_snat.service"
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        cidr: "{{ public_cidr }}"
+        exit_if: "{{ ansible_default_ipv4.interface }}"
+        exit_ip: "{{ ansible_default_ipv4.address }}"
+
+    - name: Activate systemd units
+      systemd:
+        name: "{{ item }}.service"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      loop:
+      - standalone_public_route
+      - standalone_public_snat
+    when: not public_uses_external_nic
