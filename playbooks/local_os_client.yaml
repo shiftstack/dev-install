@@ -43,16 +43,16 @@
         set_fact:
           cloudsyaml: "{{ {'clouds': {}} }}"
 
-  - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ cloudname }}
+  - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
     set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {cloudname: standalone}}, recursive=true) }}"
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: standalone}}, recursive=true) }}"
     vars:
       standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] }}"
     when: "'standalone' in hostvars['standalone']['cloudsyaml']['clouds']"
 
-  - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ cloudname }}_openshift
+  - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}_openshift
     set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {cloudname + '_openshift': openshift}}, recursive=true) }}"
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, recursive=true) }}"
     vars:
       openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] }}"
     when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
@@ -82,7 +82,7 @@
   - debug:
       msg:
       - "{{ cloudsyamlpath }} has been updated."
-      - "To connect to your cloud set OS_CLOUD={{ cloudname }} and update your local routes."
+      - "To connect to your cloud set OS_CLOUD={{ local_cloudname }} and update your local routes."
       - "For convenience:"
       - "  `scripts/sshuttle-standalone.sh` will start a correctly configure sshuttle."
       - "  `source scripts/env.sh` will set OS_CLOUD correctly."

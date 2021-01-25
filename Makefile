@@ -35,7 +35,7 @@ inventory.yaml:
 	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: root\n" > $@
 
 local-overrides.yaml:
-	echo -e "# Override default variables by putting them in this file\ncloudname: standalone\nstandalone_host: $(host)" > $@
+	echo -e "# Override default variables by putting them in this file\nstandalone_host: $(host)" > $@
 
 
 #
