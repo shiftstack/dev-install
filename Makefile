@@ -5,6 +5,7 @@
 # It is recommended to run:
 #   make config host=<myhost>
 host ?= my_osp_host
+user ?= root
 ansible_args ?=
 
 ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory.yaml -e @local-overrides.yaml
@@ -32,7 +33,7 @@ usage:
 config: inventory.yaml local-overrides.yaml
 
 inventory.yaml:
-	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: root\n" > $@
+	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: $(user)\n" > $@
 
 local-overrides.yaml:
 	echo -e "# Override default variables by putting them in this file\nstandalone_host: $(host)" > $@
