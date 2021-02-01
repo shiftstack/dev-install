@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/sbin/iptables -t nat -A POSTROUTING -s {{ cidr }} -o {{ exit_if }} -j SNAT --to {{ exit_ip }}
+ExecStart=/usr/sbin/iptables -t nat -A POSTROUTING -s {{ cidr }} -o br-ex -j SNAT --to {{ exit_ip }}
 RemainAfterExit=true
 StandardOutput=journal
 

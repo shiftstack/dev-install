@@ -27,13 +27,11 @@ Both of these files can be safely modified.
 
 `make osp_full` performs the actual installation. On an example system with 12 cores and 192GB RAM and running in a Red Hat data centre this takes approximately 65 minutes to execute.
 
-## Configuring access to OpenStack from your workstation
+## Accessing OpenStack from your workstation
 
-To access OpenStack on your standalone host from your workstation you need 2 things:
-* A route to the virtual network on the standalone host
-* A correct clouds.yaml
-
-dev-install configures both of these with:
+By default, dev-install configures OpenStack to use the default public IP of the
+host. To access this you just need a correct clouds.yaml, which dev-install
+configures with:
 
 ```
 make local_os_client
@@ -48,53 +46,34 @@ setting `local_cloudname` to something else.
 
 ## Network configuration
 
-dev-install will create a new OVS bridge called br-ex and move your external
-interface on to that bridge. It will also create a new interface called dummy0
-which will be added to the br-ctlplane bridge when it is created by TripleO.
-From here there are 2 network configuration options.
+dev-install will create a new OVS bridge called br-ex and move the host's
+external interface on to that bridge. This bridge is used to provide the
+`external` provider network if `external_fip_pool_start` and
+`external_fip_pool_end` are defined in `local-overrides.yaml`.
 
-### Internal-only networking (default)
+In addition it will create OVS bridges called br-ctlplane and br-hostonly. The
+former is used internally by OSP. The latter is a second provider network which
+is only routable from the host.
 
-With no further configuration, dev-install will configure the `public` provider
-network on br-ctlplane with subnet 192.168.25.0/24. The OSP public endpoint will
-use 192.168.25.1.
-
-For remote access to this network you can use
-[sshuttle](https://github.com/sshuttle/sshuttle). `make local_os_client` writes
-a script to `scripts/sshuttle-standalone.sh` in the dev-install directory with
-appropriate arguments.
-
-### Externally routable public network
-
-This is the best configuration when you can route multiple IP addresses to the
-external interface of your host, for example a lab system where you control the
-whole subnet, or a DSAL system where you requested additional FIPs.
-
-dev-install will create the `public` provider network on br-ex, bridged to your
-external nic. You need to override several parameters in local-overrides.yaml to
-provide your networking details. For example, on my DSAL system I have:
+Note that we don't enable DHCP on provider networks by default, and it is not
+recommended to enable DHCP on the external network at all. To enable DHCP on the
+hostonly network after installation, run:
 
 ```
-public_cidr: 10.46.26.0/23
-public_api: 10.46.27.66
-public_gateway: 10.46.27.254
-public_fip_pool_start: 10.46.27.67
-public_fip_pool_end: 10.46.27.75
-public_uses_external_nic: true
+OS_CLOUD=standalone openstack subnet set --dhcp hostonly-subnet
 ```
 
-In this case, my external NIC is on the subnet `10.46.26.0/23`. The host has a
-primary IP in that range, and the default gateway for the subnet is
-`10.46.27.254`.
+`make local_os_client` will write a
+[sshuttle](https://github.com/sshuttle/sshuttle) script to
+`scripts/sshuttle-standalone.sh` which will route to the hostonly provider
+network over ssh.
 
-In addition, I have an allocation of 10 FIPs in the range
-`10.46.27.66`-`10.46.27.75` (NOTE: these are also in the same subnet). I have
-used the first of these, `10.46.27.66` as OSP's public API endpoint. The rest
-will be used as the allocation pool of OSP's public provider network. That is,
-floating IPs allocated by OSP are externally routable.
+## Configuration
 
-Finally, set `public_uses_external_nic` to tell dev-install to configure
-external networking.
+dev-install is configured by overriding variables in `local-overrides.yaml`. See
+the [default variable
+definitions](https://github.com/shiftstack/dev-install/blob/master/playbooks/vars/defaults.yaml)
+for what can be overridden.
 
 ## Sizing
 

@@ -23,6 +23,7 @@ usage:
 	@echo
 	@echo 'Utility targets:'
 	@echo '  local_os_client: Configure local clouds.yaml to use standalone cloud'
+	@echo '  prepare_stack_testconfig: Download cirros image and create a test network, router and security group'
 
 #
 # Targets which initialize local state
@@ -60,6 +61,10 @@ install_stack: inventory.yaml local-overrides.yaml
 .PHONY: prepare_stack
 prepare_stack: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/prepare_stack.yaml
+
+.PHONY: prepare_stack_testconfig
+prepare_stack_testconfig: inventory.yaml local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/prepare_stack_testconfig.yaml
 
 .PHONY: local_os_client
 local_os_client: inventory.yaml local-overrides.yaml

@@ -4,42 +4,14 @@
   become_user: stack
   gather_facts: false
   vars_files: vars/defaults.yaml
+  roles:
+  - network_info
 
   tasks:
 
-  - setup:
+  - name: Gather host environment variables
+    setup:
       filter: ansible_env
-
-  - name: Create flavors
-    shell: |
-      if ! openstack flavor show m1.tiny; then
-          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public m1.tiny
-      fi
-      if ! openstack flavor show m1.medium; then
-          openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
-      fi
-      if ! openstack flavor show m1.large; then
-          openstack flavor create --ram 8192 --disk 20 --vcpu 4 --public m1.large
-      fi
-      if ! openstack flavor show m1.xlarge; then
-          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Create public network
-    shell: |
-      if ! openstack network show public; then
-          openstack network create --external --share --provider-physical-network datacentre --provider-network-type flat public
-      fi
-      if ! openstack subnet show public-subnet; then
-          openstack subnet create public-subnet --subnet-range "{{ public_cidr }}" \
-              --no-dhcp --gateway "{{ public_gateway }}" \
-              --allocation-pool "start={{ public_fip_pool_start }},end={{ public_fip_pool_end }}" \
-              --network public
-      fi
-    environment:
-      OS_CLOUD: standalone
 
   - name: Create openshift user without any admin privileges
     shell: |
@@ -83,6 +55,52 @@
     environment:
       OS_CLOUD: standalone
 
+  - name: Create flavors
+    shell: |
+      if ! openstack flavor show m1.tiny; then
+          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public m1.tiny
+      fi
+      if ! openstack flavor show m1.medium; then
+          openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
+      fi
+      if ! openstack flavor show m1.large; then
+          openstack flavor create --ram 8192 --disk 20 --vcpu 4 --public m1.large
+      fi
+      if ! openstack flavor show m1.xlarge; then
+          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
+      fi
+    environment:
+      OS_CLOUD: standalone
+
+  - name: Create external network
+    shell: |
+      if ! openstack network show external; then
+          openstack network create --external --provider-physical-network external --provider-network-type flat external
+      fi
+      if ! openstack subnet show external-subnet; then
+          openstack subnet create external-subnet --subnet-range "{{ external_cidr }}" \
+              --no-dhcp --gateway "{{ external_gateway }}" \
+              --allocation-pool "start={{ external_fip_pool_start }},end={{ external_fip_pool_end }}" \
+              --network external
+      fi
+    environment:
+      OS_CLOUD: standalone
+    when: external_fip_pool_start is defined and external_fip_pool_end is defined
+
+  - name: Create hostonly network
+    shell: |
+      if ! openstack network show hostonly; then
+          openstack network create --project openshift --external --provider-physical-network hostonly --provider-network-type flat hostonly
+      fi
+      if ! openstack subnet show hostonly-subnet; then
+          openstack subnet create --project openshift hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
+              --no-dhcp --gateway "{{ hostonly_gateway }}" \
+              --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
+              --network hostonly
+      fi
+    environment:
+      OS_CLOUD: standalone
+
   - name: Read clouds.yaml
     slurp:
       src: &cloudsyamlpath /home/stack/.config/openstack/clouds.yaml
@@ -117,41 +135,6 @@
       dest: *cloudsyamlpath
       content: "{{ cloudsyaml | to_nice_yaml }}"
 
-  # NOTE: the following commands are generally not needed.
-  # - name: Configure resources for openshift user
-  #   shell: |
-  #     if ! openstack keypair show default >/dev/null; then
-  #         openstack keypair create --public-key ~/.ssh/id_rsa.pub default
-  #     fi
-  #     openstack object store account set --property Temp-URL-Key=superkey
-  #     if ! openstack network show private >/dev/null; then
-  #         openstack network create --internal private
-  #     fi
-  #     if ! openstack subnet show private-subnet >/dev/null; then
-  #         openstack subnet create private-subnet --subnet-range {{ user_private_cidr }} --network private
-  #     fi
-  #     # create basic security group to allow ssh/ping/dns
-  #     if ! openstack security group show basic >/dev/null; then
-  #         openstack security group create basic
-  #     fi
-  #     if ! openstack security group rule list basic | grep "22:22"; then
-  #         openstack security group rule create basic --protocol tcp --dst-port 22:22 --remote-ip 0.0.0.0/0
-  #     fi
-  #     if ! openstack security group rule list basic | grep "icmp"; then
-  #         openstack security group rule create --protocol icmp basic
-  #     fi
-  #     if ! openstack security group rule list basic | grep "53:53"; then
-  #         openstack security group rule create --protocol udp --dst-port 53:53 basic
-  #     fi
-  #     # Create a router for the private network
-  #     if ! openstack router show private-subnet-external >/dev/null; then
-  #         openstack router create private-subnet-external
-  #         openstack router set private-subnet-external --external-gateway public
-  #         openstack router add subnet private-subnet-external private-subnet
-  #     fi
-  #   environment:
-  #     OS_CLOUD: openshift
-
   - name: Set images directory
     set_fact:
       images_dir: "{{ ansible_env.HOME }}/images"
@@ -174,7 +157,7 @@
       get_url:
         url: "{{ rhcos_meta_url }}"
         dest: "{{ images_dir }}"
-        force: yes
+        force: true
       register: rhcos_meta
 
     - name: Read rhcos release info
@@ -188,19 +171,9 @@
         dict: "{{ rhcos_meta.content | b64decode | from_json }}"
     when: rhcos_url is undefined
 
-  - name: Extract Cirros filename
-    set_fact:
-      cirros_filename: "{{ cirros_url | urlsplit('path') | basename }}"
-
   - name: Extract RHCOS compressed filename
     set_fact:
       rhcos_compressed_filename: "{{ rhcos_url | urlsplit('path') | basename }}"
-
-  - name: Download Cirros image
-    get_url:
-      url: "{{ cirros_url }}"
-      dest: "{{ images_dir }}/{{ cirros_filename }}"
-    register: cirros
 
   - name: Download compressed RHCOS image
     get_url:
@@ -225,15 +198,6 @@
   - name: Extract uncompressed RHCOS filename
     set_fact:
       rhcos_uncompressed_path: "{{ uncompress.stdout }}"
-
-  - name: Import Cirros image
-    shell: |
-      if ! openstack image show cirros >/dev/null; then
-          openstack image create cirros --container-format bare --disk-format qcow2 --public \
-            --file "{{ cirros.dest }}"
-      fi
-    environment:
-      OS_CLOUD: standalone
 
   - name: Import RHCOS image
     shell: |

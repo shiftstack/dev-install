@@ -2,10 +2,16 @@
 - hosts: standalone
   become: true
   become_user: stack
-  gather_facts: true
+  gather_facts: false
   vars_files: vars/defaults.yaml
+  roles:
+  - network_info
 
   tasks:
+
+  - name: Get minimum ansible facts
+    setup:
+      gather_subset: min
 
   - name: Install the tripleo client
     yum:
@@ -18,8 +24,11 @@
     template:
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
-    vars:
-      public_bridge: "{{ 'br-ex' if public_uses_external_nic else 'br-ctlplane' }}"
+
+  - name: Create dev-install_net_config.yaml
+    template:
+      src: dev-install_net_config.yaml.j2
+      dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
   - name: Create containers-prepare-parameters.yaml
     copy:
@@ -64,7 +73,7 @@
   - name: Wait for the deploy to complete
     command: systemctl show -p SubState --value tripleo-deploy
     register: tripleo_deploy_state
-    until: tripleo_deploy_state.stdout != "running"
+    until: tripleo_deploy_state is not failed and tripleo_deploy_state.stdout != "running"
     retries: 120 # 2 hours
     delay: 60
 
