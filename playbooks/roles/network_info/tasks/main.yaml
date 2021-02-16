@@ -1,0 +1,30 @@
+---
+- name: Read network info if present
+  slurp:
+    src: &networkinfo /etc/dev-install-network-info.yaml
+  register: networkinfo_file
+  ignore_errors: true
+
+- name: Set network_info from file
+  set_fact:
+    network_info: "{{ networkinfo_file['content'] | b64decode | from_json }}"
+  when: not networkinfo_file.failed
+
+- name: Store network info before we change it
+  block:
+  - name: Gather host network info
+    setup:
+      gather_subset: "network"
+
+  - name: Set network_info from gathered facts
+    set_fact:
+      network_info:
+        dns: "{{ ansible_facts.dns.nameservers }}"
+        public_ipv4: "{{ ansible_facts.default_ipv4 }}"
+        public_ipv6: "{{ ansible_facts.default_ipv6 }}"
+
+  - name: Write network_info to file
+    copy:
+      dest: *networkinfo
+      content: "{{ network_info | to_nice_json }}"
+  when: networkinfo_file.failed

@@ -2,7 +2,7 @@
 - hosts: standalone
   become: true
   become_user: root
-  gather_facts: true
+  gather_facts: false
   vars_files: vars/defaults.yaml
 
   tasks:

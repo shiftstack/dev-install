@@ -2,34 +2,23 @@
 
 parameter_defaults:
   CloudName: {{ public_api }}
-  # default gateway
-  ControlPlaneStaticRoutes:
-    - ip_netmask: 0.0.0.0/0
-      next_hop: {{ ansible_default_ipv4.gateway }}
-      default: true
   Debug: true
   DeploymentUser: {{ ansible_env.USER }}
   DnsServers:
-{% for nameserver in ansible_dns.nameservers %}
+{% for nameserver in network_info.dns %}
     - {{ nameserver }}
 {% endfor %}
   # needed for vip & pacemaker
   KernelIpNonLocalBind: 1
   DockerInsecureRegistryAddress:
     - {{ control_plane_ip }}:8787
-  # This is a hack. If we don't pass an interface here net-config-standalone
-  # will add the host's first nic to the br-ctlplane bridge, which will break
-  # host networking. Adding dummy0 will harmlessly have no effect. The correct
-  # solution is presumably to define a new network topology, but not today...
-  NeutronPublicInterface: dummy0
   # domain name used by the host
   CloudDomain: {{ clouddomain }}
   NeutronDnsDomain: {{ clouddomain }}
-  NeutronBridgeMappings: datacentre:{{ public_bridge }}
-  NeutronPhysicalBridge: {{ public_bridge }}
-  # enable to force metadata for public net
-  #NeutronEnableForceMetadata: true
+  NeutronBridgeMappings: "external:br-ex,hostonly:br-hostonly"
+  NeutronFlatNetworks: "external,hostonly"
   StandaloneEnableRoutedNetworks: false
-  StandaloneHomeDir: {{ ansible_env.HOME }}
+  StandaloneHomeDir: "{{ ansible_env.HOME }}"
   InterfaceLocalMtu: 1500
   SELinuxMode: permissive
+  StandaloneNetworkConfigTemplate: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
