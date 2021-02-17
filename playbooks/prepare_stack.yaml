@@ -64,7 +64,7 @@
           openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
       fi
       if ! openstack flavor show m1.large; then
-          openstack flavor create --ram 8192 --disk 20 --vcpu 4 --public m1.large
+          openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large
       fi
       if ! openstack flavor show m1.xlarge; then
           openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
