@@ -10,6 +10,12 @@ dev-install requires that:
 
 For OSP 16 and 17, the recommended OS is RHEL 8.2. There is no need to do any other configuration prior to running dev-install.
 
+## Local pre-requisites
+
+dev-install requires up to date versions of `ansible` and `make`, both of which must be installed manually before invoking dev-install.
+
+All other requirements should be configured automatically by ansible. Note that dev-install doesn't require root access on the machine it is invoked from, only the target host.
+
 ## Running dev-install
 
 dev-install is invoked using its Makefile. The simplest invocation is:
