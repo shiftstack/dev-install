@@ -22,3 +22,8 @@ parameter_defaults:
   InterfaceLocalMtu: 1500
   SELinuxMode: permissive
   StandaloneNetworkConfigTemplate: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+  # These 2 Octavia parameters are required to be set even if we don't use the Amphora thanks
+  # to the OVN provider in Octavia.
+  OctaviaGenerateCerts: true
+  OctaviaCaKeyPassphrase: "secrete"
+  OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
