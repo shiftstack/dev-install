@@ -20,6 +20,13 @@
     become: true
     become_user: root
 
+  - name: Install the Octavia Amphora Images
+    yum:
+      name:
+      - octavia-amphora-image-x86_64
+    become: true
+    become_user: root
+
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2
