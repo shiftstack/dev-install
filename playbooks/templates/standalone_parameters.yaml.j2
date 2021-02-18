@@ -25,4 +25,4 @@ parameter_defaults:
   OctaviaGenerateCerts: true
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
-  OctaviaAmphoraImageFilename: /usr/share/openstack-octavia-amphora-images/octavia-amphora.qcow2
+  OctaviaAmphoraImageFilename: "{{ ansible_env.HOME }}/amphora.qcow2"

@@ -27,6 +27,15 @@
     become: true
     become_user: root
 
+  # The Amphora image is broken for OSP17, see:
+  # https://review.rdoproject.org/r/32023
+  # Until then this is fine (tested) to use the latest
+  # image from RDO:
+  - name: Download the latest Amphora image for Octavia
+    get_url:
+      url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
+      dest: "{{ ansible_env.HOME }}/amphora.qcow2"
+
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2
