@@ -21,8 +21,11 @@
       if ! openstack user show openshift; then
           openstack user create --password 'password' openshift
       fi
-      openstack role add --user openshift --project openshift _member_
-      openstack role add --user openshift --project openshift swiftoperator
+      for r in _member_ member swiftoperator; do
+          if openstack role show $r; then
+              openstack role add --user openshift --project openshift $r
+          fi
+      done
 
       # Unlimited quota
       openstack quota set \
