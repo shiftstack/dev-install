@@ -1,7 +1,15 @@
 ---
+- name: Prepare dev-install directory in /var/lib
+  file:
+    path: /var/lib/dev-install
+    state: directory
+    owner: stack
+    group: stack
+    mode: 0775
+
 - name: Read network info if present
   slurp:
-    src: &networkinfo /etc/dev-install-network-info.yaml
+    src: &networkinfo /var/lib/dev-install/dev-install-network-info.yaml
   register: networkinfo_file
   ignore_errors: true
 
@@ -27,4 +35,6 @@
     copy:
       dest: *networkinfo
       content: "{{ network_info | to_nice_json }}"
+      owner: stack
+      group: stack
   when: networkinfo_file.failed
