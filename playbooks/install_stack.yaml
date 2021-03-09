@@ -81,6 +81,12 @@
   # NOTE(mdbooth): Despite it using sudo, we want to run the deploy script as
   # the stack user so it gets the stack user's environment and creates things in
   # the stack user's home directory.
+
+  - name: Cleanup in case of previous network failure.
+    command: systemctl reset-failed
+    become: true
+    become_user: root
+
   - name: Execute tripleo deploy
     command: systemd-run --unit=tripleo-deploy --uid=stack --gid=wheel -- {{ tripleo_deploy_path }}
     become: true
