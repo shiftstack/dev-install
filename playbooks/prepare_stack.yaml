@@ -93,7 +93,7 @@
   - name: Create hostonly network
     shell: |
       if ! openstack network show hostonly; then
-          openstack network create --project openshift --external --provider-physical-network hostonly --provider-network-type flat hostonly
+          openstack network create --project openshift --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
       fi
       if ! openstack subnet show hostonly-subnet; then
           openstack subnet create --project openshift hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
