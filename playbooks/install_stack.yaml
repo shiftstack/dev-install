@@ -13,6 +13,25 @@
     setup:
       gather_subset: min
 
+  - name: Create dev-install_net_config.yaml
+    template:
+      src: dev-install_net_config.yaml.j2
+      dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+
+  - name: Read dev-install_net_config.yaml
+    slurp:
+      src: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+    register: net_config
+  
+  - name: Create net_config_json fact
+    set_fact:
+      net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
+
+  - name: Create standalone_parameters.yaml
+    template:
+      src: standalone_parameters.yaml.j2
+      dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
+
   - name: Install the tripleo client
     yum:
       name:
@@ -36,19 +55,9 @@
       url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
       dest: "{{ ansible_env.HOME }}/amphora.qcow2"
 
-  - name: Create standalone_parameters.yaml
-    template:
-      src: standalone_parameters.yaml.j2
-      dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
-
-  - name: Create dev-install_net_config.yaml
-    template:
-      src: dev-install_net_config.yaml.j2
-      dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
-
   - name: Create containers-prepare-parameters.yaml
-    copy:
-      src: "files/containers-prepare-parameters.yaml"
+    template:
+      src: containers-prepare-parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
   # NOTE(mdbooth): The deploy step consistently fails to return. It fails in a
