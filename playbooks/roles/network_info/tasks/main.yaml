@@ -1,7 +1,7 @@
 ---
 - name: Read network info if present
   slurp:
-    src: &networkinfo /etc/dev-install-network-info.yaml
+    src: &networkinfo /home/stack/dev-install-network-info.yaml
   register: networkinfo_file
   ignore_errors: true
 
