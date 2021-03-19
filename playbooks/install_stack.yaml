@@ -47,8 +47,8 @@
       dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
   - name: Create containers-prepare-parameters.yaml
-    copy:
-      src: "files/containers-prepare-parameters.yaml"
+    template:
+      src: containers-prepare-parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
   # NOTE(mdbooth): The deploy step consistently fails to return. It fails in a

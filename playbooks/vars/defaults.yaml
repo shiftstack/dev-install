@@ -1,5 +1,10 @@
 ---
 rhos_release: 17
+cip_config:
+  - set:
+      namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      name_prefix: rhosp17-openstack-
+      tag: latest
 hostname: standalone
 clouddomain: shiftstack
 
