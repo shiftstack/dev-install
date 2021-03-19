@@ -21,7 +21,14 @@ parameter_defaults:
   StandaloneHomeDir: "{{ ansible_env.HOME }}"
   InterfaceLocalMtu: 1500
   SELinuxMode: permissive
+  # For OSP17+:
   StandaloneNetworkConfigTemplate: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+  # For OSP16:
+  StandaloneNetConfigOverride:
+    network_config:
+{% for member in net_config_json['network_config'] %}
+      - {{ member }}
+{% endfor %}
   OctaviaGenerateCerts: true
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
