@@ -35,6 +35,7 @@
   - name: Install the tripleo client
     yum:
       name:
+      - ceph-ansible
       - python3-tripleoclient
     become: true
     become_user: root
