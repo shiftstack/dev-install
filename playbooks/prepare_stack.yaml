@@ -139,86 +139,90 @@
       dest: *cloudsyamlpath
       content: "{{ cloudsyaml | to_nice_yaml }}"
 
-  - name: Set images directory
-    set_fact:
-      images_dir: "{{ ansible_env.HOME }}/images"
-
-  - name: Create images directory
-    file:
-      path: "{{ images_dir }}"
-      state: directory
-
-  - name: Get URL of latest RHCOS image
+  - name: Manage RHCOS image
+    when:
+      - create_rhcos_image
     block:
-    # NOTE(mdbooth): My first attempt to do this involved something like
-    #  set_fact:
-    #    rhcos_meta: "{{ lookup('url', rhcos_meta_url) | from_json }}"
-    #
-    # which would have been much nicer, but this gave an unfathomable ansible
-    # error and I eventually gave up and did this instead.
+    - name: Set images directory
+      set_fact:
+        images_dir: "{{ ansible_env.HOME }}/images"
 
-    - name: Fetch rhcos release info
+    - name: Create images directory
+      file:
+        path: "{{ images_dir }}"
+        state: directory
+
+    - name: Get URL of latest RHCOS image
+      block:
+      # NOTE(mdbooth): My first attempt to do this involved something like
+      #  set_fact:
+      #    rhcos_meta: "{{ lookup('url', rhcos_meta_url) | from_json }}"
+      #
+      # which would have been much nicer, but this gave an unfathomable ansible
+      # error and I eventually gave up and did this instead.
+
+      - name: Fetch rhcos release info
+        get_url:
+          url: "{{ rhcos_meta_url }}"
+          dest: "{{ images_dir }}"
+          force: true
+        register: rhcos_meta
+
+      - name: Read rhcos release info
+        slurp:
+          src: "{{ rhcos_meta.dest }}"
+        register: rhcos_meta
+
+      - set_fact:
+          rhcos_url: "{{ dict['baseURI'] }}{{ dict['images']['openstack']['path'] }}"
+        vars:
+          dict: "{{ rhcos_meta.content | b64decode | from_json }}"
+      when: rhcos_url is undefined
+
+    - name: Extract RHCOS compressed filename
+      set_fact:
+        rhcos_compressed_filename: "{{ rhcos_url | urlsplit('path') | basename }}"
+
+    - name: Download compressed RHCOS image
       get_url:
-        url: "{{ rhcos_meta_url }}"
-        dest: "{{ images_dir }}"
-        force: true
-      register: rhcos_meta
+        url: "{{ rhcos_url }}"
+        dest: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
+      register: rhcos
 
-    - name: Read rhcos release info
-      slurp:
-        src: "{{ rhcos_meta.dest }}"
-      register: rhcos_meta
+    # NOTE(mdbooth): Bizarrely, unarchive can't do this
+    - name: Uncompress RHCOS image
+      shell: |
+        set -ex -o pipefail
 
-    - set_fact:
-        rhcos_url: "{{ dict['baseURI'] }}{{ dict['images']['openstack']['path'] }}"
-      vars:
-        dict: "{{ rhcos_meta.content | b64decode | from_json }}"
-    when: rhcos_url is undefined
+        uncompressed=${rhcos_compressed_path%%.gz}
+        if [ ! -f "${uncompressed}" ]; then
+          gzip -dfc "${rhcos_compressed_path}" > "${uncompressed}"
+        fi
+        echo ${uncompressed}
+      environment:
+        rhcos_compressed_path: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
+      register: uncompress
 
-  - name: Extract RHCOS compressed filename
-    set_fact:
-      rhcos_compressed_filename: "{{ rhcos_url | urlsplit('path') | basename }}"
+    - name: Extract uncompressed RHCOS filename
+      set_fact:
+        rhcos_uncompressed_path: "{{ uncompress.stdout }}"
 
-  - name: Download compressed RHCOS image
-    get_url:
-      url: "{{ rhcos_url }}"
-      dest: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
-    register: rhcos
+    - name: Import RHCOS image
+      shell: |
+        set -ex -o pipefail
 
-  # NOTE(mdbooth): Bizarrely, unarchive can't do this
-  - name: Uncompress RHCOS image
-    shell: |
-      set -ex -o pipefail
+        # Get hash of existing rhcos image if we have one. Be careful not to fail
+        # if it doesn't exist, just set an empty variable.
+        os_hash_value=$(openstack image show rhcos -c properties -f json | jq -re '.properties.os_hash_value' || echo)
 
-      uncompressed=${rhcos_compressed_path%%.gz}
-      if [ ! -f "${uncompressed}" ]; then
-        gzip -dfc "${rhcos_compressed_path}" > "${uncompressed}"
-      fi
-      echo ${uncompressed}
-    environment:
-      rhcos_compressed_path: "{{ images_dir }}/{{ rhcos_compressed_filename }}"
-    register: uncompress
+        # Delete the rhcos image if its checksum doesn't match what we downloaded
+        if [ ! -z "${os_hash_value}" ] && \
+           ! echo "${os_hash_value} {{ rhcos_uncompressed_path }}" | sha512sum -c; then
+          openstack image delete rhcos
+        fi
 
-  - name: Extract uncompressed RHCOS filename
-    set_fact:
-      rhcos_uncompressed_path: "{{ uncompress.stdout }}"
-
-  - name: Import RHCOS image
-    shell: |
-      set -ex -o pipefail
-
-      # Get hash of existing rhcos image if we have one. Be careful not to fail
-      # if it doesn't exist, just set an empty variable.
-      os_hash_value=$(openstack image show rhcos -c properties -f json | jq -re '.properties.os_hash_value' || echo)
-
-      # Delete the rhcos image if its checksum doesn't match what we downloaded
-      if [ ! -z "${os_hash_value}" ] && \
-         ! echo "${os_hash_value} {{ rhcos_uncompressed_path }}" | sha512sum -c; then
-        openstack image delete rhcos
-      fi
-
-      if ! openstack image show rhcos >/dev/null; then
-        openstack image create rhcos --container-format bare --disk-format qcow2 --public --file "{{ rhcos_uncompressed_path }}"
-      fi
-    environment:
-      OS_CLOUD: standalone
+        if ! openstack image show rhcos >/dev/null; then
+          openstack image create rhcos --container-format bare --disk-format qcow2 --public --file "{{ rhcos_uncompressed_path }}"
+        fi
+      environment:
+        OS_CLOUD: standalone
