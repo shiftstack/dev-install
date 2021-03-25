@@ -36,6 +36,7 @@
     yum:
       name:
       - python3-tripleoclient
+      - ceph-ansible
     become: true
     become_user: root
 
