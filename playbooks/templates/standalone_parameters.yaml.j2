@@ -1,7 +1,7 @@
 #vi:syntax=yaml
 
 parameter_defaults:
-  CloudName: {{ public_api }}
+  CloudName: {{ hostname }}.{{ clouddomain }}
   Debug: true
   DeploymentUser: {{ ansible_env.USER }}
   DnsServers:
