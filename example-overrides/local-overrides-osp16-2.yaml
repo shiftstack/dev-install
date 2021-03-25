@@ -1,0 +1,12 @@
+standalone_host: <standalone FQDN>
+# Both public_api and control_plane_ip have to be the same in OSP16 for Pacemaker
+public_api: <IP address used to reach the node>
+control_plane_ip: <Same IP address used to reach the node>
+# Get latest 16.2 puddle
+rhos_release: 16.2
+cip_config:
+  - set:
+      namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      name_prefix: rhosp16-openstack-
+      # This is subject to change, you should rely on what rhos-release provides
+      tag: 16.2_20210318.1

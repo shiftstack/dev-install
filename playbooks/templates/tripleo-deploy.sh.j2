@@ -16,4 +16,4 @@ sudo openstack tripleo deploy \
     -e {{ stack_home }}/standalone_parameters.yaml \
     --output-dir {{ stack_home }} \
     --keep-running \
-    --standalone >> {{ tripleo_deploy_logs }}
+    --standalone &>> {{ tripleo_deploy_logs }}
