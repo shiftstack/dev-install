@@ -15,8 +15,8 @@ parameter_defaults:
   # domain name used by the host
   CloudDomain: {{ clouddomain }}
   NeutronDnsDomain: {{ clouddomain }}
-  NeutronBridgeMappings: "external:br-ex,hostonly:br-hostonly"
-  NeutronFlatNetworks: "external,hostonly"
+  NeutronBridgeMappings: {{ neutron_bridge_mappings }}
+  NeutronFlatNetworks: {{ neutron_flat_networks }}
   StandaloneEnableRoutedNetworks: false
   StandaloneHomeDir: "{{ ansible_env.HOME }}"
   InterfaceLocalMtu: 1500
