@@ -17,6 +17,8 @@ parameter_defaults:
   NeutronDnsDomain: {{ clouddomain }}
   NeutronBridgeMappings: {{ neutron_bridge_mappings }}
   NeutronFlatNetworks: {{ neutron_flat_networks }}
+  NeutronNetworkType: 'flat,vlan'
+  NeutronNetworkVLANRanges: 'sriov:100:199'
   StandaloneEnableRoutedNetworks: false
   StandaloneHomeDir: "{{ ansible_env.HOME }}"
   InterfaceLocalMtu: 1500
@@ -33,3 +35,18 @@ parameter_defaults:
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
   OctaviaAmphoraImageFilename: "{{ ansible_env.HOME }}/amphora.qcow2"
+
+  NeutronPhysicalDevMappings: "{{ neutron_dev_physical_mappings }}"
+  NovaReservedHostMemory: 4096
+
+# The following kernelargs, need to be added to the host GRUB_CMDLINE_LINUX
+# and the host needs to be rebooted and the values cheked.
+#  #KernelArgs: "default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on isolcpus=1-19,21-39"
+#  Still don't hav TunedProfile working correctly
+#  TunedProfileName: "cpu-partitioning"
+# The PCI passthrough access address should be provided by user as variable
+  NovaPCIPassthrough:
+    - address: "0000:04:00.1"
+      trusted: "true"
+      physical_network: "sriov"
+  NeutronEnableDVR: false

@@ -7,10 +7,10 @@ sudo openstack tripleo deploy \
     --templates \
     --local-ip={{ control_plane_ip }} \
     --control-virtual-ip {{ public_api }} \
-    -e /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml \
-{% for service in enabled_services %}
+  {% for service in enabled_services %}
     -e {{ service }} \
-{% endfor %}
+  {% endfor %}
+    -e /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml \
     -r {{ standalone_role }} \
     -e {{ stack_home }}/containers-prepare-parameters.yaml \
     -e {{ stack_home }}/standalone_parameters.yaml \

@@ -38,3 +38,11 @@ network_config:
   - type: interface
     name: dummy1
     nm_controlled: true
+- type: sriov_pf
+  name: {{ sriov_interface }}
+  numvfs: 10
+  use_dhcp: false
+  defroute: false
+  nm_controlled: true
+  hotplug: true
+  promisc: false
