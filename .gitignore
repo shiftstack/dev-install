@@ -3,7 +3,7 @@
 /scripts/env.sh
 /scripts/sshuttle-standalone.sh
 /simpleca
-/quay.cert
+/quay.crt
 /quay.csr
 /quay.key
 
