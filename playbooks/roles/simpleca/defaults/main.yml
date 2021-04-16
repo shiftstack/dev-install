@@ -1,0 +1,3 @@
+---
+cert_dir: ..
+ca_dir: "{{ cert_dir}}/simpleca"

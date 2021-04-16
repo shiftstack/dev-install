@@ -71,6 +71,10 @@ prepare_stack_testconfig: inventory.yaml local-overrides.yaml
 local_os_client: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
+.PHONY: certs
+certs: local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/certs.yaml
+
 .PHONY: destroy
 destroy: inventory.yaml local-overrides.yaml
 	$(ANSIBLE_CMD) playbooks/destroy.yaml
