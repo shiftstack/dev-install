@@ -2,6 +2,10 @@
 /local-overrides.yaml
 /scripts/env.sh
 /scripts/sshuttle-standalone.sh
+/simpleca
+/quay.cert
+/quay.csr
+/quay.key
 
 # From https://github.com/github/gitignore/blob/master/Global/Vim.gitignore
 # Swap
