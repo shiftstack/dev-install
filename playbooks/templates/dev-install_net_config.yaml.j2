@@ -1,6 +1,9 @@
 #vi:syntax=yaml
 ---
 network_config:
+{% if network_config is defined %}
+{{ network_config | to_nice_yaml }}
+{% else %}
 - type: ovs_bridge
   name: br-ex
   use_dhcp: true
@@ -38,3 +41,4 @@ network_config:
   - type: interface
     name: dummy1
     nm_controlled: true
+{% endif %}
