@@ -61,3 +61,7 @@ standalone_role: /usr/share/openstack-tripleo-heat-templates/roles/Standalone.ya
 
 neutron_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
 neutron_flat_networks: "external,hostonly"
+
+tripleo_repos_repos:
+  - current-tripleo-dev
+  - ceph

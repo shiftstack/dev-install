@@ -1,0 +1,10 @@
+standalone_host: <standalone FQDN>
+# Both public_api and control_plane_ip have to be the same in OSP16 for Pacemaker
+public_api: <IP address used to reach the node>
+control_plane_ip: <Same IP address used to reach the node>
+tripleo_repos_branch: train
+cip_config:
+  - set:
+      namespace: quay.io/tripleotrain
+      name_prefix: openstack-
+      tag: current-tripleo
