@@ -17,6 +17,7 @@ usage:
 	@echo 'make osp_full'
 	@echo
 	@echo 'Individual install phase targets:'
+	@echo '  local_requirements: Install Ansible requirements required to run dev-install'
 	@echo '  prepare_host: Host configuration required before installing standalone, including rhos-release'
 	@echo '  network: Host networking configuration required before installing standalone'
 	@echo '  install_stack: Install TripleO standalone'
@@ -45,7 +46,11 @@ local-overrides.yaml:
 #
 
 .PHONY: osp_full
-osp_full: prepare_host network install_stack prepare_stack
+osp_full: local_requirements prepare_host network install_stack prepare_stack
+
+.PHONY: local_requirements
+local_requirements: inventory.yaml local-overrides.yaml
+	$(ANSIBLE_CMD) playbooks/local_requirements.yaml
 
 .PHONY: prepare_host
 prepare_host: inventory.yaml local-overrides.yaml
