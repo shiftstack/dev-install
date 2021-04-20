@@ -16,6 +16,7 @@
       - rhosp-openvswitch
       - NetworkManager-ovs
       - nmstate
+      - iptables
     register: installovs
 
   - name: Restart NetworkManager to load ovs plugin
