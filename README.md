@@ -8,7 +8,8 @@ dev-install requires that:
 * an appropriate OS has already been installed
 * the machine running dev-install can SSH to the standalone host as either root or a user with passwordless sudo access
 
-For OSP 16 and 17, the recommended OS is RHEL 8.2. There is no need to do any other configuration prior to running dev-install.
+For OSP 16, the recommended OS is RHEL 8.2. For OSP 17, the recommended RHEL is 8.4 (it will not work on <8.3).
+There is no need to do any other configuration prior to running dev-install.
 
 ## Local pre-requisites
 
