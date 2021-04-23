@@ -9,6 +9,7 @@
 
   - name: Destroy the OpenStack
     shell: |
+      pkill -9 heat-all
       if type pcs &> /dev/null; then
           pcs cluster destroy
       fi

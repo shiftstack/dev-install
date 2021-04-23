@@ -55,61 +55,31 @@
       src: containers-prepare-parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
-  # NOTE(mdbooth): The deploy step consistently fails to return. It fails in a
-  # manner consistent with a hung SSH connection. The following dance is an
-  # effort to never have a very long-running ansible task which might hang.
-  - name: Set deploy log file location
+  - name: Generate a keypair for Octavia Amphora (needed by TripleO)
+    shell: |
+      if [ ! -f "{{ ansible_env.HOME }}/octavia" ]; then
+          ssh-keygen -b 2048 -t rsa -f "{{ ansible_env.HOME }}/octavia" -q -N ""
+      fi
+
+  - name: Create default_tripleo_envs fact
     set_fact:
-      tripleo_deploy_logs: "{{ ansible_env.HOME }}/tripleo-deploy.log"
-      # Create this in /usr/local/bin because we execute it with systemd-run,
-      # which requires an executable SELinux label
-      tripleo_deploy_path: "/usr/local/bin/tripleo-deploy.sh"
+      default_tripleo_envs:
+        - /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml
+        - "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+        - "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
-  - name: Create the deploy script
-    template:
-      src: tripleo-deploy.sh.j2
-      dest: "{{ tripleo_deploy_path }}"
-      owner: root
-      group: root
-      mode: 0755
+  - name: Run TripleO deploy
+    import_role:
+      name: tripleo.operator.tripleo_deploy
     vars:
-      stack_home: "{{ ansible_env.HOME }}"
-    become: true
-    become_user: root
-
-  - name: Truncate the log file
-    copy:
-      dest: "{{ tripleo_deploy_logs }}"
-      content: ""
-
-  # NOTE(mdbooth): Despite it using sudo, we want to run the deploy script as
-  # the stack user so it gets the stack user's environment and creates things in
-  # the stack user's home directory.
-
-  - name: Cleanup in case of previous network failure.
-    command: systemctl reset-failed
-    become: true
-    become_user: root
-
-  - name: Execute tripleo deploy
-    command: systemd-run --unit=tripleo-deploy --uid=stack --gid=wheel -- {{ tripleo_deploy_path }}
-    become: true
-    become_user: root
-
-  - name: Wait for the deploy to complete
-    command: systemctl show -p SubState --value tripleo-deploy
-    register: tripleo_deploy_state
-    until: tripleo_deploy_state is not failed and tripleo_deploy_state.stdout != "running"
-    retries: 120 # 2 hours
-    delay: 60
-
-  - name: Cleanup and exit on failure
-    block:
-    - name: Reset transient systemd unit
-      command: systemctl reset-failed tripleo-deploy
-      become: true
-      become_user: root
-
-    - fail:
-        msg: TripleO deploy failed. See {{ tripleo_deploy_logs }} for details.
-    when: tripleo_deploy_state.stdout == "failed"
+      openstack_bin: sudo openstack
+      tripleo_deploy_deployment_user: stack
+      tripleo_deploy_standalone: true
+      tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
+      tripleo_deploy_local_ip: "{{ public_api }}"
+      tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
+      tripleo_deploy_environment_files: "{{ default_tripleo_envs | union(enabled_services) }}"
+      tripleo_deploy_generate_scripts: true
+      tripleo_deploy_keep_running: true
+      tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
+      tripleo_deploy_roles_file: "{{ standalone_role }}"
