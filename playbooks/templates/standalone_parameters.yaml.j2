@@ -48,3 +48,9 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
 {% endif %}
+{# note: keep this block at the very end #}
+{% if extra_heat_params is defined %}
+{% for key, value in extra_heat_params.items() %}
+  {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}

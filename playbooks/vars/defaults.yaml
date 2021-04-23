@@ -79,6 +79,16 @@ enabled_services:
   - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 standalone_role: /usr/share/openstack-tripleo-heat-templates/roles/Standalone.yaml
 
+# This variable allows to add extra Heat parameters to standalone_parameters.yaml.
+# e.g.  extra_heat_params:
+#         NovaReservedHostMemory: 4096
+#         NovaPCIPassthrough:
+#           - address: "0000:04:00.1"
+# Note that if a Heat param is defined in extra_heat_params and also in standalone_parameters,
+# the former will override the latter which can be useful if you need specific configs.
+#
+# extra_heat_params:
+
 neutron_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
 neutron_flat_networks: "external,hostonly"
 
