@@ -2,20 +2,42 @@
 - hosts: standalone
   become: true
   become_user: root
-  gather_facts: false
+  gather_facts: true
   vars_files: vars/defaults.yaml
 
   tasks:
 
-  - name: install rhos-release
-    yum:
-      state: installed
-      name:
-      - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
-      disable_gpg_check: True
+  - name: Prepare host on RHEL system
+    when:
+      - ansible_facts.distribution == 'RedHat'
+    block:
+      - name: install rhos-release
+        yum:
+          state: installed
+          name:
+          - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
+          disable_gpg_check: True
 
-  - name: Configure rhos release "{{ rhos_release }}"
-    shell: rhos-release "{{ rhos_release }}"
+      - name: Configure rhos release "{{ rhos_release }}"
+        shell: rhos-release "{{ rhos_release }}"
+
+      - name: Fetch the Red Hat root certificate
+        get_url:
+          dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
+          url: https://password.corp.redhat.com/RH-IT-Root-CA.crt
+
+      - name: Add the certificate to the local trust bundle
+        shell: |
+          update-ca-trust enable
+          update-ca-trust extract
+
+  - name: Prepare host on CentOS system
+    when:
+      - ansible_facts.distribution == 'CentOS'
+    block:
+      - name: configure tripleo repositories
+        import_role:
+          name: tripleo.operator.tripleo_repos
 
   - name: Upgrade all packages
     yum:
@@ -47,13 +69,3 @@
     user:
       name: stack
       groups: wheel
-
-  - name: Fetch the Red Hat root certificate
-    get_url:
-      dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
-      url: https://password.corp.redhat.com/RH-IT-Root-CA.crt
-
-  - name: Add the certificate to the local trust bundle
-    shell: |
-      update-ca-trust enable
-      update-ca-trust extract

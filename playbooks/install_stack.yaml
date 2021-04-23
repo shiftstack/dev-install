@@ -41,13 +41,6 @@
     become: true
     become_user: root
 
-  - name: Install the Octavia Amphora Images
-    yum:
-      name:
-      - octavia-amphora-image-x86_64
-    become: true
-    become_user: root
-
   # The Amphora image is broken for OSP17, see:
   # https://review.rdoproject.org/r/32023
   # Until then this is fine (tested) to use the latest

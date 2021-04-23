@@ -10,6 +10,7 @@ dev-install requires that:
 
 For OSP 16, the recommended OS is RHEL 8.2. For OSP 17, the recommended RHEL is 8.4 (it will not work on <8.3).
 There is no need to do any other configuration prior to running dev-install.
+When deploying on CentOS, you need to check what platform is supported for the TripleO version that you plan to deploy.
 
 ## Local pre-requisites
 
@@ -84,7 +85,7 @@ for what can be overridden.
 
 ## Sizing
 
-When idle, OSP17 standalone on RHEL8 uses approximately:
+When idle, a standalone deployment uses approximately:
 * 16GB RAM
 * 15G on /
 * 3.5G on /home
