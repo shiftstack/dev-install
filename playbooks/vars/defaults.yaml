@@ -1,10 +1,24 @@
 ---
-rhos_release: 17
+rhos_release: 16.2
 cip_config:
   - set:
-      namespace: registry-proxy.engineering.redhat.com/rh-osbs
-      name_prefix: rhosp17-openstack-
-      tag: latest
+      name_prefix: rhosp16-openstack-
+      tag: 16.2_20210426.1
+      ceph-namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      ceph-image: rhceph
+      ceph-tag: 4-36
+      ceph_alertmanager_image: openshift-ose-prometheus-alertmanager
+      ceph_alertmanager_namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      ceph_alertmanager_tag: v4.1
+      ceph_grafana_image: rhceph-3-dashboard-rhel7
+      ceph_grafana_namespace: registry.access.redhat.com/rhceph
+      ceph_grafana_tag: 3
+      ceph_node_exporter_image: openshift-ose-prometheus-node-exporter
+      ceph_node_exporter_namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      ceph_node_exporter_tag: v4.1
+      ceph_prometheus_image: openshift-ose-prometheus
+      ceph_prometheus_namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      ceph_prometheus_tag: v4.1
 hostname: standalone
 clouddomain: shiftstack
 
