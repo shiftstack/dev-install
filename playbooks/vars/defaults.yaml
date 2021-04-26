@@ -85,3 +85,8 @@ neutron_flat_networks: "external,hostonly"
 tripleo_repos_repos:
   - current-tripleo-dev
   - ceph
+
+ceph_enabled: false
+# Size of the loop device that will be
+# used for Ceph (in GB).
+ceph_loop_device_size: 10

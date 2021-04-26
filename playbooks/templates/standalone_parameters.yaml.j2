@@ -33,3 +33,18 @@ parameter_defaults:
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
   OctaviaAmphoraImageFilename: "{{ ansible_env.HOME }}/amphora.qcow2"
+{% if ceph_enabled %}
+  CephAnsibleDisksConfig:
+    osd_scenario: lvm
+    osd_objectstore: bluestore
+    lvm_volumes:
+      - data: data-lv2
+        data_vg: vg2
+        db: db-lv2
+        db_vg: vg2
+  CephAnsibleExtraConfig:
+    cluster_network: {{ network_info.public_ipv4.network }}/{{ network_info.public_ipv4_cidr }}
+    public_network: {{ network_info.public_ipv4.network }}/{{ network_info.public_ipv4_cidr }}
+  CephPoolDefaultPgNum: 8
+  CephPoolDefaultSize: 1
+{% endif %}

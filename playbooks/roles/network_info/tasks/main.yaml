@@ -16,12 +16,17 @@
     setup:
       gather_subset: "network"
 
+  - name: Set ip with netmask facts
+    set_fact:
+      public_ipv4_full: "{{ ansible_facts.default_ipv4.address + '/' + ansible_facts.default_ipv4.netmask }}"
+
   - name: Set network_info from gathered facts
     set_fact:
       network_info:
         dns: "{{ ansible_facts.dns.nameservers }}"
         public_ipv4: "{{ ansible_facts.default_ipv4 }}"
         public_ipv6: "{{ ansible_facts.default_ipv6 }}"
+        public_ipv4_cidr: "{{ public_ipv4_full | ipaddr('prefix') }}"
 
   - name: Write network_info to file
     copy:

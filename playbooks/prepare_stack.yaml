@@ -69,8 +69,14 @@
       if ! openstack flavor show m1.large; then
           openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large
       fi
+      if ! openstack flavor show m1.large.nodisk; then
+          openstack flavor create --ram 8192 --disk 0 --vcpu 4 --public m1.large.nodisk
+      fi
       if ! openstack flavor show m1.xlarge; then
           openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
+      fi
+      if ! openstack flavor show m1.xlarge.nodisk; then
+          openstack flavor create --ram 16384 --disk 0 --vcpu 4 --public m1.xlarge.nodisk
       fi
     environment:
       OS_CLOUD: standalone
