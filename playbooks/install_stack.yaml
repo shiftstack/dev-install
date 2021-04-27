@@ -13,6 +13,14 @@
     setup:
       gather_subset: min
 
+  - name: Install the tripleo client
+    yum:
+      name:
+      - ceph-ansible
+      - python3-tripleoclient
+    become: true
+    become_user: root
+
   - name: Create dev-install_net_config.yaml
     template:
       src: dev-install_net_config.yaml.j2
@@ -27,18 +35,34 @@
     set_fact:
       net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
 
+  - name: Read the TripleO role
+    slurp:
+      src: "{{ standalone_role }}"
+    register: role_yaml
+
+  - name: Parse the role data
+    set_fact:
+      role_data: "{{ role_yaml['content'] | b64decode | from_yaml }}"
+
+  - name: Set fact for the new role data
+    set_fact:
+      new_role_data: "{{ role_data }}"
+
+  - name: Set the fact for overrides services
+    set_fact:
+      role_data: >
+        {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault | union(services_overrides)) %}
+        {{ new_role_data }}
+
+  - name: Create the new role file
+    copy:
+      dest: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+      content: "{{ role_data }}"
+
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
-
-  - name: Install the tripleo client
-    yum:
-      name:
-      - ceph-ansible
-      - python3-tripleoclient
-    become: true
-    become_user: root
 
   # The Amphora image is broken for OSP17, see:
   # https://review.rdoproject.org/r/32023
@@ -87,4 +111,4 @@
       tripleo_deploy_generate_scripts: true
       tripleo_deploy_keep_running: true
       tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
-      tripleo_deploy_roles_file: "{{ standalone_role }}"
+      tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
