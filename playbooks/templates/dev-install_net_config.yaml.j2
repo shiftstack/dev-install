@@ -38,7 +38,18 @@ network_config:
   - destination: {{ hostonly_cidr }}
     nexthop: {{ hostonly_gateway }}
   members:
+{% if sriov_interface is defined %}
+  - type: sriov_pf
+    name: {{ sriov_interface }}
+    numvfs: {{ sriov_nic_numvfs | mandatory }}
+    use_dhcp: false
+    defroute: false
+    nm_controlled: false
+    hotplug: true
+    promisc: false
+{% else %}
   - type: interface
     name: dummy1
     nm_controlled: true
+{% endif %}
 {% endif %}

@@ -103,3 +103,14 @@ ceph_enabled: false
 # Size of the loop device that will be
 # used for Ceph (in GB).
 ceph_loop_device_size: 10
+
+sriov_services:
+  - OS::TripleO::Services::NeutronSriovAgent
+  - OS::TripleO::Services::BootParams
+#sriov_interface:
+#sriov_nic_numvfs:
+#sriov_nova_pci_passthrough:
+
+#dpdk_kernel_args:
+#dpdk_isol_cpus_list:
+#dpdk_cpu_shared_set:
