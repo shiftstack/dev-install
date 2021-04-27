@@ -2,8 +2,10 @@
 rhos_release: 16.2
 cip_config:
   - set:
+      namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      prefix: rhosp16-openstack-
       name_prefix: rhosp16-openstack-
-      tag: 16.2_20210426.1
+      tag: 16.2_20210420.1
       ceph-namespace: registry-proxy.engineering.redhat.com/rh-osbs
       ceph-image: rhceph
       ceph-tag: 4-36
