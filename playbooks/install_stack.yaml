@@ -37,7 +37,6 @@
       name:
       - ceph-ansible
       - python3-tripleoclient
-      - ceph-ansible
     become: true
     become_user: root
 
@@ -63,14 +62,14 @@
 
   - name: Create ceph_env fact
     set_fact:
-      ceph_env: /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml
+      ceph_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml
     when: ceph_enabled
 
   - name: Create default_tripleo_envs fact
     set_fact:
       default_tripleo_envs:
         - /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml
-        - "{{ ceph_env | default(omit) }}"
         - "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
         - "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
@@ -84,7 +83,7 @@
       tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_local_ip: "{{ public_api }}"
       tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
-      tripleo_deploy_environment_files: "{{ default_tripleo_envs | union(enabled_services) }}"
+      tripleo_deploy_environment_files: "{{ default_tripleo_envs | union(enabled_services) | union(ceph_env|default([]) }}"
       tripleo_deploy_generate_scripts: true
       tripleo_deploy_keep_running: true
       tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
