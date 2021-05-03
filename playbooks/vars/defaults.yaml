@@ -6,9 +6,9 @@ cip_config:
       prefix: rhosp16-openstack-
       name_prefix: rhosp16-openstack-
       tag: 16.2_20210420.1
-      ceph-namespace: registry-proxy.engineering.redhat.com/rh-osbs
-      ceph-image: rhceph
-      ceph-tag: 4-36
+      ceph_namespace: registry-proxy.engineering.redhat.com/rh-osbs
+      ceph_image: rhceph
+      ceph_tag: 4-36
       ceph_alertmanager_image: openshift-ose-prometheus-alertmanager
       ceph_alertmanager_namespace: registry-proxy.engineering.redhat.com/rh-osbs
       ceph_alertmanager_tag: v4.1
