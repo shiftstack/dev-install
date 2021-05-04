@@ -8,6 +8,7 @@
   tasks:
 
   - name: Destroy the OpenStack
+    changed_when: true
     shell: |
       pkill -9 heat-all
       if type pcs &> /dev/null; then

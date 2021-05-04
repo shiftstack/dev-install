@@ -1,0 +1,17 @@
+name: Ansible Lint
+on:
+  pull_request:
+    paths:
+    - playbooks/**.yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checks-out the repository under $GITHUB_WORKSPACE
+      uses: actions/checkout@v2
+    - name: run ansible-lint
+      uses: ansible/ansible-lint-action@master
+      with:
+        targets: |
+          playbooks/*.yaml
+        args: "-q"
