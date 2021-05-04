@@ -19,7 +19,7 @@
       - iptables
     register: installovs
 
-  - name: Restart NetworkManager to load ovs plugin
+  - name: Restart NetworkManager to load ovs plugin # noqa 503
     systemd:
       name: "NetworkManager.service"
       enabled: true
@@ -32,7 +32,7 @@
       enabled: true
       state: started
 
-  - name: Set nmstate
+  - name: Set nmstate # noqa 301
     command: nmstatectl set --no-commit --timeout 60
     args:
       stdin: "{{ network_state | to_nice_json }}"
@@ -57,7 +57,7 @@
 
   # Doing this in 2 steps means that we'll automatically rollback if we break
   # networking such that ansible can no longer connect
-  - name: Commit the new network state
+  - name: Commit the new network state # noqa 301
     command: nmstatectl commit "{{ checkpoint }}"
     vars:
       checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"

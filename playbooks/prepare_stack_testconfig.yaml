@@ -28,7 +28,7 @@
       mode: '0600'
     register: testconfig_public_key_copy
 
-  - name: Configure resources for openshift user
+  - name: Configure resources for openshift user # noqa 301
     shell: |
       set -e -o pipefail
 
@@ -71,6 +71,7 @@
     file:
       path: "{{ images_dir }}"
       state: directory
+      mode: 0755
 
   - name: Extract Cirros filename
     set_fact:
@@ -82,7 +83,7 @@
       dest: "{{ images_dir }}/{{ cirros_filename }}"
     register: cirros
 
-  - name: Import Cirros image
+  - name: Import Cirros image # noqa 301
     shell: |
       if ! openstack image show cirros >/dev/null; then
           openstack image create cirros --container-format bare --disk-format qcow2 --public \

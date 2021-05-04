@@ -19,7 +19,7 @@
           disable_gpg_check: True
 
       - name: Configure rhos release "{{ rhos_release }}"
-        shell: rhos-release "{{ rhos_release }}"
+        command: rhos-release "{{ rhos_release }}"
 
       - name: Fetch the Red Hat root certificate
         get_url:
@@ -39,13 +39,13 @@
         import_role:
           name: tripleo.operator.tripleo_repos
 
-  - name: Upgrade all packages
+  - name: Upgrade all packages # noqa 403
     yum:
       name: '*'
       state: latest
     register: yum
 
-  - name: Reboot if we updated packages
+  - name: Reboot if we updated packages # noqa 503
     reboot:
     when: yum.changed
 
@@ -77,7 +77,7 @@
         name:
           - util-linux
           - lvm2
-        state: latest
+        state: present
     - name: Use dd and losetup to create the loop devices
       shell: |
         fallocate -l {{ ceph_loop_device_size }}G /var/lib/ceph-osd.img
@@ -89,6 +89,7 @@
     - name: Create /etc/systemd/system/ceph-osd-losetup.service
       copy:
         dest: /etc/systemd/system/ceph-osd-losetup.service
+        mode: 0755
         content: |
           [Unit]
           Description=Ceph OSD losetup

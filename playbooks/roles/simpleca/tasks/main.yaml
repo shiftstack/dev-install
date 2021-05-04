@@ -30,12 +30,12 @@
 
 - name: Create a private key for {{ cert_user }}
   openssl_privatekey:
-    path: "{{cert_dir}}/{{ cert_user }}.key"
+    path: "{{ cert_dir }}/{{ cert_user }}.key"
   register: user_key
 
 - name: Create a CSR for {{ cert_user }}
   openssl_csr:
-    path: "{{cert_dir}}/{{ cert_user }}.csr"
+    path: "{{ cert_dir }}/{{ cert_user }}.csr"
     privatekey_path: "{{ user_key.filename }}"
     common_name: "{{ cert_name }}"
     subject_alt_name: "DNS:{{ cert_name }}"
@@ -43,7 +43,7 @@
 
 - name: Sign the CSR for {{ cert_user }}
   openssl_certificate:
-    path: "{{cert_dir}}/{{ cert_user }}.crt"
+    path: "{{ cert_dir }}/{{ cert_user }}.crt"
     csr_path: "{{ user_csr.filename }}"
     provider: ownca
     ownca_path: "{{ ca_crt.filename }}"
