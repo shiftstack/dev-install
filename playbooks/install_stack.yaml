@@ -13,6 +13,14 @@
     setup:
       gather_subset: min
 
+  - name: Install the tripleo client
+    yum:
+      name:
+      - ceph-ansible
+      - python3-tripleoclient
+    become: true
+    become_user: root
+
   - name: Create dev-install_net_config.yaml
     template:
       src: dev-install_net_config.yaml.j2
@@ -27,18 +35,38 @@
     set_fact:
       net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
 
+  - name: Set fact for SR-IOV services overrides
+    set_fact:
+      sriov_services_fact: "{{ sriov_interface | ternary(sriov_services, []) }}"
+
+  - name: Read the TripleO role
+    slurp:
+      src: "{{ standalone_role }}"
+    register: role_yaml
+
+  - name: Parse the role data
+    set_fact:
+      role_data: "{{ role_yaml['content'] | b64decode | from_yaml }}"
+
+  - name: Set fact for the new role data
+    set_fact:
+      new_role_data: "{{ role_data }}"
+
+  - name: Set the fact for overrides services
+    set_fact:
+      role_data: >
+        {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault | union(sriov_services_fact) | union(standalone_role_overrides)) %}
+        {{ new_role_data }}
+
+  - name: Create the new role file
+    copy:
+      dest: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+      content: "{{ role_data }}"
+
   - name: Create standalone_parameters.yaml
     template:
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
-
-  - name: Install the tripleo client
-    yum:
-      name:
-      - ceph-ansible
-      - python3-tripleoclient
-    become: true
-    become_user: root
 
   # The Amphora image is broken for OSP17, see:
   # https://review.rdoproject.org/r/32023
@@ -66,6 +94,20 @@
         - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml
     when: ceph_enabled
 
+  - name: Install all tuned profiles if SR-IOV is enabled
+    yum:
+      name:
+      - tuned-profiles-*
+    become: true
+    become_user: root
+    when: dpdk_kernel_args is defined
+
+  - name: Create sriov_env fact
+    set_fact:
+      sriov_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-sriov.yaml
+    when: sriov_interface is defined
+
   - name: Create default_tripleo_envs fact
     set_fact:
       default_tripleo_envs:
@@ -83,8 +125,19 @@
       tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_local_ip: "{{ public_api }}"
       tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
-      tripleo_deploy_environment_files: "{{ default_tripleo_envs | union(enabled_services) | union(ceph_env|default([])) }}"
+      tripleo_deploy_environment_files: "{{ default_tripleo_envs | union(enabled_services) | union(ceph_env|default([])) | union(sriov_env|default([])) }}"
       tripleo_deploy_generate_scripts: true
       tripleo_deploy_keep_running: true
       tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
-      tripleo_deploy_roles_file: "{{ standalone_role }}"
+      tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+
+  - name: Reboot if SR-IOV is enabled (to apply kernel changes)
+    when:
+      - sriov_interface is defined
+    block:
+      - name: Reboot the node
+        become_user: root
+        reboot:
+      - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
+        pause:
+          minutes: 2

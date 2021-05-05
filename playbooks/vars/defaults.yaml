@@ -78,6 +78,9 @@ rhcos_meta_url: https://raw.githubusercontent.com/openshift/installer/master/dat
 enabled_services:
   - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 standalone_role: /usr/share/openstack-tripleo-heat-templates/roles/Standalone.yaml
+# List of TripleO services that we want to add in the role defined in standalone_role.
+# e.g. ['OS::TripleO::Services::CinderVolumeEdge', 'OS::TripleO::Services::Etcd']
+standalone_role_overrides: []
 
 # This variable allows to add extra Heat parameters to standalone_parameters.yaml.
 # e.g.  extra_heat_params:
@@ -100,3 +103,14 @@ ceph_enabled: false
 # Size of the loop device that will be
 # used for Ceph (in GB).
 ceph_loop_device_size: 10
+
+sriov_services:
+  - OS::TripleO::Services::NeutronSriovAgent
+  - OS::TripleO::Services::BootParams
+#sriov_interface:
+#sriov_nic_numvfs:
+#sriov_nova_pci_passthrough:
+
+#dpdk_kernel_args:
+#dpdk_isol_cpus_list:
+#dpdk_cpu_shared_set:
