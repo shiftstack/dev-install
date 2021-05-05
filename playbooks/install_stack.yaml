@@ -23,6 +23,7 @@
 
   - name: Create dev-install_net_config.yaml
     template:
+      mode: 0644
       src: dev-install_net_config.yaml.j2
       dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
@@ -30,7 +31,7 @@
     slurp:
       src: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
     register: net_config
-  
+
   - name: Create net_config_json fact
     set_fact:
       net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
@@ -65,6 +66,7 @@
 
   - name: Create standalone_parameters.yaml
     template:
+      mode: 0644
       src: standalone_parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
@@ -79,6 +81,7 @@
 
   - name: Create containers-prepare-parameters.yaml
     template:
+      mode: 0644
       src: containers-prepare-parameters.yaml.j2
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
@@ -87,6 +90,8 @@
       if [ ! -f "{{ ansible_env.HOME }}/octavia" ]; then
           ssh-keygen -b 2048 -t rsa -f "{{ ansible_env.HOME }}/octavia" -q -N ""
       fi
+    args:
+      creates: "{{ ansible_env.HOME }}/octavia"
 
   - name: Create ceph_env fact
     set_fact:

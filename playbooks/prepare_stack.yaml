@@ -13,7 +13,7 @@
     setup:
       filter: ansible_env
 
-  - name: Create openshift user without any admin privileges
+  - name: Create openshift user without any admin privileges # noqa 301
     shell: |
       if ! openstack project show openshift; then
           openstack project create openshift
@@ -58,7 +58,7 @@
     environment:
       OS_CLOUD: standalone
 
-  - name: Create flavors
+  - name: Create flavors # noqa 301
     shell: |
       if ! openstack flavor show m1.tiny; then
           openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public m1.tiny
@@ -96,7 +96,7 @@
       OS_CLOUD: standalone
     when: external_fip_pool_start is defined and external_fip_pool_end is defined
 
-  - name: Create hostonly network
+  - name: Create hostonly network # noqa 301
     shell: |
       if ! openstack network show hostonly; then
           openstack network create --project openshift --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
@@ -144,6 +144,7 @@
     copy:
       dest: *cloudsyamlpath
       content: "{{ cloudsyaml | to_nice_yaml }}"
+      mode: 0755
 
   - name: Manage RHCOS image
     when:
@@ -157,6 +158,7 @@
       file:
         path: "{{ images_dir }}"
         state: directory
+        mode: 0755
 
     - name: Get URL of latest RHCOS image
       block:

@@ -32,4 +32,5 @@
     copy:
       dest: *networkinfo
       content: "{{ network_info | to_nice_json }}"
+      mode: 0755
   when: networkinfo_file.failed

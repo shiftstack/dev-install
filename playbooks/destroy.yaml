@@ -7,7 +7,7 @@
 
   tasks:
 
-  - name: Destroy the OpenStack
+  - name: Destroy the OpenStack # noqa 301
     shell: |
       pkill -9 heat-all
       if type pcs &> /dev/null; then

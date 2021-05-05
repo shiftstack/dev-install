@@ -12,6 +12,7 @@
     - always
     - lab
   file:
+    mode: 0755
     path: ~/.ansible
     state: directory
 
@@ -24,8 +25,9 @@
     dest: ~/.ansible/tripleo-operator-ansible
     repo: https://opendev.org/openstack/tripleo-operator-ansible
     update: "{{ update_operator | bool }}"
+    version: master
 
-- name: Build operator collection
+- name: Build operator collection # noqa 503
   tags: always
   when: git_operator is changed
   command: "ansible-galaxy collection build --force --output-path /tmp/collections"
@@ -33,7 +35,7 @@
   args:
     chdir: ~/.ansible/tripleo-operator-ansible
 
-- name: Install operator collection
+- name: Install operator collection # noqa 503
   tags: always
   when: git_operator is changed
   command: "ansible-galaxy collection install --force {{ collection_name.stdout.split(' ')[-1] }}"

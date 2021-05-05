@@ -12,8 +12,9 @@
       src: /home/stack/.config/openstack/clouds.yaml
     register: cloudsyaml
 
-  - set_fact:
-        cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
+  - name: Create fact for cloudsyaml
+    set_fact:
+      cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
 
 - hosts: localhost
   gather_facts: false
@@ -21,13 +22,15 @@
 
   tasks:
 
-  - setup:
+  - name: Load Ansible env
+    setup:
       filter: ansible_env
 
   - name: Ensure ~/.config/openstack dir exists
     file:
       path: "{{ ansible_env.HOME }}/.config/openstack"
       state: directory
+      mode: 0755
 
   - name: Set path of local clouds.yaml
     set_fact:
@@ -61,6 +64,7 @@
     copy:
       dest: "{{ cloudsyamlpath }}"
       content: "{{ cloudsyaml | to_nice_yaml }}"
+      mode: 0755
 
   - name: Install openstack client locally
     pip:
@@ -85,7 +89,8 @@
       dest: ../scripts/env.sh
       mode: 0644
 
-  - debug:
+  - name: Print useful infos
+    debug:
       msg:
       - "{{ cloudsyamlpath }} has been updated."
       - "To connect to your cloud set OS_CLOUD={{ local_cloudname }} and update your local routes."
