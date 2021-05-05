@@ -37,7 +37,7 @@
 
   - name: Set fact for SR-IOV services overrides
     set_fact:
-      sriov_services_fact: "{{ sriov_interface | ternary(sriov_services, []) }}"
+      sriov_services_fact: "{{ sriov_interface|default(None)| ternary(sriov_services, []) }}"
 
   - name: Read the TripleO role
     slurp:
