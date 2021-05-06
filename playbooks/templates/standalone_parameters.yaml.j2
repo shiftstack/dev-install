@@ -48,6 +48,13 @@ parameter_defaults:
   StandaloneExtraGroupVars:
     tripleo_kernel_defer_reboot: true
 {% if ceph_enabled %}
+  # Since we use a loop device for Ceph disk, performances wouldn't be great enough
+  # to boot VMs with heavy workloads on it.
+  # This can be overriden by setting:
+  # extra_heat_params:
+  #   NovaEnableRbdBackend: true
+  # But to use at your own risks.
+  NovaEnableRbdBackend: false
   CephAnsibleDisksConfig:
     osd_scenario: lvm
     osd_objectstore: bluestore
