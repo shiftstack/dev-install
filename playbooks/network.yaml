@@ -39,13 +39,6 @@
     vars:
       network_state:
         interfaces:
-        - name: dummy0
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
         - name: dummy1
           type: dummy
           state: up

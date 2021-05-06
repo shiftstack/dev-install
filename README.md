@@ -59,9 +59,8 @@ external interface on to that bridge. This bridge is used to provide the
 `external` provider network if `external_fip_pool_start` and
 `external_fip_pool_end` are defined in `local-overrides.yaml`.
 
-In addition it will create OVS bridges called br-ctlplane and br-hostonly. The
-former is used internally by OSP. The latter is a second provider network which
-is only routable from the host.
+In addition it will create an OVS bridge br-hostonly. This is a second provider
+network which is only routable from the host.
 
 Note that we don't enable DHCP on provider networks by default, and it is not
 recommended to enable DHCP on the external network at all. To enable DHCP on the

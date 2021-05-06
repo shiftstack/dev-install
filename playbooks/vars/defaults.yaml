@@ -28,10 +28,6 @@ clouddomain: shiftstack
 # called `standalone`.
 local_cloudname: standalone
 
-# The control plane IP address allocated to br-ctlplane
-# You probably won't need to change this
-control_plane_ip: 192.168.24.1
-
 # The IP address of the public openstack endpoints
 # By default we use the default IP of the host
 public_api: "{{ network_info.public_ipv4.address }}"

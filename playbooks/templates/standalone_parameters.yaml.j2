@@ -11,7 +11,7 @@ parameter_defaults:
   # needed for vip & pacemaker
   KernelIpNonLocalBind: 1
   DockerInsecureRegistryAddress:
-    - {{ control_plane_ip }}:8787
+    - {{ public_api }}:8787
   # domain name used by the host
   CloudDomain: {{ clouddomain }}
   NeutronDnsDomain: {{ clouddomain }}
