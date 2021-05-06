@@ -81,11 +81,34 @@
       url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
       dest: "{{ ansible_env.HOME }}/amphora.qcow2"
 
+  - name: Set cip_config from downloaded container_image_prepare.yaml
+    when: cip_config is not defined
+    block:
+    - name: Read container_image_prepare.yaml
+      slurp:
+        src: /home/stack/container_image_prepare.yaml
+      register: cip_yaml
+    - set_fact:
+        cip_raw: "{{ (cip_yaml.content | b64decode | from_yaml)['container-image-prepare'] | dict2items }}"
+    - set_fact:
+        cip_config: "{{ [{ 'set': dict(keys | zip(values)) }] }}"
+      vars:
+        # container_image_prepare.yaml downloaded from the puddle contains some
+        # keys with invalid names, e.g. 'ceph-namespace' instead of
+        # 'ceph_namespace'. We rewrite them.
+        keys: "{{ cip_raw | map(attribute='key') | map('regex_replace', '-', '_') | list }}"
+        values: "{{ cip_raw | map(attribute='value') | list }}"
+
   - name: Create containers-prepare-parameters.yaml
-    template:
-      mode: 0644
-      src: containers-prepare-parameters.yaml.j2
+    copy:
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+      content: "{{ cip_content | to_nice_yaml }}"
+      owner: stack
+      mode: 0644
+    vars:
+      cip_content:
+        parameter_defaults:
+          ContainerImagePrepare: "{{ cip_config }}"
 
   - name: Generate a keypair for Octavia Amphora (needed by TripleO)
     shell: |
