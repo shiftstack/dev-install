@@ -82,10 +82,16 @@ ceph_loop_device_size: 100
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
   - OS::TripleO::Services::BootParams
+sriov_kernel_args_default:
+- "intel_iommu=on"
+- "iommu=pt"
 #sriov_interface:
 #sriov_nic_numvfs:
 #sriov_nova_pci_passthrough:
+sriov_kernel_args: "{{ (sriov_interface is defined) | ternary(sriov_kernel_args_default, []) }}"
 
 #dpdk_kernel_args:
 #dpdk_isol_cpus_list:
 #dpdk_cpu_shared_set:
+
+kernel_args: "{{ sriov_kernel_args + (dpdk_kernel_args | default([])) }}"
