@@ -52,10 +52,10 @@ parameter_defaults:
     osd_scenario: lvm
     osd_objectstore: bluestore
     lvm_volumes:
-      - data: data-lv2
-        data_vg: vg2
-        db: db-lv2
-        db_vg: vg2
+      - data: data
+        data_vg: vg_ceph
+        db: db
+        db_vg: vg_ceph
   CephAnsibleExtraConfig:
     cluster_network: {{ network_info.public_ipv4.network }}/{{ network_info.public_ipv4_cidr }}
     public_network: {{ network_info.public_ipv4.network }}/{{ network_info.public_ipv4_cidr }}

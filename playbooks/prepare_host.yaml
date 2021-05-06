@@ -78,14 +78,10 @@
           - util-linux
           - lvm2
         state: present
-    - name: Use dd and losetup to create the loop devices
-      shell: |
-        fallocate -l {{ ceph_loop_device_size }}G /var/lib/ceph-osd.img
-        losetup /dev/loop1 /var/lib/ceph-osd.img
-        pvcreate /dev/loop1
-        vgcreate vg2 /dev/loop1
-        lvcreate -n data-lv2 --size {{ ceph_loop_device_size * 96 / 100 }}G vg2
-        lvcreate -n db-lv2 --size {{ (ceph_loop_device_size * 4 / 100) - 0.1 }}G vg2
+    - name: Create a backing file for ceph
+      command: /usr/bin/fallocate -l {{ ceph_loop_device_size }}G /var/lib/ceph-osd.img
+      args:
+        creates: /var/lib/ceph-osd.img
     - name: Create /etc/systemd/system/ceph-osd-losetup.service
       copy:
         dest: /etc/systemd/system/ceph-osd-losetup.service
@@ -96,8 +92,7 @@
           After=syslog.target
           [Service]
           Type=oneshot
-          ExecStart=/bin/bash -c '/sbin/losetup /dev/loop1 || \
-          /sbin/losetup /dev/loop1 /var/lib/ceph-osd.img ; partprobe /dev/loop1'
+          ExecStart=/bin/bash -c '/sbin/losetup /dev/loop1 || /sbin/losetup /dev/loop1 /var/lib/ceph-osd.img'
           ExecStop=/sbin/losetup -d /dev/loop1
           RemainAfterExit=yes
           [Install]
@@ -106,3 +101,18 @@
       systemd:
         name: ceph-osd-losetup.service
         enabled: true
+        state: started
+    - name: Create volume group for ceph
+      lvg:
+        vg: vg_ceph
+        pvs: /dev/loop1
+    - name: Create ceph data LV
+      lvol:
+        vg: vg_ceph
+        lv: data
+        size: 96%VG
+    - name: Create ceph db LV
+      lvol:
+        vg: vg_ceph
+        lv: db
+        size: 4%VG
