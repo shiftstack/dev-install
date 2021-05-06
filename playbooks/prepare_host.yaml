@@ -7,6 +7,11 @@
 
   tasks:
 
+  - name: Create the stack user
+    user:
+      name: stack
+      groups: wheel
+
   - name: Prepare host on RHEL system
     when:
       - ansible_facts.distribution == 'RedHat'
@@ -18,9 +23,6 @@
           - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
           disable_gpg_check: True
 
-      - name: Configure rhos release "{{ rhos_release }}"
-        command: rhos-release "{{ rhos_release }}"
-
       - name: Fetch the Red Hat root certificate
         get_url:
           dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
@@ -30,6 +32,21 @@
         shell: |
           update-ca-trust enable
           update-ca-trust extract
+
+      - name: Configure rhos release "{{ rhos_release }}" and keep puddle name
+        shell: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
+        register: rhos_release_puddle
+
+      - name: Extract puddle name from rhos-release output
+        set_fact:
+          puddle: "{{ rhos_release_puddle.stdout_lines.0 }}"
+
+      - name: Download container_image_prepare.yaml for "{{ puddle }}"
+        get_url:
+          url: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack/{{ rhos_release }}-RHEL-8/{{ puddle }}/container_image_prepare.yaml"
+          dest: /home/stack/container_image_prepare.yaml
+          owner: stack
+          group: stack
 
   - name: Prepare host on CentOS system
     when:
@@ -65,10 +82,6 @@
       line: '%wheel ALL=(ALL) NOPASSWD: ALL'
       validate: 'visudo -cf %s'
 
-  - name: Create the stack user
-    user:
-      name: stack
-      groups: wheel
   - name: Prepare host for Ceph
     when: ceph_enabled
     block:
