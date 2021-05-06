@@ -32,20 +32,43 @@
       enabled: true
       state: started
 
+  - name: Get list of network interfaces
+    command: nmstatectl show --json
+    register: nmstatectl
+
+  # Add the dummy1 interface
+  - set_fact:
+      configure_interfaces:
+      - name: dummy1
+        type: dummy
+        state: up
+        ipv4:
+          enabled: false
+        ipv6:
+          enabled: false
+
+  # Disable all interfaces which we are not using.
+  # This prevents a later failure in the network systemd unit
+  - set_fact:
+      configure_interfaces: "{{ configure_interfaces + [ { 'name': item } | combine(disabled) ] }}"
+    loop: "{{ all_interfaces | difference(used_interfaces) }}"
+    vars:
+      all_interfaces: "{{ (nmstatectl.stdout | from_json)['interfaces'] | map(attribute='name') | list }}"
+      used_interfaces: "{{ [ 'lo', network_info.public_ipv4.interface ] + (sriov_interface is defined | ternary([sriov_interface], [])) }}"
+      disabled:
+        state: down
+        ipv4:
+          enabled: false
+        ipv6:
+          enabled: false
+
   - name: Set nmstate # noqa 301
     command: nmstatectl set --no-commit --timeout 60
     args:
       stdin: "{{ network_state | to_nice_json }}"
     vars:
       network_state:
-        interfaces:
-        - name: dummy1
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
+        interfaces: "{{ configure_interfaces }}"
     register: nmstateset
 
   # Doing this in 2 steps means that we'll automatically rollback if we break
