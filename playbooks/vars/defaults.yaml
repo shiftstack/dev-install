@@ -95,10 +95,10 @@ tripleo_repos_repos:
   - current-tripleo-dev
   - ceph
 
-ceph_enabled: false
+ceph_enabled: true
 # Size of the loop device that will be
 # used for Ceph (in GB).
-ceph_loop_device_size: 10
+ceph_loop_device_size: 100
 
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
