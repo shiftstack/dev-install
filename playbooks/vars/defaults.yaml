@@ -59,6 +59,7 @@ standalone_role: /usr/share/openstack-tripleo-heat-templates/roles/Standalone.ya
 # List of TripleO services that we want to add in the role defined in standalone_role.
 # e.g. ['OS::TripleO::Services::CinderVolumeEdge', 'OS::TripleO::Services::Etcd']
 standalone_role_overrides: []
+standalone_extra_config: {}
 
 # This variable allows to add extra Heat parameters to standalone_parameters.yaml.
 # e.g.  extra_heat_params:
@@ -83,6 +84,8 @@ ceph_enabled: false
 ceph_loop_device_size: 10
 
 octavia_enabled: true
+
+manila_enabled: false
 
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
