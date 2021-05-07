@@ -69,6 +69,12 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
 {% endif %}
+{% if standalone_extra_config|length > 0 %}
+  StandaloneExtraConfig: {{ standalone_extra_config }}
+  {% for key, value in standalone_extra_config.iteritems() %}
+    {{ key }}: {{ value }}
+  {% endfor %}
+{% endif %}
 {# note: keep this block at the very end #}
 {% if extra_heat_params is defined %}
 {% for key, value in extra_heat_params.items() %}

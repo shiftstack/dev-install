@@ -70,6 +70,29 @@
       content: "{{ role_data }}"
       mode: 0644
 
+  - name: Configure manila
+    when: manila_enabled
+    block:
+    - name: Add manila services
+      set_fact:
+        enabled_services: "{{ enabled_services + manila_services }}"
+      vars:
+        manila_services:
+        - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-mds.yaml
+        - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
+
+    # This works round https://bugs.launchpad.net/tripleo/+bug/1911022
+    - name: Add manila extraconfig
+      set_fact:
+        standalone_extra_config: "{{ standalone_extra_config | combine(manila_extra_config) }}"
+      vars:
+        manila_extra_config:
+          ganesha_vip: "{{ public_api }}"
+
+    - name: Ensure ceph is enabled
+      set_fact:
+        ceph_enabled: true
+
   - name: Create standalone_parameters.yaml
     template:
       mode: 0644
