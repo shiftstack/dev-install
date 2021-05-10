@@ -7,7 +7,7 @@ network_config:
 - type: ovs_bridge
   name: br-ex
   use_dhcp: true
-  mtu: 1500
+  mtu: {{ network_info.public_ipv4.mtu }}
   ovs_extra:
   - br-set-external-id br-ex bridge-id br-ex
   members:
