@@ -48,6 +48,33 @@
           owner: stack
           group: stack
 
+  # To ensure that our CentOS users are actually using Stream.
+  # TripleO Master only support Stream now.
+  - name: Migrate to CentOS Stream if not done already
+    when:
+      - ansible_facts.distribution == 'CentOS'
+      - ansible_facts.distribution_release != 'Stream'
+    shell: |
+      if ! rpm --query centos-stream-release; then
+          dnf -y swap centos-linux-repos centos-stream-repos
+          dnf -y distro-sync
+      fi
+    args:
+      warn: false
+    register: stream_output
+    changed_when: (stream_output.stdout_lines | length) > 1
+
+  # To get latest version of podman & dependencies we need this
+  # version for now.
+  - name: Ensure that container-tools 3.0 is being used
+    when:
+      - ansible_facts.distribution == 'CentOS'
+    shell: |
+      dnf module disable -y container-tools:rhel8
+      dnf module enable -y container-tools:3.0
+    args:
+      warn: false
+
   - name: Prepare host on CentOS system
     when:
       - ansible_facts.distribution == 'CentOS'
