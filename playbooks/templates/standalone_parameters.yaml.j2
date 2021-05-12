@@ -70,10 +70,10 @@ parameter_defaults:
   CephPoolDefaultSize: 1
 {% endif %}
 {% if standalone_extra_config|length > 0 %}
-  StandaloneExtraConfig: {{ standalone_extra_config }}
-  {% for key, value in standalone_extra_config.iteritems() %}
+  StandaloneExtraConfig:
+{% for key, value in standalone_extra_config.items() %}
     {{ key }}: {{ value }}
-  {% endfor %}
+{% endfor %}
 {% endif %}
 {# note: keep this block at the very end #}
 {% if extra_heat_params is defined %}
