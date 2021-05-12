@@ -79,6 +79,10 @@ tripleo_repos_repos:
   - ceph
 
 ceph_enabled: false
+# List of devices to use for ceph. If unset, we use a loop device instead.
+# ceph_devices:
+#   - /dev/sdc
+
 # Size of the loop device that will be
 # used for Ceph (in GB).
 ceph_loop_device_size: 10
