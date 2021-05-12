@@ -83,7 +83,9 @@
       validate: 'visudo -cf %s'
 
   - name: Prepare host for Ceph
-    when: ceph_enabled
+    when:
+    - ceph_enabled
+    - ceph_devices is not defined
     block:
     - name: Make sure we have losetup installed/latest
       package:
