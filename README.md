@@ -35,6 +35,9 @@ Both of these files can be safely modified.
 
 `make osp_full` performs the actual installation. On an example system with 12 cores and 192GB RAM and running in a Red Hat data centre this takes approximately 65 minutes to execute.
 
+If you deal with multiple OpenStack clouds and want to maintain a single local-overrides per cloud, you can create `local-overrides-<name>.yaml`
+and then use it when deploying with `make osp_full overrides=local-overrides-<name>.yaml`
+
 ## Accessing OpenStack from your workstation
 
 By default, dev-install configures OpenStack to use the default public IP of the

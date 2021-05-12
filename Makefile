@@ -7,8 +7,9 @@
 host ?= my_osp_host
 user ?= root
 ansible_args ?=
+overrides ?= local-overrides.yaml
 
-ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory.yaml -e @local-overrides.yaml
+ANSIBLE_CMD=ANSIBLE_FORCE_COLOR=true ansible-playbook $(ansible_args) -i inventory.yaml -e @$(overrides)
 
 usage:
 	@echo 'Usage:'
@@ -37,8 +38,8 @@ config: inventory.yaml local-overrides.yaml
 inventory.yaml:
 	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: $(user)\n" > $@
 
-local-overrides.yaml:
-	echo -e "# Override default variables by putting them in this file\nstandalone_host: $(host)" > $@
+$(overrides):
+	echo -e "# Override default variables by putting them in this file\nstandalone_host: $(host)" > $(overrides)
 
 
 #
@@ -49,37 +50,37 @@ local-overrides.yaml:
 osp_full: local_requirements prepare_host network install_stack prepare_stack
 
 .PHONY: local_requirements
-local_requirements: inventory.yaml local-overrides.yaml
+local_requirements: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/local_requirements.yaml
 
 .PHONY: prepare_host
-prepare_host: inventory.yaml local-overrides.yaml
+prepare_host: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/prepare_host.yaml
 
 .PHONY: network
-network: inventory.yaml local-overrides.yaml
+network: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/network.yaml
 
 .PHONY: install_stack
-install_stack: inventory.yaml local-overrides.yaml
+install_stack: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/install_stack.yaml
 
 .PHONY: prepare_stack
-prepare_stack: inventory.yaml local-overrides.yaml
+prepare_stack: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/prepare_stack.yaml
 
 .PHONY: prepare_stack_testconfig
-prepare_stack_testconfig: inventory.yaml local-overrides.yaml
+prepare_stack_testconfig: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/prepare_stack_testconfig.yaml
 
 .PHONY: local_os_client
-local_os_client: inventory.yaml local-overrides.yaml
+local_os_client: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/local_os_client.yaml
 
 .PHONY: certs
-certs: local-overrides.yaml
+certs: $(overrides)
 	$(ANSIBLE_CMD) playbooks/certs.yaml
 
 .PHONY: destroy
-destroy: inventory.yaml local-overrides.yaml
+destroy: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/destroy.yaml
