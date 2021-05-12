@@ -75,9 +75,9 @@
     block:
     - name: Add manila services
       set_fact:
-        enabled_services: "{{ enabled_services + manila_services }}"
+        service_envs: "{{ service_envs | union(manila_env) }}"
       vars:
-        manila_services:
+        manila_env:
         - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-mds.yaml
         - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
 
