@@ -138,6 +138,7 @@
           username: openshift
         cacert: "{{ standalone['cacert'] }}"
         identity_api_version: "{{ standalone['identity_api_version'] }}"
+        volume_api_version: "{{ standalone['volume_api_version'] }}"
         region_name: "{{ standalone['region_name'] }}"
 
   - name: Write updated clouds.yaml
