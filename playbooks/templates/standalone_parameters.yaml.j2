@@ -48,7 +48,7 @@ parameter_defaults:
   StandaloneExtraGroupVars:
     tripleo_kernel_defer_reboot: true
 {% if ceph_enabled %}
-{% if ceph_devices %}
+{% if ceph_devices is defined %}
   CephAnsibleDisksConfig:
     osd_scenario: lvm
     osd_objectstore: bluestore
