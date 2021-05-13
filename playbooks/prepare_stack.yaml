@@ -111,6 +111,15 @@
     environment:
       OS_CLOUD: standalone
 
+  - name: Create Manila share type for CephFS NFS # noqa 301
+    shell: |
+      if ! openstack share type show cephfsnfstype; then
+          openstack share type create cephfsnfstype false
+      fi
+    when: manila_enabled
+    environment:
+      OS_CLOUD: standalone
+
   - name: Read clouds.yaml
     slurp:
       src: &cloudsyamlpath /home/stack/.config/openstack/clouds.yaml
