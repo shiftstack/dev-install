@@ -87,7 +87,7 @@
         standalone_extra_config: "{{ standalone_extra_config | combine(manila_extra_config) }}"
       vars:
         manila_extra_config:
-          ganesha_vip: "{{ public_api }}"
+          ganesha_vip: "{{ control_plane_ip }}"
 
     - name: Ensure ceph is enabled
       set_fact:
