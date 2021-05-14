@@ -78,14 +78,14 @@ tripleo_repos_repos:
   - current-tripleo-dev
   - ceph
 
-ceph_enabled: false
+ceph_enabled: true
 # List of devices to use for ceph. If unset, we use a loop device instead.
 # ceph_devices:
 #   - /dev/sdc
 
 # Size of the loop device that will be
 # used for Ceph (in GB).
-ceph_loop_device_size: 10
+ceph_loop_device_size: 100
 
 octavia_enabled: true
 
