@@ -1,5 +1,5 @@
 /inventory.yaml
-/local-overrides.yaml
+/local-overrides*
 /scripts/env.sh
 /scripts/sshuttle-standalone.sh
 /simpleca
