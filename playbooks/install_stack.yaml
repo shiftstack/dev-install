@@ -126,8 +126,11 @@
           octavia_env:
             - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 
+  # On RHEL/OSP if cip_config is not provided, we download it from latest puddle
   - name: Set cip_config from downloaded container_image_prepare.yaml
-    when: cip_config is not defined
+    when:
+      - cip_config is not defined
+      - ansible_facts.distribution == 'RedHat'
     block:
     - name: Read container_image_prepare.yaml
       slurp:
@@ -146,7 +149,8 @@
         keys: "{{ cip_raw | map(attribute='key') | map('regex_replace', '-', '_') | list }}"
         values: "{{ cip_raw | map(attribute='value') | list }}"
 
-  - name: Create containers-prepare-parameters.yaml
+  - name: Create containers-prepare-parameters.yaml if cip_config is defined
+    when: cip_config is defined
     copy:
       dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
       content: "{{ cip_content | to_nice_yaml }}"
@@ -156,6 +160,16 @@
       cip_content:
         parameter_defaults:
           ContainerImagePrepare: "{{ cip_config }}"
+
+  - name: Download containers-prepare-parameters.yaml from upstream master if cip_config is not defined on CentOS
+    when:
+      - cip_config is not defined
+      - ansible_facts.distribution == 'CentOS'
+    get_url:
+      dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+      url: "https://opendev.org/openstack/tripleo-common/raw/branch/master/container-images/container_image_prepare_defaults.yaml"
+      owner: stack
+      mode: 0644
 
   - name: Add ceph to enabled services
     set_fact:
