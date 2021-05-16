@@ -119,6 +119,8 @@
     when: manila_enabled
     environment:
       OS_CLOUD: standalone
+      # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
+      OS_SHARE_API_VERSION: 2.60
 
   - name: Read clouds.yaml
     slurp:
