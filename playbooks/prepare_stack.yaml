@@ -19,7 +19,7 @@
           openstack project create openshift
       fi
       if ! openstack user show openshift; then
-          openstack user create --password 'password' openshift
+          openstack user create --password '{{ openshift_password }}' openshift
       fi
       for r in _member_ member swiftoperator; do
           if openstack role show $r; then
