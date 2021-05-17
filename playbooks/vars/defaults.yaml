@@ -101,3 +101,8 @@ sriov_services:
 #dpdk_kernel_args:
 #dpdk_isol_cpus_list:
 #dpdk_cpu_shared_set:
+
+# This should not be changed unless you know what you're doing
+# because CentOS8 stream is now the only distro supported when deploying
+# TripleO from upstream.
+tripleo_repos_stream: true
