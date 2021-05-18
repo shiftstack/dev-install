@@ -4,6 +4,9 @@
 #
 # It is recommended to run:
 #   make config host=<myhost>
+#
+SHELL=/bin/bash
+
 host ?= my_osp_host
 user ?= root
 ansible_args ?=
