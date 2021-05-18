@@ -27,11 +27,13 @@
         get_url:
           dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
           url: https://password.corp.redhat.com/RH-IT-Root-CA.crt
+        register: rhca
 
       - name: Add the certificate to the local trust bundle
         shell: |
           update-ca-trust enable
           update-ca-trust extract
+        when: rhca.changed
 
       - name: Configure rhos release "{{ rhos_release }}" and keep puddle name
         shell: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
