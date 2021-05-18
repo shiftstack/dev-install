@@ -131,7 +131,7 @@
       openshift:
         auth:
           auth_url: "{{ standalone['auth']['auth_url'] }}"
-          password: password
+          password: "{{ openshift_password }}"
           project_domain_name: Default
           project_name: openshift
           user_domain_name: Default
