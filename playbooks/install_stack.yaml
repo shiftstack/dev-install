@@ -17,6 +17,17 @@
     set_fact:
       service_envs: "{{ enabled_services }}"
 
+  # OSP16 doesn't have HA enabled by default for all service (HAproxy).
+  # While this is being fixed, we'll force it here.
+  - name: Enable HA by default
+    block:
+    - name: Add HA services
+      set_fact:
+        service_envs: "{{ service_envs | union(ha_env) }}"
+      vars:
+        ha_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml
+
   - name: Install the tripleo client
     yum:
       name:
