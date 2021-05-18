@@ -7,6 +7,9 @@ clouddomain: shiftstack
 # called `standalone`.
 local_cloudname: standalone
 
+# Keystone password for the 'openshift' user
+openshift_password: password
+
 # The control plane IP address allocated to br-ctlplane
 # You probably won't need to change this
 control_plane_ip: 192.168.24.1
