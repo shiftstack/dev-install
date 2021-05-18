@@ -52,6 +52,9 @@
 
   # To ensure that our CentOS users are actually using Stream.
   # TripleO Master only support Stream now.
+  # NOTE(EmilienM) We use async because the task might take too much time
+  # when running from CI environments, which can lead to connection lost
+  # so with async we regularly check the task status and don't loose connection.
   - name: Migrate to CentOS Stream if not done already
     when:
       - ansible_facts.distribution == 'CentOS'
@@ -63,8 +66,20 @@
       fi
     args:
       warn: false
-    register: stream_output
-    changed_when: (stream_output.stdout_lines | length) > 1
+    register: stream_async_result
+    async: 3600
+    poll: 0
+    no_log: true
+
+  - name: Wait for CentOS Stream migration to finish
+    when: stream_async_result is defined
+    async_status:
+      jid: "{{ stream_async_result.ansible_job_id }}"
+    register: stream_outputs
+    until: stream_outputs.finished
+    retries: 1200
+    delay: 3
+    failed_when: (not stream_outputs.finished) or (stream_outputs.rc is defined and stream_outputs.rc != 0)
 
   # To get latest version of podman & dependencies we need this
   # version for now.
