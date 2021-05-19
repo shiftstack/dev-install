@@ -38,7 +38,11 @@
     path: "{{ cert_dir }}/{{ cert_user }}.csr"
     privatekey_path: "{{ user_key.filename }}"
     common_name: "{{ cert_name }}"
-    subject_alt_name: "DNS:{{ cert_name }}"
+    subject_alt_name:
+      - "DNS:{{ cert_name }}"
+      - "DNS:{{ standalone_host }}"
+      - "IP:{{ public_api }}"
+      - "IP:{{ control_plane_ip }}"
   register: user_csr
 
 - name: Sign the CSR for {{ cert_user }}

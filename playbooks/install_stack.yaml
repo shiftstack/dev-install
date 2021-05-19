@@ -28,6 +28,62 @@
         ha_env:
         - /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml
 
+  - name: Enable SSL
+    when: ssl_enabled
+    block:
+    - name: Add SSL service
+      set_fact:
+        service_envs: "{{ service_envs | union(ssl_env) }}"
+      vars:
+        ssl_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/tls-endpoints-public-ip.yaml
+        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/enable-tls.yaml
+        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/inject-trust-anchor.yaml
+
+  - name: Generate SSL self-signed certificate
+    when: ssl_enabled
+    include_role:
+      name: simpleca
+    vars:
+      cert_user: standalone
+      ca_dir: "{{ ansible_env.HOME }}/ssl/ca"
+      cert_dir: "{{ ansible_env.HOME }}/ssl"
+      cert_name: standalone
+
+  - name: Prepare the host for SSL
+    when: ssl_enabled
+    block:
+      - name: Read SSL certificate
+        slurp:
+          src: "{{ ansible_env.HOME }}/ssl/standalone.crt"
+        register: ssl_cert_output
+      - name: Read SSL key
+        slurp:
+          src: "{{ ansible_env.HOME }}/ssl/standalone.key"
+        register: ssl_key_output
+      - name: Read CA certificate
+        slurp:
+          src: "{{ ansible_env.HOME }}/ssl/ca/simpleca.crt"
+        register: ssl_ca_cert_output
+      - name: Set facts for SSL
+        set_fact:
+          ssl_cert: "{{ ssl_cert_output['content'] | b64decode }}"
+          ssl_key: "{{ ssl_key_output['content'] | b64decode }}"
+          ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
+      - name: Copy CA cert into PKI
+        become: true
+        become_user: root
+        copy:
+          dest: "{{ ssl_ca_cert_path }}"
+          content: "{{ ssl_ca_cert }}"
+          mode: '0444'
+          owner: root
+          group: root
+      - name: Update CA trust
+        become: true
+        become_user: root
+        command: update-ca-trust extract
+
   - name: Install the tripleo client
     yum:
       name:
@@ -227,6 +283,8 @@
       tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_local_ip: "{{ public_api }}"
       tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
+      #TODO(emilien) figure out if we need this:
+      #tripleo_deploy_public_virtual_ip: "{{ ssl_enabled | ternary(public_api, omit) }}"
       tripleo_deploy_environment_files: "{{ default_tripleo_envs + service_envs + tripleo_override_envs }}"
       tripleo_deploy_generate_scripts: true
       tripleo_deploy_keep_running: true

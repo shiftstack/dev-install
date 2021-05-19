@@ -55,6 +55,8 @@ This will configure your local clouds.yaml with 2 entries:
 You can change the name of these entries by editing `local-overrides.yaml` and
 setting `local_cloudname` to something else.
 
+If SSL is enabled, the CA will be pulled from the host and deployed in PKI.
+
 ## Network configuration
 
 dev-install will create a new OVS bridge called br-ex and move the host's
