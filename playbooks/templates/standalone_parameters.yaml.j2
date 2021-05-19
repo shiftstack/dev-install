@@ -81,6 +81,17 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
 {% endif %}
+{% if ssl_enabled %}
+  AddVipsToEtcHosts: true
+  HorizonSecureCookies: True
+  SSLCertificate: |
+    {{ ssl_cert | indent }}
+  SSLKey: |
+    {{ ssl_key | indent }}
+  SSLRootCertificate: |
+    {{ ssl_ca_cert | indent }}
+  PublicTLSCAFile: {{ ssl_ca_cert_path }}
+{% endif %}
 {% if standalone_extra_config|length > 0 %}
   StandaloneExtraConfig:
 {% for key, value in standalone_extra_config.items() %}

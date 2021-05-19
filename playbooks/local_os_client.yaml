@@ -16,6 +16,33 @@
     set_fact:
       cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
 
+  - name: Grab the CA certificate
+    when: ssl_enabled
+    block:
+      - name: Read CA certificate
+        slurp:
+          src: "{{ ssl_ca_cert_path }}"
+        register: ssl_ca_cert_output
+      - name: Set fact for CA cert
+        set_fact:
+          ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
+      - name: Copy CA cert into PKI
+        when: ssl_enabled
+        become: true
+        become_user: root
+        delegate_to: localhost
+        copy:
+          dest: "{{ ssl_ca_cert_path }}"
+          content: "{{ ssl_ca_cert }}"
+          mode: '0444'
+          owner: root
+          group: root
+      - name: Update CA trust
+        become: true
+        become_user: root
+        delegate_to: localhost
+        command: update-ca-trust extract
+
 - hosts: localhost
   gather_facts: false
   vars_files: vars/defaults.yaml

@@ -94,6 +94,11 @@ octavia_enabled: true
 
 manila_enabled: false
 
+# Enable SSL for the OpenStack public endpoints
+# using self-signed certificate
+ssl_enabled: false
+ssl_ca_cert_path: /etc/pki/ca-trust/source/anchors/simpleca.crt
+
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
   - OS::TripleO::Services::BootParams
