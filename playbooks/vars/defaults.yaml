@@ -78,7 +78,7 @@ neutron_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
 neutron_flat_networks: "external,hostonly"
 
 tripleo_repos_repos:
-  - current-tripleo-dev
+  - current-tripleo
   - ceph
 
 ceph_enabled: true
