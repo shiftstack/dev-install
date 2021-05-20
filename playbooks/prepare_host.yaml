@@ -13,8 +13,8 @@
       groups: wheel
 
   - name: Configure authorized SSH keys for stack user
-    when: (authorized_keys | length) > 1
-    ansible.posix.authorized_key:
+    when: (authorized_keys | length) > 0
+    authorized_key:
       user: stack
       state: present
       key: "{{ item }}"
