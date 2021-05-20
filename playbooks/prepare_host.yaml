@@ -12,6 +12,14 @@
       name: stack
       groups: wheel
 
+  - name: Configure authorized SSH keys for stack user
+    when: (authorized_keys | length) > 1
+    ansible.posix.authorized_key:
+      user: stack
+      state: present
+      key: "{{ item }}"
+    loop: "{{ authorized_keys }}"
+
   - name: Prepare host on RHEL system
     when:
       - ansible_facts.distribution == 'RedHat'
