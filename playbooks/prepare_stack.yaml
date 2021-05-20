@@ -114,7 +114,7 @@
   - name: Create Manila share type for CephFS NFS # noqa 301
     shell: |
       if ! openstack share type show cephfsnfstype; then
-          openstack share type create cephfsnfstype false
+          openstack share type create --snapshot-support false cephfsnfstype false
       fi
     when: manila_enabled
     environment:
