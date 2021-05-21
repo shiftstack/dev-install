@@ -57,18 +57,28 @@
         slurp:
           src: "{{ ansible_env.HOME }}/ssl/standalone.crt"
         register: ssl_cert_output
+        when: ssl_cert is not defined
       - name: Read SSL key
         slurp:
           src: "{{ ansible_env.HOME }}/ssl/standalone.key"
         register: ssl_key_output
+        when: ssl_ssl_key is not defined
       - name: Read CA certificate
         slurp:
           src: "{{ ansible_env.HOME }}/ssl/ca/simpleca.crt"
         register: ssl_ca_cert_output
-      - name: Set facts for SSL
+        when: ssl_ca_cert is not defined
+      - name: Set fact for SSL cert
+        when: ssl_cert is not defined
         set_fact:
           ssl_cert: "{{ ssl_cert_output['content'] | b64decode }}"
+      - name: Set fact for SSL key
+        when: ssl_key is not defined
+        set_fact:
           ssl_key: "{{ ssl_key_output['content'] | b64decode }}"
+      - name: Set fact for CA cert
+        when: ssl_ca_cert is not defined
+        set_fact:
           ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
       - name: Copy CA cert into PKI
         become: true
