@@ -27,7 +27,7 @@
         set_fact:
           ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
       - name: Copy CA cert into PKI
-        when: ssl_enabled
+        when: update_local_pki
         become: true
         become_user: root
         delegate_to: localhost
@@ -38,6 +38,7 @@
           owner: root
           group: root
       - name: Update CA trust
+        when: update_local_pki
         become: true
         become_user: root
         delegate_to: localhost

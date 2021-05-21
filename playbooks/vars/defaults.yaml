@@ -95,9 +95,15 @@ octavia_enabled: true
 manila_enabled: false
 
 # Enable SSL for the OpenStack public endpoints
-# using self-signed certificate
 ssl_enabled: false
+# To use your own certificates and key, set these variables, otherwise
+# dev-install will generate self-signed certificates and use them
+# ssl_ca_cert
+# ssl_cert
+# ssl_key
 ssl_ca_cert_path: /etc/pki/ca-trust/source/anchors/simpleca.crt
+# Whether or not we update the local PKI with the CA certificate
+update_local_pki: false
 
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
