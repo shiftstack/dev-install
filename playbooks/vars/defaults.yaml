@@ -78,7 +78,7 @@ neutron_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
 neutron_flat_networks: "external,hostonly"
 
 tripleo_repos_repos:
-  - current-tripleo-dev
+  - current-tripleo
   - ceph
 
 ceph_enabled: true
@@ -109,3 +109,8 @@ sriov_services:
 # because CentOS8 stream is now the only distro supported when deploying
 # TripleO from upstream.
 tripleo_repos_stream: true
+
+# A list of SSH public keys that will be authorized to be used
+# when connecting with the stack user
+# They have to be URLs, e.g. https://github.com/foobar.keys
+authorized_keys: []

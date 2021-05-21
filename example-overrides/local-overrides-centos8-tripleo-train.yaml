@@ -1,8 +1,11 @@
 standalone_host: <standalone FQDN>
 public_api: <IP address used to reach the node>
 tripleo_repos_branch: train
+# tripleo-repos only supports --stream (for CentOS 8 Stream) after Train,
+# so we need to pull tripleo-repos tool from master and move on.
+tripleo_repos_repo_branch: master
 cip_config:
   - set:
-      namespace: quay.io/tripleotrain
-      name_prefix: openstack-
+      namespace: quay.io/tripleotraincentos8
+      name_prefix: centos-binary-
       tag: current-tripleo
