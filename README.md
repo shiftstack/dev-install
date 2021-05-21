@@ -55,8 +55,6 @@ This will configure your local clouds.yaml with 2 entries:
 You can change the name of these entries by editing `local-overrides.yaml` and
 setting `local_cloudname` to something else.
 
-If SSL is enabled, the CA will be pulled from the host and deployed in PKI.
-
 ## Network configuration
 
 dev-install will create a new OVS bridge called br-ex and move the host's
@@ -133,3 +131,16 @@ couldn't be automatically set for you by dev-install.
 | `dpdk_kernel_args` | `[undefined]` | Kernel arguments to configure when booting the machine. |
 | `dpdk_isol_cpus_list` | `[undefined]` | A set of CPU cores isolated from the host processes represented via a comma-separated list or range of physical host CPU numbers to which processes for pinned instance CPUs can be scheduled.
 | `dpdk_cpu_shared_set` | `[undefined]` | A comma-separated list or range of physical host CPU numbers used to determine the host CPUs for instance emulator threads.
+
+### SSL for public endpoints
+
+This sections contains configuration procedures for enabling SSL on OpenStack public endpoints.
+
+| Name              | Default Value       | Description          |
+|-------------------|---------------------|----------------------|
+| `ssl_enabled` | `false` | Whether or not we enable SSL for public endpoints |
+| `ssl_ca_cert` | `[undefined]` | CA certificate. If undefined, a self-signed will be generated and deployed |
+| `ssl_key` | `[undefined]` | SSL Key. If undefined, it will be generated and deployed |
+| `ssl_cert` | `[undefined]` | SSL certificate. If undefined, a self-signed will be generated and deployed |
+| `ssl_ca_cert_path` | `/etc/pki/ca-trust/source/anchors/simpleca.crt` | Path to the CA certificate |
+| `update_local_pki` | `false` | Whether or not we want to update the local PKI with the CA certificate |
