@@ -1,5 +1,13 @@
 ---
 # With thanks to https://milliams.com/posts/2020/ansible-certificate-authority/
+
+- name: install crypto library for openssl_* modules
+  become: true
+  become_user: root
+  yum:
+    state: installed
+    name: python3-cryptography
+
 - name: Create the CA directory
   file:
     path: "{{ ca_dir }}"
