@@ -52,6 +52,7 @@
 
   - name: Prepare the host for SSL
     when: ssl_enabled
+    no_log: true
     block:
       - name: Read SSL certificate
         slurp:
@@ -171,6 +172,7 @@
         ceph_enabled: true
 
   - name: Create standalone_parameters.yaml
+    no_log: true
     template:
       mode: 0644
       src: standalone_parameters.yaml.j2
