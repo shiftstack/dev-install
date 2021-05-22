@@ -2,5 +2,7 @@
   connection: local
   vars:
     update_operator: true
+    update_rhsm: true
   roles:
     - operators
+    - rhsm

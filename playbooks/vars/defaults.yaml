@@ -129,3 +129,21 @@ tripleo_repos_stream: true
 # when connecting with the stack user
 # They have to be URLs, e.g. https://github.com/foobar.keys
 authorized_keys: []
+
+# Red Hat Subscription Manager options
+rhsm_enabled: false
+rhsm_repos:
+  - rhel-8-for-x86_64-baseos-eus-rpms
+  - rhel-8-for-x86_64-appstream-eus-rpms
+  - rhel-8-for-x86_64-highavailability-eus-rpms
+  - ansible-2.9-for-rhel-8-x86_64-rpms
+  - openstack-16.1-for-rhel-8-x86_64-rpms
+  - fast-datapath-for-rhel-8-x86_64-rpms
+  - advanced-virt-for-rhel-8-x86_64-rpms
+  - rhceph-4-osd-for-rhel-8-x86_64-rpms
+  - rhceph-4-tools-for-rhel-8-x86_64-rpms
+rhsm_method: "portal"
+rhsm_release: 8.2
+rhsm_container_tools_version: '2.0'
+# Red Hat Registry credentials have to be set when deploying OSP on RHEL
+# redhat_registry_credentials
