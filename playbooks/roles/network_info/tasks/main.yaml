@@ -34,3 +34,59 @@
       content: "{{ network_info | to_nice_json }}"
       mode: 0755
   when: networkinfo_file.failed
+
+- name: Find network devices with a device link
+  find:
+    paths: /sys/class/net
+    patterns:
+    - device
+    file_type: link
+    follow: true
+    depth: 2
+    recurse: true
+    use_regex: false
+  register: device_links
+
+- name: Extract paths from device_links
+  set_fact:
+    device_links: "{{ device_links.files | map(attribute='path') | list }}"
+
+- name: Extract device names from device_links
+  set_fact:
+    network_devices: "{{ network_devices + [ item | dirname | basename ] }}"
+  loop: "{{ device_links }}"
+  vars:
+    network_devices: []
+
+- name: Initialise SR-IOV PFs to an empty list
+  set_fact:
+    sriov_pfs: []
+
+- name: Find SR-IOV PFs
+  find:
+    paths: "{{ device_links }}"
+    patterns:
+    - sriov_totalvfs
+  register: sriov_totalvfs
+
+- name: Extract device names for SR-IOV PFs
+  set_fact:
+    sriov_pfs: "{{ sriov_pfs + [ item | dirname | dirname | basename ] }}"
+  loop: "{{ sriov_totalvfs.files | map(attribute='path') | list }}"
+
+- name: Initialise SR-IOV VFs to an empty list
+  set_fact:
+    sriov_vfs: []
+
+- name: Find SR-IOV VFs
+  find:
+    paths: "{{ device_links }}"
+    patterns:
+    - physfn
+    file_type: link
+  register: sriov_physfndir
+
+- name: Extract device names for SR-IOV VFs
+  set_fact:
+    sriov_vfs: "{{ sriov_vfs + [ item | dirname | dirname | basename ] }}"
+  loop: "{{ sriov_physfndir.files | map(attribute='path') | list }}"
