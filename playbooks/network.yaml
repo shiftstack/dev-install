@@ -32,27 +32,57 @@
       enabled: true
       state: started
 
+  - name: Define dummy interfaces to be created
+    set_fact:
+      nmstate_ifs:
+      - name: dummy0
+        type: dummy
+        state: up
+        ipv4:
+          enabled: false
+        ipv6:
+          enabled: false
+      - name: dummy1
+        type: dummy
+        state: up
+        ipv4:
+          enabled: false
+        ipv6:
+          enabled: false
+
+  - name: Construct a list of disabled nics
+    set_fact:
+      disabled_nics: "{{ network_devices | difference(sriov_vfs) | difference(used_devices) }}"
+    vars:
+      used_devices: "{{ [ network_info.public_ipv4.interface ] + (sriov_interface is defined | ternary([sriov_interface], [])) }}"
+
+
+  - name: Disable interfaces which aren't in use
+    set_fact:
+      nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(removed) ] }}"
+    loop: "{{ disabled_nics }}"
+    vars:
+      removed:
+        state: absent
+
+  - name: Disable DHCP on SR-IOV PFs
+    set_fact:
+      nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(nodhcp) ] }}"
+    loop: "{{ sriov_pfs | difference(disabled_nics) }}"
+    vars:
+      nodhcp:
+        ipv4:
+          enabled: false
+        ipv6:
+          enabled: false
+
   - name: Set nmstate # noqa 301
     command: nmstatectl set --no-commit --timeout 60
     args:
       stdin: "{{ network_state | to_nice_json }}"
     vars:
       network_state:
-        interfaces:
-        - name: dummy0
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
-        - name: dummy1
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
+        interfaces: "{{ nmstate_ifs }}"
     register: nmstateset
 
   # Doing this in 2 steps means that we'll automatically rollback if we break
@@ -61,6 +91,13 @@
     command: nmstatectl commit "{{ checkpoint }}"
     vars:
       checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"
+
+  # This prevents OpenStack installation failure later if the network unit
+  # failed because not all physical interfaces have DHCP
+  - name: Ensure network systemd unit is up
+    systemd:
+      name: network
+      state: started
 
   - name: Create systemd unit to add SNAT rule for hostonly network
     template:
