@@ -74,18 +74,41 @@
         set_fact:
           cloudsyaml: "{{ {'clouds': {}} }}"
 
+  - name: Configure cacert locally
+    when: ssl_enabled
+    block:
+    - name: Set local path of cacert
+      set_fact:
+        cacert_path: "{{ ansible_env.HOME }}/.config/openstack/{{ local_cloudname }}-ca.crt"
+
+    - name: Copy CA cert into local config directory
+      copy:
+        dest: "{{ cacert_path }}"
+        content: "{{ hostvars['standalone']['ssl_ca_cert'] }}"
+        mode: '0644'
+
+    - name: Set cacert in clouds.yaml
+      set_fact:
+        set_cacert: "{{ {'cacert': cacert_path} }}"
+
+  - name: Don't set cacert in clouds.yaml
+    when: not ssl_enabled
+    set_fact:
+    vars:
+      set_cacert: {}
+
   - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
     set_fact:
       cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: standalone}}, recursive=true) }}"
     vars:
-      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] }}"
+      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] | combine(set_cacert) }}"
     when: "'standalone' in hostvars['standalone']['cloudsyaml']['clouds']"
 
   - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}_openshift
     set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, recursive=true) }}"
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, set_cacert, recursive=true) }}"
     vars:
-      openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] }}"
+      openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] | combine(set_cacert) }}"
     when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
 
   - name: Update local clouds.yaml
