@@ -36,7 +36,7 @@ usage:
 #
 
 .PHONY: config
-config: inventory.yaml local-overrides.yaml
+config: inventory.yaml $(overrides)
 
 inventory.yaml:
 	echo -e "all:\n  hosts:\n    standalone:\n      ansible_host: $(host)\n      ansible_user: $(user)\n" > $@
