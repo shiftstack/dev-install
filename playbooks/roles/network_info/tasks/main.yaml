@@ -53,10 +53,10 @@
 
 - name: Extract device names from device_links
   set_fact:
-    network_devices: "{{ network_devices + [ item | dirname | basename ] }}"
+    physical_nics: "{{ physical_nics + [ item | dirname | basename ] }}"
   loop: "{{ device_links }}"
   vars:
-    network_devices: []
+    physical_nics: []
 
 - name: Initialise SR-IOV PFs to an empty list
   set_fact:

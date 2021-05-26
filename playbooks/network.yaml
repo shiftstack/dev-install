@@ -50,12 +50,13 @@
         ipv6:
           enabled: false
 
+  - name: Construct a list of used nics
+    set_fact:
+      used_nics: "{{ [ network_info.public_ipv4.interface ] + (sriov_interface is defined | ternary([sriov_interface], [])) }}"
+
   - name: Construct a list of disabled nics
     set_fact:
-      disabled_nics: "{{ network_devices | difference(sriov_vfs) | difference(used_devices) }}"
-    vars:
-      used_devices: "{{ [ network_info.public_ipv4.interface ] + (sriov_interface is defined | ternary([sriov_interface], [])) }}"
-
+      disabled_nics: "{{ physical_nics | difference(sriov_vfs) | difference(used_nics) }}"
 
   - name: Disable interfaces which aren't in use
     set_fact:
