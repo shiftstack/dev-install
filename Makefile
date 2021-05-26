@@ -22,7 +22,6 @@ usage:
 	@echo
 	@echo 'Individual install phase targets:'
 	@echo '  local_requirements: Install Ansible requirements required to run dev-install'
-	@echo '  validations: Run some validations before the deployment'
 	@echo '  prepare_host: Host configuration required before installing standalone, including rhos-release'
 	@echo '  network: Host networking configuration required before installing standalone'
 	@echo '  install_stack: Install TripleO standalone'
@@ -51,15 +50,11 @@ $(overrides):
 #
 
 .PHONY: osp_full
-osp_full: local_requirements validations prepare_host network install_stack prepare_stack
+osp_full: local_requirements prepare_host network install_stack prepare_stack
 
 .PHONY: local_requirements
 local_requirements: inventory.yaml $(overrides)
 	$(ANSIBLE_CMD) playbooks/local_requirements.yaml
-
-.PHONY: validations
-validations: inventory.yaml $(overrides)
-	$(ANSIBLE_CMD) playbooks/validations.yaml
 
 .PHONY: prepare_host
 prepare_host: inventory.yaml $(overrides)
