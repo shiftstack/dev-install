@@ -50,32 +50,28 @@
         ipv6:
           enabled: false
 
-  - name: Construct a list of used SR-IOV interfaces
-    set_fact:
-      used_sriov_nics: "{{ sriov_interface is defined | ternary([sriov_interface], []) }}"
-
-  - name: Construct a list of used nics
-    set_fact:
-      used_nics: "{{ [ network_info.public_ipv4.interface ] + used_sriov_nics }}"
-
-  - name: Disable interfaces which aren't in use
+  # This works round a TripleO installation failure caused by NM-managed
+  # interfaces 'failing' because:
+  # * The default NM configuration specifies DHCP
+  # * They have an active link, but
+  # * The network they are plugged into doesn't have DHCP
+  #
+  # To work round this we remove all interfaces from NM control except the
+  # public interface.
+  #
+  # The public interface will also be remove from NM control later by TripleO,
+  # but we don't touch it here because:
+  # * We are confident that it is correctly configured in NM because we're
+  #   connected over it
+  # * We need it for installation
+  - name: Remove all physical nics from NM control except the public interface
     set_fact:
       nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(removed) ] }}"
-    loop: "{{ physical_nics | difference(sriov_vfs) | difference(used_nics) }}"
+    loop: "{{ physical_nics | difference(primary_nic) }}"
     vars:
+      primary_nic: "{{ [ network_info.public_ipv4.interface ] }}"
       removed:
         state: absent
-
-  - name: Disable DHCP on used SR-IOV PFs
-    set_fact:
-      nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(nodhcp) ] }}"
-    loop: "{{ used_sriov_nics }}"
-    vars:
-      nodhcp:
-        ipv4:
-          enabled: false
-        ipv6:
-          enabled: false
 
   - name: Log target nmstate
     debug:
