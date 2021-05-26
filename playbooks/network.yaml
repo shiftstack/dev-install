@@ -50,32 +50,36 @@
         ipv6:
           enabled: false
 
+  - name: Construct a list of used SR-IOV interfaces
+    set_fact:
+      used_sriov_nics: "{{ sriov_interface is defined | ternary([sriov_interface], []) }}"
+
   - name: Construct a list of used nics
     set_fact:
-      used_nics: "{{ [ network_info.public_ipv4.interface ] + (sriov_interface is defined | ternary([sriov_interface], [])) }}"
-
-  - name: Construct a list of disabled nics
-    set_fact:
-      disabled_nics: "{{ physical_nics | difference(sriov_vfs) | difference(used_nics) }}"
+      used_nics: "{{ [ network_info.public_ipv4.interface ] + used_sriov_nics }}"
 
   - name: Disable interfaces which aren't in use
     set_fact:
       nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(removed) ] }}"
-    loop: "{{ disabled_nics }}"
+    loop: "{{ physical_nics | difference(sriov_vfs) | difference(used_nics) }}"
     vars:
       removed:
         state: absent
 
-  - name: Disable DHCP on SR-IOV PFs
+  - name: Disable DHCP on used SR-IOV PFs
     set_fact:
       nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(nodhcp) ] }}"
-    loop: "{{ sriov_pfs | difference(disabled_nics) }}"
+    loop: "{{ used_sriov_nics }}"
     vars:
       nodhcp:
         ipv4:
           enabled: false
         ipv6:
           enabled: false
+
+  - name: Log target nmstate
+    debug:
+      var: nmstate_ifs
 
   - name: Set nmstate # noqa 301
     command: nmstatectl set --no-commit --timeout 60
