@@ -93,6 +93,25 @@
     vars:
       checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"
 
+  # We have seen this creating a CentOS8 VM in OpenStack. We don't understand
+  # why they are created. Specifically we see a phantom ens3 device. It's
+  # possible they are baked into the image?
+  #
+  # nmstate doesn't report them, so we can't use nmstate to delete them.
+  #
+  # They cause installation failure due to the failure of the connection to
+  # come up.
+  - name: Get a list of phantom NM connections with no associated device # noqa 301
+    shell: |
+      set -o pipefail
+      nmcli -g uuid,device connection | awk -F: '$2 == "" {print $1}'
+    register: phantom_connections
+    changed_when: false
+
+  - name: Delete phantom NM connections # noqa 301
+    command: nmcli connection delete uuid "{{ item }}"
+    loop: "{{ phantom_connections.stdout_lines }}"
+
   # This prevents OpenStack installation failure later if the network unit
   # failed because not all physical interfaces have DHCP
   - name: Ensure network systemd unit is up
