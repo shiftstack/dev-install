@@ -102,7 +102,7 @@ ssl_enabled: false
 # ssl_key
 # If you already have your own CA, you can provide these two variables
 # and dev-install will sign the certificates with it.
-# If left unset, dev-install will generate the CA ans self-sign it.
+# If left unset, dev-install will generate the CA and self-sign it.
 # ssl_ca_cert
 # ssl_ca_key
 ssl_ca_cert_path: /etc/pki/ca-trust/source/anchors/simpleca.crt
