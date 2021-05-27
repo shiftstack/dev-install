@@ -50,7 +50,7 @@ $(overrides):
 #
 
 .PHONY: osp_full
-osp_full: local_requirements prepare_host network install_stack prepare_stack
+osp_full: local_requirements prepare_host network install_stack prepare_stack local_os_client
 
 .PHONY: local_requirements
 local_requirements: inventory.yaml $(overrides)
