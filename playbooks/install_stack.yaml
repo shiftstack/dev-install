@@ -40,35 +40,57 @@
         - /usr/share/openstack-tripleo-heat-templates/environments/ssl/enable-tls.yaml
         - /usr/share/openstack-tripleo-heat-templates/environments/ssl/inject-trust-anchor.yaml
 
-  - name: Generate SSL self-signed certificate
+  - name: Generate SSL self-signed certificate on localhost
     when: ssl_enabled
-    include_role:
-      name: simpleca
-    vars:
-      cert_user: standalone
-      ca_dir: "{{ ansible_env.HOME }}/ssl/ca"
-      cert_dir: "{{ ansible_env.HOME }}/ssl"
-      cert_name: standalone
+    become: false
+    # We run this block on localhost because we don't want to put the CA key on the remote
+    # server, which could lead to security problems.
+    delegate_to: localhost
+    block:
+    - name: Create temporary directory for SSL files
+      tempfile:
+        state: directory
+        suffix: dev-install-ssl
+      register: ssl_dir
+    - name: Generate SSL self-signed certificate
+      include_role:
+        name: simpleca
+      vars:
+        cert_user: standalone
+        ca_dir: "{{ ssl_dir.path }}/ssl/ca"
+        cert_dir: "{{ ssl_dir.path }}/ssl"
+        cert_name: standalone
 
   - name: Prepare the host for SSL
     when: ssl_enabled
     no_log: true
     block:
-      - name: Read SSL certificate
-        slurp:
-          src: "{{ ansible_env.HOME }}/ssl/standalone.crt"
-        register: ssl_cert_output
-        when: ssl_cert is not defined
-      - name: Read SSL key
-        slurp:
-          src: "{{ ansible_env.HOME }}/ssl/standalone.key"
-        register: ssl_key_output
-        when: ssl_key is not defined
-      - name: Read CA certificate
-        slurp:
-          src: "{{ ansible_env.HOME }}/ssl/ca/simpleca.crt"
-        register: ssl_ca_cert_output
-        when: ssl_ca_cert is not defined
+      - name: Read and clean SSL files
+        become: false
+        delegate_to: localhost
+        block:
+          - name: Read SSL certificate
+            slurp:
+              src: "{{ ssl_dir.path }}/ssl/standalone.crt"
+            register: ssl_cert_output
+            when: ssl_cert is not defined
+          - name: Read SSL key
+            slurp:
+              src: "{{ ssl_dir.path }}/ssl/standalone.key"
+            register: ssl_key_output
+            when: ssl_key is not defined
+          - name: Read CA certificate
+            slurp:
+              src: "{{ ssl_dir.path }}/ssl/ca/simpleca.crt"
+            register: ssl_ca_cert_output
+            when: ssl_ca_cert is not defined
+          # At this point the files should not be useful, so we can
+          # clear them to avoid any leak on the host where Ansible
+          # is run.
+          - name: Remove temporary directory for SSL files
+            file:
+              state: absent
+              path: "{{ ssl_dir.path }}"
       - name: Set fact for SSL cert
         when: ssl_cert is not defined
         set_fact:

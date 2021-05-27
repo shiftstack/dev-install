@@ -14,27 +14,55 @@
     state: directory
     mode: '0750'
 
-- name: Create CA key
-  openssl_privatekey:
-    path: "{{ ca_dir }}/simpleca.key"
-  register: ca_key
+- name: Run the tasks to create CA cert and key when not provided
+  when: ssl_ca_cert is not defined or ssl_ca_key is not defined
+  block:
+    - name: Create CA key
+      openssl_privatekey:
+        path: "{{ ca_dir }}/simpleca.key"
+      register: ca_key
 
-- name: Create the CA CSR
-  openssl_csr:
-    path: "{{ ca_dir }}/simpleca.csr"
-    privatekey_path: "{{ ca_key.filename }}"
-    common_name: "simpleca"
-    basic_constraints:
-    - "CA:TRUE"
-  register: ca_csr
+    - name: Create the CA CSR
+      openssl_csr:
+        path: "{{ ca_dir }}/simpleca.csr"
+        privatekey_path: "{{ ca_key.filename }}"
+        common_name: "simpleca"
+        basic_constraints:
+        - "CA:TRUE"
+      register: ca_csr
 
-- name: Sign the CA CSR
-  openssl_certificate:
-    path: "{{ ca_dir }}/simpleca.crt"
-    csr_path: "{{ ca_csr.filename }}"
-    privatekey_path: "{{ ca_key.filename }}"
-    provider: selfsigned
-  register: ca_crt
+    - name: Sign the CA CSR
+      openssl_certificate:
+        path: "{{ ca_dir }}/simpleca.crt"
+        csr_path: "{{ ca_csr.filename }}"
+        privatekey_path: "{{ ca_key.filename }}"
+        provider: selfsigned
+      register: ca_crt
+
+    - name: Create facts for CA files
+      set_fact:
+        ca_crt_path: "{{ ca_crt.filename }}"
+        ca_key_path: "{{ ca_key.filename }}"
+
+- name: Run the tasks to create temp files for CA cert and key when provided
+  when: ssl_ca_cert is defined or ssl_ca_key is defined
+  block:
+    - name: "Write the CA cert into {{ ca_dir }}"
+      copy:
+        content: "{{ ssl_ca_cert | mandatory }}"
+        dest: "{{ ca_dir }}/simpleca.crt"
+        mode: 0400
+
+    - name: "Write the CA key into {{ ca_dir }}"
+      copy:
+        content: "{{ ssl_ca_key | mandatory }}"
+        dest: "{{ ca_dir }}/simpleca.key"
+        mode: 0400
+
+    - name: Create facts for CA files
+      set_fact:
+        ca_crt_path: "{{ ca_dir }}/simpleca.crt"
+        ca_key_path: "{{ ca_dir }}/simpleca.key"
 
 - name: Create a private key for {{ cert_user }}
   openssl_privatekey:
@@ -58,5 +86,5 @@
     path: "{{ cert_dir }}/{{ cert_user }}.crt"
     csr_path: "{{ user_csr.filename }}"
     provider: ownca
-    ownca_path: "{{ ca_crt.filename }}"
-    ownca_privatekey_path: "{{ ca_key.filename }}"
+    ownca_path: "{{ ca_crt_path }}"
+    ownca_privatekey_path: "{{ ca_key_path }}"

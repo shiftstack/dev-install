@@ -140,6 +140,7 @@ This sections contains configuration procedures for enabling SSL on OpenStack pu
 |-------------------|---------------------|----------------------|
 | `ssl_enabled` | `false` | Whether or not we enable SSL for public endpoints |
 | `ssl_ca_cert` | `[undefined]` | CA certificate. If undefined, a self-signed will be generated and deployed |
+| `ssl_ca_key` | `[undefined]` | CA key. If undefined, it will be generated and used to sign the SSL certificate |
 | `ssl_key` | `[undefined]` | SSL Key. If undefined, it will be generated and deployed |
 | `ssl_cert` | `[undefined]` | SSL certificate. If undefined, a self-signed will be generated and deployed |
 | `ssl_ca_cert_path` | `/etc/pki/ca-trust/source/anchors/simpleca.crt` | Path to the CA certificate |

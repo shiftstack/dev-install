@@ -98,9 +98,13 @@ manila_enabled: false
 ssl_enabled: false
 # To use your own certificates and key, set these variables, otherwise
 # dev-install will generate self-signed certificates and use them
-# ssl_ca_cert
 # ssl_cert
 # ssl_key
+# If you already have your own CA, you can provide these two variables
+# and dev-install will sign the certificates with it.
+# If left unset, dev-install will generate the CA and self-sign it.
+# ssl_ca_cert
+# ssl_ca_key
 ssl_ca_cert_path: /etc/pki/ca-trust/source/anchors/simpleca.crt
 # Whether or not we update the local PKI with the CA certificate
 update_local_pki: false
