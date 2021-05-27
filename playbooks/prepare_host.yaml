@@ -20,9 +20,27 @@
       key: "{{ item }}"
     loop: "{{ authorized_keys }}"
 
-  - name: Prepare host on RHEL system
+  - name: Prepare host on RHEL system with Subscription Manager
     when:
       - ansible_facts.distribution == 'RedHat'
+      - rhsm_enabled
+    block:
+      - name: Configure Red Hat Subscription Manager
+        import_role:
+          name: redhat-subscription
+      - name: Install container-tools module
+        shell: |
+          dnf module disable -y container-tools:rhel8
+          dnf module enable -y container-tools:"{{ rhsm_container_tools_version }}"
+      - name: Install virt module
+        shell: |
+          dnf module disable -y virt:rhel
+          dnf module enable -y virt:"{{ rhsm_release }}"
+
+  - name: Prepare host on RHEL system with rhos-release
+    when:
+      - ansible_facts.distribution == 'RedHat'
+      - not rhsm_enabled
     block:
       - name: install rhos-release
         yum:

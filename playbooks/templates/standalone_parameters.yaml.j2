@@ -81,6 +81,12 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
 {% endif %}
+{% if rhsm_enabled %}
+  ContainerImageRegistryCredentials:
+    registry.redhat.io:
+      {{ redhat_registry_credentials | mandatory }}
+  ContainerImageRegistryLogin: true
+{% endif %}
 {% if ssl_enabled %}
   AddVipsToEtcHosts: true
   HorizonSecureCookies: True

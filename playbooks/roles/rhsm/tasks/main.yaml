@@ -1,0 +1,16 @@
+---
+- name: Ensure we have ~/.ansible
+  tags:
+    - always
+    - lab
+  file:
+    mode: 0755
+    path: ~/.ansible/roles
+    state: directory
+
+- name: Clone ansible-role-redhat-subscription
+  git:
+    dest: ~/.ansible/roles/redhat-subscription
+    repo: https://opendev.org/openstack/ansible-role-redhat-subscription
+    update: "{{ update_rhsm | bool }}"
+    version: master

@@ -227,11 +227,19 @@
           octavia_env:
             - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 
+  - name: Generate container_image_prepare.yaml if not using rhos-release
+    when:
+      - cip_config is not defined
+      - ansible_facts.distribution == 'RedHat'
+      - rhsm_enabled
+    command: openstack tripleo container image prepare default --output-env-file /home/stack/containers-prepare-parameters.yaml
+
   # On RHEL/OSP if cip_config is not provided, we download it from latest puddle
   - name: Set cip_config from downloaded container_image_prepare.yaml
     when:
       - cip_config is not defined
       - ansible_facts.distribution == 'RedHat'
+      - not rhsm_enabled
     block:
     - name: Read container_image_prepare.yaml
       slurp:
