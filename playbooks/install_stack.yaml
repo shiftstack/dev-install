@@ -63,7 +63,7 @@
         slurp:
           src: "{{ ansible_env.HOME }}/ssl/standalone.key"
         register: ssl_key_output
-        when: ssl_ssl_key is not defined
+        when: ssl_key is not defined
       - name: Read CA certificate
         slurp:
           src: "{{ ansible_env.HOME }}/ssl/ca/simpleca.crt"
