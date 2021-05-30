@@ -95,7 +95,7 @@ octavia_enabled: true
 manila_enabled: false
 
 # Enable SSL for the OpenStack public endpoints
-ssl_enabled: false
+ssl_enabled: true
 # To use your own certificates and key, set these variables, otherwise
 # dev-install will generate self-signed certificates and use them
 # ssl_cert
