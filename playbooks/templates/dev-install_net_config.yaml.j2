@@ -26,6 +26,14 @@ network_config:
   - type: interface
     name: dummy0
     nm_controlled: true
+{% for ip in tunnel_remote_ips | default([]) %}
+  - type: ovs_tunnel
+    name: "tun-ctlplane-{{ ip | to_uuid }}"
+    tunnel_type: vxlan
+    ovs_options:
+      - remote_ip={{ ip }}
+      - key=100
+{% endfor %}
 - type: ovs_bridge
   name: br-hostonly
   use_dhcp: false
@@ -38,6 +46,14 @@ network_config:
   - destination: {{ hostonly_cidr }}
     nexthop: {{ hostonly_gateway }}
   members:
+{% for ip in tunnel_remote_ips | default([]) %}
+  - type: ovs_tunnel
+    name: "tun-hostonly-{{ ip | to_uuid }}"
+    tunnel_type: vxlan
+    ovs_options:
+      - remote_ip={{ ip }}
+      - key=101
+{% endfor %}
 {% if sriov_interface is defined %}
   - type: sriov_pf
     name: {{ sriov_interface }}

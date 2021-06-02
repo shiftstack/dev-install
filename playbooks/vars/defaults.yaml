@@ -30,6 +30,10 @@ public_api: "{{ network_info.public_ipv4.address }}"
 # The format is for os-net-config, check dev-install_net_config.yaml.j2 template.
 # network_config
 
+# List of remote IPs used by VXLAN enpoints to connect both
+# hostonly and control plane bridges, when they exist.
+tunnel_remote_ips: []
+
 # The `external` provider network
 # This will be created only if external_fip_pool_start and external_fip_pool_end
 # are manually defined.
