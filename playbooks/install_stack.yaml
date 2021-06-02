@@ -17,6 +17,13 @@
     set_fact:
       service_envs: "{{ enabled_services }}"
 
+  - name: Add external network VIP service
+    set_fact:
+      service_envs: "{{ service_envs | union(vip_env) }}"
+    vars:
+      vip_env:
+      - /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
+
   # OSP16 doesn't have HA enabled by default for all service (HAproxy).
   # While this is being fixed, we'll force it here.
   - name: Enable HA by default
@@ -315,6 +322,18 @@
       tripleo_override_envs:
         - "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
+  # Until https://review.opendev.org/c/openstack/tripleo-heat-templates/+/793836
+  # is merged upstream.
+  - name: Create the VIP env file
+    copy:
+      dest: /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
+      content: |
+        resource_registry:
+          OS::TripleO::Network::Ports::ExternalVipPort: ../network/ports/external_from_pool.yaml
+      mode: 0644
+    become: true
+    become_user: root
+
   - name: Run TripleO deploy
     import_role:
       name: tripleo.operator.tripleo_deploy
@@ -323,15 +342,15 @@
       tripleo_deploy_deployment_user: stack
       tripleo_deploy_standalone: true
       tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
-      tripleo_deploy_local_ip: "{{ public_api }}"
+      tripleo_deploy_local_ip: "{{ local_ip }}"
       tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
-      #TODO(emilien) figure out if we need this:
-      #tripleo_deploy_public_virtual_ip: "{{ ssl_enabled | ternary(public_api, omit) }}"
+      tripleo_deploy_public_virtual_ip: "{{ public_api }}"
       tripleo_deploy_environment_files: "{{ default_tripleo_envs + service_envs + tripleo_override_envs }}"
       tripleo_deploy_generate_scripts: true
       tripleo_deploy_keep_running: true
       tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+      tripleo_deploy_networks_file: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
 
   - name: Reboot if SR-IOV is enabled (to apply kernel changes)
     when:

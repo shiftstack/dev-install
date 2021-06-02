@@ -10,9 +10,17 @@ local_cloudname: standalone
 # Keystone password for the 'openshift' user
 openshift_password: password
 
-# The control plane IP address allocated to br-ctlplane
-# You probably won't need to change this
-control_plane_ip: 192.168.24.1
+# Control plane network is used for services not exposed on the public network
+# and isolated under the br-ctlplane bridge.
+# * local_ip is the IP where the services actually listen to.
+# * control_plane_ip is the VIP that will be managed by Pacemaker,
+#   where HAproxy will listen on the control plane network and
+#   redirect the traffic to local_ip where the service actually listens.
+# You probably won't need to change this.
+control_plane_cidr: 192.168.24.0/24
+control_plane_prefix: "{{ control_plane_cidr | ipaddr('prefix') }}"
+local_ip: "{{ control_plane_cidr | nthhost(1) }}"
+control_plane_ip: "{{ control_plane_cidr | nthhost(2) }}"
 
 # The IP address of the public openstack endpoints
 # By default we use the default IP of the host
