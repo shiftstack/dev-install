@@ -50,6 +50,17 @@
         ipv6:
           enabled: false
 
+  # this saves the static route configuration including the default route
+  # prior to filtering later
+
+  - name: save route info
+    shell: nmstatectl show --json
+    register: pre
+  - set_fact:
+      nmstate_routes: "{{ pre.stdout | from_json | json_query(q) }}"
+    vars:
+      q: "routes.config"
+
   # This works round a TripleO installation failure caused by NM-managed
   # interfaces 'failing' because:
   # * The default NM configuration specifies DHCP
@@ -84,6 +95,9 @@
     vars:
       network_state:
         interfaces: "{{ nmstate_ifs }}"
+        # add saved static routes
+        routes:
+          config: "{{ nmstate_routes }}"
     register: nmstateset
 
   # Doing this in 2 steps means that we'll automatically rollback if we break
