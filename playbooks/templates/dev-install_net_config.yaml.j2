@@ -26,7 +26,7 @@ network_config:
   - type: interface
     name: dummy0
     nm_controlled: true
-{% for ip in tunnel_remote_ips | default([]) %}
+{% for ip in tunnel_remote_ips %}
   - type: ovs_tunnel
     name: "tun-ctlplane-{{ ip | to_uuid }}"
     tunnel_type: vxlan
@@ -46,7 +46,7 @@ network_config:
   - destination: {{ hostonly_cidr }}
     nexthop: {{ hostonly_gateway }}
   members:
-{% for ip in tunnel_remote_ips | default([]) %}
+{% for ip in tunnel_remote_ips %}
   - type: ovs_tunnel
     name: "tun-hostonly-{{ ip | to_uuid }}"
     tunnel_type: vxlan
