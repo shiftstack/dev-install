@@ -105,6 +105,9 @@ ceph_loop_device_size: 100
 octavia_enabled: true
 
 manila_enabled: false
+# Workaround for BZ#1969962
+manila_services:
+  - OS::TripleO::Services::CephNfs
 
 # Enable SSL for the OpenStack public endpoints
 ssl_enabled: true
