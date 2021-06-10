@@ -151,6 +151,10 @@
     set_fact:
       sriov_services_fact: "{{ sriov_interface|default(None)| ternary(sriov_services, []) }}"
 
+  - name: Set fact for Manila services overrides
+    set_fact:
+      manila_services_fact: "{{ manila_enabled | ternary(manila_services, []) }}"
+
   - name: Read the TripleO role
     slurp:
       src: "{{ standalone_role }}"
@@ -168,7 +172,7 @@
     set_fact:
       role_data: >
         {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault |
-        union(sriov_services_fact) | union(standalone_role_overrides)) %}
+        union(sriov_services_fact) | union(manila_services_fact) | union(standalone_role_overrides)) %}
         {{ new_role_data }}
 
   - name: Create the new role file
