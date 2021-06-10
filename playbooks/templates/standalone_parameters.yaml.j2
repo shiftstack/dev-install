@@ -1,5 +1,43 @@
 #vi:syntax=yaml
 
+{% if dcn_az is defined %}
+resource_registry:
+  OS::TripleO::Services::NovaAZConfig: /usr/share/openstack-tripleo-heat-templates/deployment/nova/nova-az-config.yaml
+{% if dcn_az != 'central' %}
+  OS::TripleO::Services::CinderVolume: /usr/share/openstack-tripleo-heat-templates/deployment/cinder/cinder-volume-container-puppet.yaml
+  OS::TripleO::Services::Etcd: /usr/share/openstack-tripleo-heat-templates/deployment/etcd/etcd-container-puppet.yaml
+  OS::TripleO::Services::CACerts: OS::Heat::None
+  OS::TripleO::Services::CinderApi: OS::Heat::None
+  OS::TripleO::Services::CinderScheduler: OS::Heat::None
+  OS::TripleO::Services::Clustercheck: OS::Heat::None
+  OS::TripleO::Services::GlanceApi: OS::Heat::None
+  OS::TripleO::Services::HAproxy: OS::Heat::None
+  OS::TripleO::Services::Horizon: OS::Heat::None
+  OS::TripleO::Services::Keystone: OS::Heat::None
+  OS::TripleO::Services::Memcached: OS::Heat::None
+  OS::TripleO::Services::MySQL: OS::Heat::None
+  OS::TripleO::Services::NeutronApi: OS::Heat::None
+  OS::TripleO::Services::NeutronDhcpAgent: OS::Heat::None
+  OS::TripleO::Services::NovaApi: OS::Heat::None
+  OS::TripleO::Services::NovaConductor: OS::Heat::None
+  OS::TripleO::Services::NovaConsoleauth: OS::Heat::None
+  OS::TripleO::Services::NovaIronic: OS::Heat::None
+  OS::TripleO::Services::NovaMetadata: OS::Heat::None
+  OS::TripleO::Services::NovaPlacement: OS::Heat::None
+  OS::TripleO::Services::NovaScheduler: OS::Heat::None
+  OS::TripleO::Services::NovaVncProxy: OS::Heat::None
+  OS::TripleO::Services::OVNDBs: OS::Heat::None
+  OS::TripleO::Services::OsloMessagingNotify: OS::Heat::None
+  OS::TripleO::Services::OsloMessagingRpc: OS::Heat::None
+  OS::TripleO::Services::Pacemaker: OS::Heat::None
+  OS::TripleO::Services::PlacementApi: OS::Heat::None
+  OS::TripleO::Services::Pacemaker: OS::Heat::None
+  OS::TripleO::Services::Redis: OS::Heat::None
+  OS::TripleO::Services::SwiftProxy: OS::Heat::None
+  OS::TripleO::Services::SwiftRingBuilder: OS::Heat::None
+  OS::TripleO::Services::SwiftStorage: OS::Heat::None
+{% endif %}
+{% endif %}
 parameter_defaults:
   CloudName: {{ hostname }}.{{ clouddomain }}
   ContainerCli: podman
@@ -98,8 +136,26 @@ parameter_defaults:
     {{ ssl_ca_cert | indent }}
   PublicTLSCAFile: {{ ssl_ca_cert_path }}
 {% endif %}
-{% if standalone_extra_config|length > 0 %}
+{% if dcn_az is defined %}
+{% if dcn_az == 'central' %}
+  GlanceBackendID: central
+  GlanceEnabledImportMethods: web-download,copy-image
+  GlanceStoreDescription: 'central rbd glance store'
+{% endif %}
+  CephClusterName: {{ dcn_az }}
+  CinderStorageAvailabilityZone: {{ dcn_az }}
+  NeutronDefaultAvailabilityZones: {{ dcn_az }}
+  NovaComputeAvailabilityZone: {{ dcn_az }}
+  NovaCrossAZAttach: false
+  OVNCMSOptions: "enable-chassis-as-gw,availability-zones={{ dcn_az }}"
+{% endif %}
+{% if standalone_extra_config|length > 0 or dcn_az is defined %}
   StandaloneExtraConfig:
+{% if dcn_az is defined %}
+    nova::availability_zone::default_schedule_zone: {{ dcn_az }}
+    oslo_messaging_notify_use_ssl: false
+    oslo_messaging_rpc_use_ssl: false
+{% endif %}
 {% for key, value in standalone_extra_config.items() %}
     {{ key }}: {{ value }}
 {% endfor %}

@@ -161,3 +161,10 @@ rhsm_release: 8.2
 rhsm_container_tools_version: '2.0'
 # Red Hat Registry credentials have to be set when deploying OSP on RHEL
 # redhat_registry_credentials
+
+# Edge parameters
+# The central site must be named "central", otherwise for other AZs it's up to the user.
+# dcn_az
+dcn_services: 
+  - OS::TripleO::Services::Etcd
+  - OS::TripleO::Services::NovaAZConfig

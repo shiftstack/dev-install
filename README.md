@@ -146,3 +146,34 @@ This sections contains configuration procedures for enabling SSL on OpenStack pu
 | `ssl_cert` | `[undefined]` | SSL certificate. If undefined, a self-signed will be generated and deployed |
 | `ssl_ca_cert_path` | `/etc/pki/ca-trust/source/anchors/simpleca.crt` | Path to the CA certificate |
 | `update_local_pki` | `false` | Whether or not we want to update the local PKI with the CA certificate |
+
+### Multi-node deployments
+
+It is possible to deploy Edge-style environments, where multiple AZ are configured.
+
+#### Deploy the Central site
+
+Deploy a regular cloud with dev-install, and make sure you set `dcn_az` parameter to `central`.
+Once this is done, you need to collect the content from `/home/stack/exported-data` into a local directory
+on the host where dev-install is executed.
+
+#### Deploy the "AZ" sites
+
+Before deploying OSP, you need to scp the content from `exported-data` into the remote hosts into
+`/opt/exported-data`.
+Once this is done, you can deploy the AZ sites with a regular config for dev-install, except that you'll need to set
+these parameters:
+
+* `dcn_az`: must contains "az" in the string (e.g. az0, az1)
+* `local_ip`: choose an available IP in the control plane subnet, (e.g. 192.168.24.10)
+* `control_plane_ip`: same as for `local_ip`, pick one that is available (e.g. 192.168.24.11)
+* `hostonly_gateway`: if using provider networks, you'll need to select an available IP (e.g. 192.168.25.2)
+* `tunnel_remote_ips`: the list of known public IPs that will be used to establish the VXLAN tunnels.
+
+Notes:
+
+* The control plane bridges will be connected thanks to VXLAN tunnels, which is why we need to select control plane IP for AZ nodes that were not taken on the Central site.
+* If you deploy the clouds in OpenStack, you need to make sure that the security groups allow VXLAN (udp/4789).
+* If the public IPs aren't predictable, you'll need to manually change the MTU on the br-ctlplane and br-hostonly on the central
+  site and the AZ sites where needed. You can do it by editing the os-net-config configuration file and run os-net-config to apply
+  it.
