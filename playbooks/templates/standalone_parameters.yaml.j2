@@ -141,8 +141,10 @@ parameter_defaults:
   GlanceBackendID: central
   GlanceEnabledImportMethods: web-download,copy-image
   GlanceStoreDescription: 'central rbd glance store'
-{% endif %}
+{% else %}
+  # BZ#1901143 and BZ#1903005
   CephClusterName: {{ dcn_az }}
+{% endif %}
   CinderStorageAvailabilityZone: {{ dcn_az }}
   NeutronDefaultAvailabilityZones: {{ dcn_az }}
   NovaComputeAvailabilityZone: {{ dcn_az }}
