@@ -151,7 +151,7 @@
         command: update-ca-trust extract
 
   - name: Install the tripleo client
-    yum:
+    package:
       name:
       - ceph-ansible
       - python3-tripleoclient
@@ -330,7 +330,7 @@
     when: ceph_enabled
 
   - name: Install all tuned profiles if SR-IOV is enabled
-    yum:
+    package:
       name:
       - tuned-profiles-*
     become: true

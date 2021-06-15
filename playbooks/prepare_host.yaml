@@ -43,7 +43,7 @@
       - not rhsm_enabled
     block:
       - name: install rhos-release
-        yum:
+        package:
           state: installed
           name:
           - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
@@ -112,14 +112,14 @@
           name: tripleo.operator.tripleo_repos
 
   - name: Upgrade all packages # noqa 403
-    yum:
+    package:
       name: '*'
       state: latest
-    register: yum
+    register: packages
 
   - name: Reboot if we updated packages # noqa 503
     reboot:
-    when: yum.changed
+    when: packages.changed
 
   - name: Set FQDN
     set_fact:

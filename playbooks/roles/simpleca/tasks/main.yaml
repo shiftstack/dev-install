@@ -4,7 +4,7 @@
 - name: install crypto library for openssl_* modules
   become: true
   become_user: root
-  yum:
+  package:
     state: installed
     name: python3-cryptography
 

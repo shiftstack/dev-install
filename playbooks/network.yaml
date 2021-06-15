@@ -10,7 +10,7 @@
   tasks:
 
   - name: Install ovs tools
-    yum:
+    package:
       state: installed
       name:
       - rhosp-openvswitch
