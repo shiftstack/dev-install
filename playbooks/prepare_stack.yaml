@@ -112,7 +112,7 @@
       OS_CLOUD: standalone
 
   # openstack cli doesn't have manila support (no openstack share type ...)in RHEL/OSP
-  - name: Create Manila share type for CephFS NFS # noqa 301
+  - name: Create Manila default share type # noqa 301
     when: manila_enabled
     block:
     - name: Convert clouds.yaml to legacy environment variables
@@ -123,10 +123,10 @@
 
     # type-show MUST NOT have OS_SHARE_API_VERSION set
     # type-create MUST have OS_SHARE_API_VERSION set
-    - name: Create Manila share type
+    - name: Create Manila default share type
       shell: |
-        if ! OS_SHARE_API_VERSION= manila type-show cephfsnfstype; then
-            manila type-create --snapshot_support false cephfsnfstype false
+        if ! OS_SHARE_API_VERSION= manila type-show default; then
+            manila type-create --snapshot_support false default false
         fi
       environment: "{{ legacy_vars | combine(extra_vars) }}"
       vars:
