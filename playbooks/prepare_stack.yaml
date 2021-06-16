@@ -111,6 +111,15 @@
     environment:
       OS_CLOUD: standalone
 
+  - name: Create basic security group which allow SSH # noqa 301
+    shell: |
+      if ! openstack security group show allow_ssh; then
+          openstack security group create allow_ssh --project openshift
+          openstack security group rule create --protocol tcp --dst-port 22 --project openshift allow_ssh
+      fi
+    environment:
+      OS_CLOUD: standalone
+
   # openstack cli doesn't have manila support (no openstack share type ...)in RHEL/OSP
   - name: Create Manila default share type # noqa 301
     when: manila_enabled
