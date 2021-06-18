@@ -1,0 +1,5 @@
+standalone_host: <standalone FQDN>
+public_api: <IP address used to reach the node>
+tripleo_repos_repos:
+  - current-tripleo-dev
+  - ceph
