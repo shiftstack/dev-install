@@ -109,6 +109,13 @@ manila_enabled: false
 manila_services:
   - OS::TripleO::Services::CephNfs
 
+# Whether or not we want to add the swiftoperator role to
+# the openshift user in openshift project (in Keystone).
+# Set this to false and the openshift user won't have access
+# to Swift. It can be useful if you want to force OpenShift to
+# deploy the Image registry in Cinder instead of Swift.
+swiftoperator_enabled: true
+
 # Enable SSL for the OpenStack public endpoints
 ssl_enabled: true
 # To use your own certificates and key, set these variables, otherwise
