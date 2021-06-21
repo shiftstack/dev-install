@@ -21,7 +21,7 @@
       if ! openstack user show openshift; then
           openstack user create --password '{{ openshift_password }}' openshift
       fi
-      for r in _member_ member swiftoperator; do
+      for r in _member_ member; do
           if openstack role show $r; then
               openstack role add --user openshift --project openshift $r
           fi
@@ -57,6 +57,12 @@
 
     environment:
       OS_CLOUD: standalone
+
+  - name: Add swiftoperator role for openshift user
+    command: openstack role add --user openshift --project openshift swiftoperator
+    environment:
+      OS_CLOUD: standalone
+    when: swiftoperator_enabled
 
   - name: Create flavors # noqa 301
     shell: |
