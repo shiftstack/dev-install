@@ -130,6 +130,7 @@
   - name: Create Manila default share type # noqa 301
     when: manila_enabled
     block:
+
     - name: Convert clouds.yaml to legacy environment variables
       script: files/cloud-to-env.py
       register: os_env_vars
@@ -141,8 +142,23 @@
     - name: Create Manila default share type
       shell: |
         if ! OS_SHARE_API_VERSION= manila type-show default; then
-            manila type-create --snapshot_support false default false
+            manila type-create default false
         fi
+      environment: "{{ legacy_vars | combine(extra_vars) }}"
+      vars:
+        legacy_vars: "{{ os_env_vars.stdout | from_json }}"
+        extra_vars:
+          # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
+          OS_SHARE_API_VERSION: 2.60
+
+    - name: Gather the package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Disable snapshot support on pre-Wallaby Manila
+      when: ansible_facts.packages['python3-manilaclient'][0].version is version('2.7.0', '<=')
+      shell: |
+        manila type-key snapshot_support false
       environment: "{{ legacy_vars | combine(extra_vars) }}"
       vars:
         legacy_vars: "{{ os_env_vars.stdout | from_json }}"
