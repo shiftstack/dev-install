@@ -394,7 +394,7 @@
 
   - name: Reboot if SR-IOV is enabled (to apply kernel changes)
     when:
-      - sriov_interface is defined
+      - sriov_interface is defined or dpdk_kernel_args is defined
     block:
       - name: Reboot the node
         become_user: root
