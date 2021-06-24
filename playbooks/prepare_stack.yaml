@@ -158,7 +158,7 @@
     - name: Disable snapshot support on pre-Wallaby Manila
       when: ansible_facts.packages['python3-manilaclient'][0].version is version('2.7.0', '<=')
       shell: |
-        manila type-key snapshot_support false
+        manila type-key default set snapshot_support=False
       environment: "{{ legacy_vars | combine(extra_vars) }}"
       vars:
         legacy_vars: "{{ os_env_vars.stdout | from_json }}"
