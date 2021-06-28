@@ -35,7 +35,7 @@
       - name: Install virt module
         shell: |
           dnf module disable -y virt:rhel
-          dnf module enable -y virt:"{{ rhsm_release }}"
+          dnf module enable -y virt:{{ rhsm_release }}
 
   - name: Prepare host on RHEL system with rhos-release
     when:
