@@ -60,12 +60,8 @@ parameter_defaults:
   NeutronPhysicalDevMappings: "hostonly:{{ sriov_interface }}"
   NovaPCIPassthrough: {{sriov_nova_pci_passthrough | mandatory | to_json }}
 {% endif %}
-{% if dpdk_kernel_args is defined %}
-  KernelArgs: "{{ dpdk_kernel_args | mandatory }}"
-  IsolCpusList: "{{ dpdk_isol_cpus_list | mandatory }}"
-  NovaComputeCpuDedicatedSet: "{{ dpdk_isol_cpus_list | mandatory }}"
-  NovaComputeCpuSharedSet: "{{ dpdk_cpu_shared_set | mandatory }}"
-  TunedProfileName: cpu-partitioning
+{% if kernel_args is defined %}
+  KernelArgs: "{{ kernel_args }}"
 {% endif %}
   StandaloneEnableRoutedNetworks: false
   StandaloneHomeDir: "{{ ansible_env.HOME }}"

@@ -102,8 +102,8 @@ There is no need to mount /var/lib/cinder and /var/lib/nova separately if / is l
 
 ### NFV enablement
 
-This section contains configuration procedures for single root input/output virtualization (SR-IOV) and
-dataplane development kit (DPDK) for network functions virtualization infrastructure (NFVi) in 
+This section contains configuration procedures for single root input/output virtualization (SR-IOV)
+for network functions virtualization infrastructure (NFVi) in 
 your Standalone OpenStack deployment. 
 Unfortunately, most of these parameters don't have default values nor can be automatically figured out in
 a Standalone type environment.
@@ -120,18 +120,15 @@ To understand how the SR-IOV configuration works, please have a look at this [up
 | `sriov_nic_numvfs` | `[undefined]` | Number of Virtual Functions that the NIC can handle. |
 | `sriov_nova_pci_passthrough` | `[undefined]` | List of PCI Passthrough whitelist parameters. [Guidelines](https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/16.1/html/configuring_the_compute_service_for_instance_creation/configuring-pci-passthrough#guidelines-for-configuring-novapcipassthrough-osp) to configure it. |
 
-DPDK Variables
---------------
+Kernel Variables
+----------------
 
-Please read the [official manual](https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/16.1/html-single/network_functions_virtualization_planning_and_configuration_guide/index#concept_ovsdpdk-cpu-parameters)
-to understand better about the following parameters, they'll help you to figure out what values can be set, which
-couldn't be automatically set for you by dev-install.
+It is possible to configure the Kernel to boot with specific arguments:
 
 | Name              | Default Value       | Description          |
 |-------------------|---------------------|----------------------|
-| `dpdk_kernel_args` | `[undefined]` | Kernel arguments to configure when booting the machine. |
-| `dpdk_isol_cpus_list` | `[undefined]` | A set of CPU cores isolated from the host processes represented via a comma-separated list or range of physical host CPU numbers to which processes for pinned instance CPUs can be scheduled.
-| `dpdk_cpu_shared_set` | `[undefined]` | A comma-separated list or range of physical host CPU numbers used to determine the host CPUs for instance emulator threads.
+| `kernel_services` | `['TripleO::Services::BootParams']` | List of TripleO services to add to the default Standalone role |
+| `kernel_args` | `[undefined]` | Kernel arguments to configure when booting the machine. |
 
 ### SSL for public endpoints
 
