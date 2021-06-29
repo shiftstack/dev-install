@@ -133,7 +133,10 @@ update_local_pki: false
 
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
+
+dpdk_services:
   - OS::TripleO::Services::BootParams
+
 #sriov_interface:
 #sriov_nic_numvfs:
 #sriov_nova_pci_passthrough:
