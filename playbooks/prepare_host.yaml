@@ -111,15 +111,24 @@
         import_role:
           name: tripleo.operator.tripleo_repos
 
+  - name: Install dnf-utils
+    package:
+      name: dnf-utils
+      state: installed
+
   - name: Upgrade all packages # noqa 403
     yum:
       name: '*'
       state: latest
-    register: yum
+
+  - name: Check if reboot is required # noqa 301
+    shell: |
+      needs-restarting -r
+    register: needs_reboot
 
   - name: Reboot if we updated packages # noqa 503
     reboot:
-    when: yum.changed
+    when: needs_reboot.rc == 1
 
   - name: Set FQDN
     set_fact:
