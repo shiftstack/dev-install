@@ -125,6 +125,8 @@
     shell: |
       needs-restarting -r
     register: needs_reboot
+    # the commands can return non-zero codes if reboot is needed
+    ignore_errors: true
 
   - name: Reboot if we updated packages # noqa 503
     reboot:
