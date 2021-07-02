@@ -76,6 +76,10 @@ standalone_role: /usr/share/openstack-tripleo-heat-templates/roles/Standalone.ya
 standalone_role_overrides: []
 standalone_extra_config: {}
 
+# Sets the number of Neutron/Nova/... workers to 1
+# Uses the environement file low-memory-usage.yaml
+low_memory_usage: false
+
 # This variable allows to add extra Heat parameters to standalone_parameters.yaml.
 # e.g.  extra_heat_params:
 #         NovaReservedHostMemory: 4096
