@@ -349,6 +349,14 @@
         - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-sriov.yaml
     when: sriov_interface is defined
 
+  - name: Reduce the number of workers
+    set_fact:
+      service_envs: "{{ service_envs | union(lowmem_env) }}"
+    vars:
+      lowmem_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml
+    when: low_memory_usage
+
   - name: Create default_tripleo_envs fact
     set_fact:
       default_tripleo_envs:
