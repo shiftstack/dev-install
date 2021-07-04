@@ -403,14 +403,3 @@
       - dcn_az is defined
       - dcn_az == "central"
     script: files/export-dcn.sh
-
-  - name: Reboot if SR-IOV is enabled (to apply kernel changes)
-    when:
-      - sriov_interface is defined or kernel_args is defined
-    block:
-      - name: Reboot the node
-        become_user: root
-        reboot:
-      - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
-        pause:
-          minutes: 2
