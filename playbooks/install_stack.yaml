@@ -380,6 +380,11 @@
     become: true
     become_user: root
 
+  - name: Create fact for heat_keep_running
+    set_fact:
+      heat_keep_running: true
+    when: dcn_az == "central"
+
   - name: Run TripleO deploy
     import_role:
       name: tripleo.operator.tripleo_deploy
@@ -393,7 +398,7 @@
       tripleo_deploy_public_virtual_ip: "{{ public_api }}"
       tripleo_deploy_environment_files: "{{ default_tripleo_envs + service_envs + tripleo_override_envs }}"
       tripleo_deploy_generate_scripts: true
-      tripleo_deploy_keep_running: true
+      tripleo_deploy_keep_running: "{{ heat_keep_running | default(False) }}"
       tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
       tripleo_deploy_networks_file: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
