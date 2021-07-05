@@ -17,6 +17,10 @@ When deploying on TripleO from upstream, you need to deploy on CentOS Stream. If
 
 dev-install requires up to date versions of `ansible` and `make`, both of which must be installed manually before invoking dev-install.
 
+If installing OSP 16.1 with official rhel 8.2 cloud images, it is required that the cloud-init service be disabled before deployment as per [THIS](https://review.opendev.org/c/openstack/tripleo-heat-templates/+/764933)
+
+At present the deployment depends on a valid DHCP source for the external interface (br-ex) as per [THIS](https://github.com/shiftstack/dev-install/blob/main/playbooks/templates/dev-install_net_config.yaml.j2#L9)
+
 All other requirements should be configured automatically by ansible. Note that dev-install doesn't require root access on the machine it is invoked from, only the target host.
 
 ## Running dev-install
@@ -174,3 +178,11 @@ Notes:
 * If the public IPs aren't predictable, you'll need to manually change the MTU on the br-ctlplane and br-hostonly on the central
   site and the AZ sites where needed. You can do it by editing the os-net-config configuration file and run os-net-config to apply
   it.
+
+#### Post Deployment Stack Updates
+
+It is possible to perform stack updates on an ephemeral standalone stack.
+
+Copying the generated tripleo_deploy.sh in your deployment users folder (eg. /home/stack/tripleo_deploy.sh) to tripleo_update.sh and add the parameter --force-stack-update.  This will allow you to modify the stack configuration without needing to redeploy the entire cloud which can save you considerable time.
+
+
