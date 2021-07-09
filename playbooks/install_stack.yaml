@@ -153,10 +153,40 @@
   - name: Install the tripleo client
     yum:
       name:
-      - ceph-ansible
       - python3-tripleoclient
     become: true
     become_user: root
+
+  - name: Prepare the deployment for Ceph
+    when: ceph_enabled
+    block:
+      - name: Check if ceph-ansible can be used to deploy Ceph
+        stat:
+          path: /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible
+        register: st_ceph
+      - name: Create ceph_ansible_enabled fact
+        set_fact:
+          ceph_ansible_enabled: "{{ st_ceph.stat.isdir is defined and st_ceph.stat.isdir }}"
+      - name: Show a message when ceph_devices is used but empty
+        debug:
+          msg: >
+            ceph_devices contains a list of disks but cephadm is going to use all available SSD/NVME disks.
+            Set the param to true to skip this message or remove it if you don't have available SSD/NVME disks.
+        when:
+          - not ceph_ansible_enabled
+          - ceph_devices is defined
+          - ceph_devices is not true
+          - (ceph_devices | length) > 0
+      - name: Create ceph facts
+        set_fact:
+          ceph_env_base: "{{ ceph_ansible_enabled | ternary('ceph-ansible', 'cephadm') }}"
+          ceph_env_name: "{{ ceph_ansible_enabled | ternary('ceph-ansible', 'cephadm-rbd-only') }}"
+      - name: "Install {{ ceph_package }}"
+        yum:
+          name:
+          - "{{ ceph_env_base }}"
+        become: true
+        become_user: root
 
   - name: Create dev-install_net_config.yaml
     template:
@@ -224,7 +254,7 @@
         service_envs: "{{ service_envs | union(manila_env) }}"
       vars:
         manila_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-mds.yaml
+        - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/ceph-mds.yaml"
         - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
 
     # This works round https://bugs.launchpad.net/tripleo/+bug/1911022
@@ -331,7 +361,7 @@
       service_envs: "{{ service_envs | union(ceph_env) }}"
     vars:
       ceph_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml
+        - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
     when: ceph_enabled
 
   - name: Install all tuned profiles
