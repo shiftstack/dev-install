@@ -21,7 +21,7 @@ If installing OSP 16.1 with official rhel 8.2 cloud images, it is required that 
 
 At present the deployment depends on a valid DHCP source for the external interface (br-ex) as per [THIS](https://github.com/shiftstack/dev-install/blob/main/playbooks/templates/dev-install_net_config.yaml.j2#L9)
 
-All other requirements should be configured automatically by ansible. Note that dev-install does require root access (or passwordless sudo) on the machine it is invoked from to install certificate management tools (simpleca) in addition to the remote host.
+All other requirements should be configured automatically by ansible. Note that dev-install doesn't require root access on the machine it is invoked from, only the target host.
 
 ## Running dev-install
 
