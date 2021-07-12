@@ -406,6 +406,7 @@
 
   - name: Reboot if SR-IOV is enabled (to apply kernel changes)
     when:
+      # if a new condition is added here, it needs to match with the block in `playbooks/prepare_host.yaml`.
       - sriov_interface is defined or kernel_args is defined
     block:
       - name: Reboot the node
