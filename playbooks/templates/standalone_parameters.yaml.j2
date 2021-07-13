@@ -154,6 +154,7 @@ parameter_defaults:
 {% endif %}
 {% if dcn_az is defined %}
 {% if dcn_az == 'central' %}
+  NovaSchedulerDiscoverHostsInCellsInterval: 120
   GlanceBackendID: central
   GlanceEnabledImportMethods: web-download,copy-image
   GlanceStoreDescription: 'central rbd glance store'
