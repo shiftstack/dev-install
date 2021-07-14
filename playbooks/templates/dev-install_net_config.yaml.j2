@@ -17,7 +17,6 @@ network_config:
 - type: ovs_bridge
   name: br-ctlplane
   use_dhcp: false
-  mtu: {{ tunnel_remote_ips | ternary(1400, 1500) }}
   ovs_extra:
   - br-set-external-id br-ctlplane bridge-id br-ctlplane
   addresses:
@@ -26,6 +25,7 @@ network_config:
   - type: interface
     name: dummy0
     nm_controlled: true
+    mtu: {{ tunnel_remote_ips | ternary(1400, 1500) }}
 {% for ip in tunnel_remote_ips %}
   - type: ovs_tunnel
     name: "tun-ctlplane-{{ ip | to_uuid }}"
@@ -37,7 +37,6 @@ network_config:
 - type: ovs_bridge
   name: br-hostonly
   use_dhcp: false
-  mtu: {{ tunnel_remote_ips | ternary(1400, 1500) }}
   ovs_extra:
   - br-set-external-id br-hostonly bridge-id br-hostonly
   addresses:
@@ -67,5 +66,6 @@ network_config:
   - type: interface
     name: dummy1
     nm_controlled: true
+    mtu: {{ tunnel_remote_ips | ternary(1400, 1500) }}
 {% endif %}
 {% endif %}
