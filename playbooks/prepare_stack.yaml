@@ -93,7 +93,7 @@
   - name: Create external network
     shell: |
       if ! openstack network show external; then
-          openstack network create --external --provider-physical-network external --provider-network-type flat external
+          openstack network create --share --external --provider-physical-network external --provider-network-type flat external
       fi
       if ! openstack subnet show external-subnet; then
           openstack subnet create external-subnet --subnet-range "{{ external_cidr }}" \
