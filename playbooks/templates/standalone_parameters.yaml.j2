@@ -170,6 +170,7 @@ parameter_defaults:
 {% endif %}
 {% if standalone_extra_config|length > 0 or dcn_az is defined %}
   StandaloneExtraConfig:
+    octavia::wsgi::apache::workers: 4
 {% if dcn_az is defined %}
     nova::availability_zone::default_schedule_zone: {{ dcn_az }}
     oslo_messaging_notify_use_ssl: false
