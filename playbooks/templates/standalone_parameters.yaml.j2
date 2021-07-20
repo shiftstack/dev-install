@@ -99,6 +99,11 @@ parameter_defaults:
   NovaEnableRbdBackend: false
 {% endif %}
 
+  # Configure Nova to use preallocated raw disks for consistent storage
+  # performance.
+  NovaComputeUseCowImages: false
+  NovaComputeLibvirtPreAllocateImages: space
+
 {% if rhsm_enabled %}
   ContainerImageRegistryCredentials:
     registry.redhat.io:
