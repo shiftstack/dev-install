@@ -82,59 +82,19 @@ parameter_defaults:
   # We never want the node to reboot during tripleo deploy, but defer to later
   StandaloneExtraGroupVars:
     tripleo_kernel_defer_reboot: true
+
 {% if ceph_enabled %}
-{% if ceph_devices is defined %}
-{% if ceph_ansible_enabled %}
-  CephAnsibleDisksConfig:
-    osd_scenario: lvm
-    osd_objectstore: bluestore
-    devices:
-{% for device in ceph_devices %}
-    - {{ device }}
-{% endfor %}
-{% else %}
-  # Install Ceph OSD on non-rotational (SSD, NVME etc) to get
-  # good enough performances for workloads like OpenShift (etcd, etc).
-  CephOsdSpec:
-    data_devices:
-      rotational: 0
-    db_devices:
-      rotational: 0
-{% endif %}
-  NovaEnableRbdBackend: true
-{% else %}
-{% if ceph_ansible_enabled %}
-  CephAnsibleDisksConfig:
-    osd_scenario: lvm
-    osd_objectstore: bluestore
-    lvm_volumes:
-      - data: data
-        data_vg: vg_ceph
-        db: db
-        db_vg: vg_ceph
-{% else %}
-  CephOsdSpec:
-    data_devices:
-      paths:
-        - /dev/vg_ceph/data
-{% endif %}
-  # Since we use a loop device for Ceph disk, performances wouldn't be great enough
-  # to boot VMs with heavy workloads on it.
-  # This can be overriden by setting:
-  # extra_heat_params:
-  #   NovaEnableRbdBackend: true
-  # But to use at your own risks.
-  NovaEnableRbdBackend: false
-{% endif %}
-{% if ceph_ansible_enabled %}
-  CephAnsibleExtraConfig:
-    cluster_network: {{ control_plane_cidr }}
-    public_network: {{ control_plane_cidr }}
-{% endif %}
+  {% if ceph_ansible_enabled %}
+{% include "standalone_parameters.ceph_ansible.yaml.j2" %}
+  {% else %}
+{% include "standalone_parameters.cephadm.yaml.j2" %}
+  {% endif %}
+
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
   CephSpecFqdn: true
 {% endif %}
+
 {% if rhsm_enabled %}
   ContainerImageRegistryCredentials:
     registry.redhat.io:

@@ -1,0 +1,24 @@
+#vi:syntax=yaml
+
+{% if ceph_devices is defined %}
+  # Install Ceph OSD on non-rotational (SSD, NVME etc) to get
+  # good enough performances for workloads like OpenShift (etcd, etc).
+  CephOsdSpec:
+    data_devices:
+      rotational: 0
+    db_devices:
+      rotational: 0
+  NovaEnableRbdBackend: true
+{% else %}
+  CephOsdSpec:
+    data_devices:
+      paths:
+        - /dev/vg_ceph/data
+  # Since we use a loop device for Ceph disk, performances wouldn't be great enough
+  # to boot VMs with heavy workloads on it.
+  # This can be overriden by setting:
+  # extra_heat_params:
+  #   NovaEnableRbdBackend: true
+  # But to use at your own risks.
+  NovaEnableRbdBackend: false
+{% endif %}
