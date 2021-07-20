@@ -103,6 +103,28 @@
     args:
       warn: false
 
+  # This fixes a bogus resolv.conf entry in the CentOS cloud image. The CentOS
+  # cloud image disables this in /etc/NetworkManager/conf.d/99-cloud-init.conf
+  # by setting [main]/dns=none. Here we replace it with the default, which
+  # re-enables NetworkManager's default behaviour of completely owning
+  # resolv.conf
+  - name: Enable NetworkManager ownership of resolv.conf
+    when:
+      - ansible_facts.distribution == 'CentOS'
+    block:
+      - name: Set main/dns=default in NetworkManager
+        ini_file:
+          path: /etc/NetworkManager/conf.d/99-cloud-init.conf
+          section: main
+          option: dns
+          value: default
+          mode: 0644
+      - name: Reload NetworkManager to regenerate resolv.conf
+        systemd:
+          name: NetworkManager
+          enabled: true
+          state: reloaded
+
   - name: Prepare host on CentOS system
     when:
       - ansible_facts.distribution == 'CentOS'
