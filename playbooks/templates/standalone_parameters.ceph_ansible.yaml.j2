@@ -1,0 +1,31 @@
+#vi:syntax=yaml
+
+{% if ceph_devices is defined %}
+  CephAnsibleDisksConfig:
+    osd_scenario: lvm
+    osd_objectstore: bluestore
+    devices:
+{% for device in ceph_devices %}
+    - {{ device }}
+{% endfor %}
+  NovaEnableRbdBackend: true
+{% else %}
+  CephAnsibleDisksConfig:
+    osd_scenario: lvm
+    osd_objectstore: bluestore
+    lvm_volumes:
+      - data: data
+        data_vg: vg_ceph
+        db: db
+        db_vg: vg_ceph
+  # Since we use a loop device for Ceph disk, performances wouldn't be great enough
+  # to boot VMs with heavy workloads on it.
+  # This can be overriden by setting:
+  # extra_heat_params:
+  #   NovaEnableRbdBackend: true
+  # But to use at your own risks.
+  NovaEnableRbdBackend: false
+{% endif %}
+  CephAnsibleExtraConfig:
+    cluster_network: {{ control_plane_cidr }}
+    public_network: {{ control_plane_cidr }}
