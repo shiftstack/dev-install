@@ -93,6 +93,10 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
   CephSpecFqdn: true
+
+  # Don't use ceph for local ephemeral storage by default: its performance is
+  # generally not good enough for etcd on a dev-install setup.
+  NovaEnableRbdBackend: false
 {% endif %}
 
 {% if rhsm_enabled %}
