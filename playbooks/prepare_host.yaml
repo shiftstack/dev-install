@@ -175,6 +175,40 @@
       line: '%wheel ALL=(ALL) NOPASSWD: ALL'
       validate: 'visudo -cf %s'
 
+  - name: Configure disks for local ephemeral storage
+    when:
+    - ephemeral_storage_devices|length > 0
+    block:
+    - name: Ensure we have lvm2
+      package:
+        name:
+          - lvm2
+        state: present
+    - name: Create VG for local ephemeral storage
+      lvg:
+        vg: vg_nova
+        pvs: "{{ ephemeral_storage_devices | join(',') }}"
+    - name: Create LV for local ephemeral storage
+      lvol:
+        vg: vg_nova
+        lv: data
+        size: 100%VG
+    - name: Create XFS filesystem for local ephemeral storage
+      filesystem:
+        fstype: xfs
+        dev: /dev/vg_nova/data
+    - name: Create /var/lib/nova
+      file:
+        path: /var/lib/nova
+        state: directory
+        mode: 0755
+    - name: Mount /var/lib/nova
+      mount:
+        path: /var/lib/nova
+        src: /dev/vg_nova/data
+        fstype: xfs
+        state: mounted
+
   - name: Prepare host for Ceph
     when:
     - ceph_enabled

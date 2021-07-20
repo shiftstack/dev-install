@@ -181,3 +181,7 @@ rhsm_container_tools_version: '2.0'
 dcn_services: 
   - OS::TripleO::Services::Etcd
   - OS::TripleO::Services::NovaAZConfig
+
+# A list of block devices which will be combined and used as ephemeral local
+# storage
+ephemeral_storage_devices: []
