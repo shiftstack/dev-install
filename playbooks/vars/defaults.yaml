@@ -1,5 +1,5 @@
 ---
-rhos_release: 16.2
+rhos_release: 16.1
 hostname: standalone
 clouddomain: shiftstack
 
@@ -172,6 +172,8 @@ rhsm_repos:
 rhsm_method: "portal"
 rhsm_release: 8.2
 rhsm_container_tools_version: '2.0'
+# Note: to install 16.2 on RHEL 8.4, you need virt_release set to "av"
+virt_release: 8.2
 # Red Hat Registry credentials have to be set when deploying OSP on RHEL
 # redhat_registry_credentials
 
