@@ -20,6 +20,16 @@
       key: "{{ item }}"
     loop: "{{ authorized_keys }}"
 
+  - name: Make sure persistent NIC names is not disabled # noqa 301
+    shell: |
+      if grep -q net.ifnames=0 /etc/default/grub; then
+          sed -i 's/net.ifnames=0 //g' /etc/default/grub
+          for f in grub2 grub2-efi; do
+              grub2-mkconfig -o $(readlink -f /etc/$f.cfg)
+          done
+      fi
+    register: grub_output
+
   - name: Prepare host on RHEL system with Subscription Manager
     when:
       - ansible_facts.distribution == 'RedHat'
@@ -147,7 +157,7 @@
     when:
       # We don't need to reboot when these parameters are defined because
       # we'll reboot after the tripleo deployment anyway. We're saving one reboot.
-      - not (sriov_interface is defined or kernel_args is defined)
+      - not (sriov_interface is defined or kernel_args is defined) or ((grub_output.stdout_lines | length) > 1)
     block:
       - name: Check if reboot is required # noqa 301
         shell: |
@@ -157,7 +167,7 @@
         ignore_errors: true
       - name: Reboot if we updated packages # noqa 503
         reboot:
-        when: needs_reboot.rc == 1
+        when: needs_reboot.rc == 1 or ((grub_output.stdout_lines | length) > 1)
 
   - name: Set FQDN
     set_fact:
