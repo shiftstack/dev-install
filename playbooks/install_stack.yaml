@@ -263,7 +263,12 @@
         standalone_extra_config: "{{ standalone_extra_config | combine(manila_extra_config) }}"
       vars:
         manila_extra_config:
+          # Needed by Pacemaker to create the VIP
           ganesha_vip: "{{ public_api }}"
+          # for ceph-ansible support on OSP 16.x
+          ceph_nfs_bind_addr: "{{ public_api }}"
+          # for cephadm support on OSP 17
+          tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
 
     - name: Ensure ceph is enabled
       set_fact:
