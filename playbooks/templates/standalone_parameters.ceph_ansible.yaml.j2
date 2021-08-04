@@ -21,3 +21,6 @@
   CephAnsibleExtraConfig:
     cluster_network: {{ control_plane_cidr }}
     public_network: {{ control_plane_cidr }}
+{% if manila_enabled %}
+    ceph_nfs_bind_addr: "{{ public_api }}"
+{% endif %}
