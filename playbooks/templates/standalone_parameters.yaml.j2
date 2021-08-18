@@ -79,6 +79,10 @@ parameter_defaults:
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
   OctaviaAmphoraImageFilename: "{{ ansible_env.HOME }}/amphora.qcow2"
+  CinderApiPolicies:
+    cinder-vol-state-set:
+      key: "volume_extension:volume_admin_actions:reset_status"
+      value: "rule:admin_or_owner"
   # We never want the node to reboot during tripleo deploy, but defer to later
   StandaloneExtraGroupVars:
     tripleo_kernel_defer_reboot: true
