@@ -25,7 +25,7 @@ network_config:
   - type: interface
     name: dummy0
     nm_controlled: true
-    mtu: {{ dcn_az | ternary(1400, 1500) }}
+    mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
 {% for ip in tunnel_remote_ips %}
   - type: ovs_tunnel
     name: "tun-ctlplane-{{ ip | to_uuid }}"
@@ -66,6 +66,6 @@ network_config:
   - type: interface
     name: dummy1
     nm_controlled: true
-    mtu: {{ dcn_az | ternary(1400, 1500) }}
+    mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
 {% endif %}
 {% endif %}
