@@ -2,8 +2,12 @@ standalone_host: <standalone FQDN>
 public_api: <IP address used to reach the node>
 rhsm_enabled: true
 redhat_registry_credentials: "'<user>': '<password>'"
+# to obtain org_id run 'subscription-manager orgs'
 rhsm_org_id: "<ID>"
 #rhsm_activation_key: "<secrete>"
+#or (mutually exclusive)
+rhsm_username: "<rhsm-username>"
+rhsm_password: "<rhsm-password>"
 rhsm_release: 8.4
 rhsm_container_tools_version: 3.0
 rhsm_repos:
