@@ -7,17 +7,18 @@ management of configurations required to configure the boxes.
 
 Utility producing useful configs that can be used to provision nodes.
 
-To use it you need to install deps:
+To use it you need to install it:
 ```
-$ sudo pip install -r requirements.txt
+cd tools/dsal
+$ pip install .
 ```
 
-Also make sure to run it from its own directory.
+(You may need to add ~/.local/bin to PATH)
 
 ### Generating anaconda-ks.cfg
 
 ```
-./dsal_helper.py anaconda-cfg --disks sda,sdb --boot-disk sda <hostname>
+dsal-helper anaconda-cfg --disks sda,sdb --boot-disk sda <hostname>
 ```
 
 The file will get created as `anaconda/anaconda-ks-<hostname>`.
@@ -25,7 +26,7 @@ The file will get created as `anaconda/anaconda-ks-<hostname>`.
 ### Cloning and configuring dev-install
 
 ```
-./dsal_helper.py dev-install-cfg --fip-pool-start 10.1.10.51 --fip-pool-end 10.1.10.55 --ceph-disk /dev/sdb <hostname>
+dsal-helper dev-install-cfg --fip-pool-start 10.1.10.51 --fip-pool-end 10.1.10.55 --ceph-disk /dev/sdb <hostname>
 ```
 
 The dev-install will be cloned into `dev-install/<hostname>` and be ready to
@@ -35,7 +36,7 @@ VIP.
 ### Generating install-config.yaml
 
 ```
-./dsal_helper.py openshift-install-cfg --pull-secret ../pull-secret.yaml --ssh-key ~/.ssh/id_rsa.pub <hostname>
+dsal-helper openshift-install-cfg --pull-secret ../pull-secret.yaml --ssh-key ~/.ssh/id_rsa.pub <hostname>
 ```
 
 Script will attempt to find free FIPs to use and create new ones if there are
@@ -52,7 +53,7 @@ There are few useful scripts in `scripts` folder.
 
 ### open-ssh.sh
 
-This will lookup OpenShift master and workers SGs and add rules allowing SSH
+This will look up OpenShift master and workers SGs and add rules allowing SSH
 traffic to the VMs.
 
 ### fix-down-ports.sh
@@ -67,8 +68,6 @@ form of `4.x`, e.g. `get-latest.sh 4.9`. The binary will be placed in a
 directory named with the nightly version.
 
 ## TODOs
-* Correctly finding paths relative to the place where the script is.
-* Converting the script to an installable module with entrypoint?
 * Supporting anything else than 8.4 and 16.2.
 * Automating other useful activities:
   * Downloading openshift-install.
