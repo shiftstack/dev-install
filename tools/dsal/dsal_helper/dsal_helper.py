@@ -30,7 +30,7 @@ class DSALHelper(object):
 
         parser = self._get_arg_parser()
         args = parser.parse_args()
-        self._prepare_jinja()
+        self._setup_jinja()
         if hasattr(args, 'func'):
             try:
                 self._setup_openstack(args.cloud)
@@ -42,9 +42,9 @@ class DSALHelper(object):
         parser.print_help()
         parser.exit()
 
-    def _prepare_jinja(self):
+    def _setup_jinja(self):
         self.jinja = jinja2.Environment(
-            loader=jinja2.FileSystemLoader("templates"))
+            loader=jinja2.PackageLoader('dsal_helper'))
 
     def _get_arg_parser(self):
         parser = argparse.ArgumentParser(
