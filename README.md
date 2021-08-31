@@ -256,3 +256,7 @@ post_install: |
 ```
 
 And then run `make post_install`.
+
+## Tools
+
+You can find tools helping to work with DSAL machines in `tools/dsal` directory.
