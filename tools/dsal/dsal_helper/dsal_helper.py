@@ -29,14 +29,14 @@ class DSALHelper(object):
         self.app_dir = os.path.dirname(os.path.realpath(__file__))
 
         parser = self._get_arg_parser()
-        args = parser.parse_args()
+        self.args = parser.parse_args()
         self._setup_jinja()
-        if hasattr(args, 'func'):
+        if hasattr(self.args, 'func'):
             try:
-                self._setup_openstack(args.cloud)
+                self._setup_openstack()
             except:
                 pass
-            args.func(args)
+            self.args.func(self.args)
             return
 
         parser.print_help()
@@ -51,7 +51,11 @@ class DSALHelper(object):
             description="Helper for deploying dev-install on DSAL boxes")
         parser.add_argument('-c', '--cloud',
                             default=os.environ.get('OS_CLOUD'),
-                            help='name in clouds.yaml to use')
+                            help='name in clouds.yaml to use, defaults to '
+                                 'OS_CLOUD envvar')
+        parser.add_argument('-d', '--dir', default='',
+                            help='directory where to place generated configs, '
+                                 'defaults to working dir')
 
         subparsers = parser.add_subparsers(help='supported commands')
 
@@ -122,18 +126,20 @@ class DSALHelper(object):
 
         return parser
 
-    def _setup_openstack(self, cloud_name):
-        conn = openstack.connection.from_config(cloud=cloud_name)
+    def _setup_openstack(self):
+        conn = openstack.connection.from_config(cloud=self.args.cloud)
         self.os = conn
         self.neutron = conn.network
 
     def _create_dir(self, directory):
-        pathlib.Path(directory).mkdir(exist_ok=True, parents=True)
+        path = pathlib.Path(self.args.dir, directory)
+        path.mkdir(exist_ok=True, parents=True)
+        return str(path)
 
     def _render(self, directory, template_file, file, vars):
-        self._create_dir(directory)
+        directory = self._create_dir(directory)
         template = self.jinja.get_template(template_file)
-        with open(f'{directory}/{file}', 'w') as f:
+        with open(os.path.join(directory, file), 'w') as f:
             print(template.render(**vars), file=f)
 
     def anaconda_cfg(self, args):

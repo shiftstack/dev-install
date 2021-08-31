@@ -23,6 +23,9 @@ dsal-helper anaconda-cfg --disks sda,sdb --boot-disk sda <hostname>
 
 The file will get created as `anaconda/anaconda-ks-<hostname>`.
 
+Note that you can manipulate base directory where the files are created using
+`--dir` option.
+
 ### Cloning and configuring dev-install
 
 ```
@@ -68,6 +71,7 @@ form of `4.x`, e.g. `get-latest.sh 4.9`. The binary will be placed in a
 directory named with the nightly version.
 
 ## TODOs
+* Dehardcode SSH keys from anaconda template.
 * Supporting anything else than 8.4 and 16.2.
 * Automating other useful activities:
   * Downloading openshift-install.
