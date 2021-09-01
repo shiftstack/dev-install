@@ -84,6 +84,7 @@ parameter_defaults:
       key: "volume_extension:volume_admin_actions:reset_status"
       value: "rule:admin_or_owner"
   # We never want the node to reboot during tripleo deploy, but defer to later
+  KernelArgsDeferReboot: true
   StandaloneExtraGroupVars:
     tripleo_kernel_defer_reboot: true
 
