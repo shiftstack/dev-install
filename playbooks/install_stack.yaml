@@ -367,10 +367,12 @@
         - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
     when: ceph_enabled
 
-  - name: Install all tuned profiles
+  - name: Install tuned profiles useful for OSP
     yum:
       name:
-      - tuned-profiles-*
+      - tuned
+      - tuned-profiles-cpu-partitioning
+      - tuned-profiles-realtime
     become: true
     become_user: root
 
