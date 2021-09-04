@@ -16,8 +16,9 @@ standalone_extra_config:
 extra_heat_params:
   NovaSchedulerDefaultFilters: ['RetryFilter','AvailabilityZoneFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter','NUMATopologyFilter']
   NovaSchedulerAvailableFilters: ["nova.scheduler.filters.all_filters","nova.scheduler.filters.pci_passthrough_filter.PciPassthroughFilter"]
-  NovaPCIPassthrough:
-    - vendor_id: "102b"
-      product_id: "0534"
+
+NovaPCIPassthrough:
+  - vendor_id: "102b"
+    product_id: "0534"
 
 kernel_args: "iommu=pt intel_iommu=on"
