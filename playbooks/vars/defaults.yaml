@@ -105,6 +105,10 @@ low_memory_usage: false
 #neutron_bridge_mappings:
 neutron_flat_networks: "external,hostonly,hostonly-sriov"
 
+# If we have more than one SR-IOV device, it can be useful to override this one, but the default is safe
+# if we only use `sriov_interface` for one device.
+#neutron_physical_dev_mappings:
+
 tripleo_repos_repos:
   - current-tripleo
   - ceph
