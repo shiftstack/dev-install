@@ -257,17 +257,6 @@
         - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/ceph-mds.yaml"
         - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
 
-    # This works round https://bugs.launchpad.net/tripleo/+bug/1911022
-    - name: Add manila extraconfig
-      set_fact:
-        standalone_extra_config: "{{ standalone_extra_config | combine(manila_extra_config) }}"
-      vars:
-        manila_extra_config:
-          # Needed by Pacemaker to create the VIP
-          ganesha_vip: "{{ public_api }}"
-          # for cephadm support on OSP 17
-          tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
-
     - name: Ensure ceph is enabled
       set_fact:
         ceph_enabled: true
@@ -367,12 +356,11 @@
         - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
     when: ceph_enabled
 
-  - name: Install tuned profiles useful for OSP
+  - name: Install tuned cpu partionioning profile
     yum:
       name:
       - tuned
       - tuned-profiles-cpu-partitioning
-      - tuned-profiles-realtime
     become: true
     become_user: root
 

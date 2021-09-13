@@ -154,6 +154,11 @@ parameter_defaults:
     oslo_messaging_notify_use_ssl: false
     oslo_messaging_rpc_use_ssl: false
 {% endif %}
+{% if manila_enabled %}
+    ganesha_vip: "{{ public_api }}"
+    # for cephadm support on OSP 17
+    tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
+{% endif %}
 {% for key, value in standalone_extra_config.items() %}
     {{ key }}: {{ value }}
 {% endfor %}
