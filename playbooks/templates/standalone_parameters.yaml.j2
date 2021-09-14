@@ -147,7 +147,7 @@ parameter_defaults:
   # over VXLAN.
   NeutronGlobalPhysnetMtu: 1300 
 {% endif %}
-{% if standalone_extra_config|length > 0 or dcn_az is defined %}
+{% if standalone_extra_config|length > 0 or dcn_az is defined or manila_enabled %}
   StandaloneExtraConfig:
 {% if dcn_az is defined %}
     nova::availability_zone::default_schedule_zone: {{ dcn_az }}
@@ -159,9 +159,11 @@ parameter_defaults:
     # for cephadm support on OSP 17
     tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
 {% endif %}
+{% if standalone_extra_config|length > 0 %}
 {% for key, value in standalone_extra_config.items() %}
     {{ key }}: {{ value }}
 {% endfor %}
+{% endif %}
 {% endif %}
 {# note: keep this block at the very end #}
 {% if extra_heat_params is defined %}
