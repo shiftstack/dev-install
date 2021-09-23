@@ -187,3 +187,6 @@ dcn_services:
 # A list of block devices which will be combined and used as ephemeral local
 # storage
 ephemeral_storage_devices: []
+
+# Whether or not we want OVN to be enabled
+ovn_enabled: true
