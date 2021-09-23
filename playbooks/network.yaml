@@ -32,23 +32,48 @@
       enabled: true
       state: started
 
-  - name: Define dummy interfaces to be created
+  - name: Define dummy interfaces to be created when not using DPDK
+    when:
+    - dpdk_interface is not defined
     set_fact:
-      nmstate_ifs:
-      - name: dummy0
-        type: dummy
-        state: up
-        ipv4:
-          enabled: false
-        ipv6:
-          enabled: false
-      - name: dummy1
-        type: dummy
-        state: up
-        ipv4:
-          enabled: false
-        ipv6:
-          enabled: false
+      nmstate_ifs: |
+        - name: dummy0
+          type: dummy
+          state: up
+          ipv4:
+            enabled: false
+          ipv6:
+            enabled: false
+        - name: dummy1
+          type: dummy
+          state: up
+          ipv4:
+            enabled: false
+          ipv6:
+            enabled: false
+
+  - name: Define dummy interfaces to be created when using DPDK
+    when:
+    - dpdk_interface is defined
+    set_fact:
+      nmstate_ifs: |
+        - name: dummy0
+          type: dummy
+          state: up
+          ipv4:
+            enabled: true
+            address:
+            - ip: {{ local_ip }}
+              prefix-length: {{ control_plane_prefix | int }}
+          ipv6:
+            enabled: false
+        - name: dummy1
+          type: dummy
+          state: up
+          ipv4:
+            enabled: false
+          ipv6:
+            enabled: false
 
   # this saves the static route configuration including the default route
   # prior to filtering later
@@ -79,7 +104,7 @@
   # * We need it for installation
   - name: Remove all physical nics from NM control except the public interface
     set_fact:
-      nmstate_ifs: "{{ nmstate_ifs + [ {'name': item} | combine(removed) ] }}"
+      nmstate_ifs: "{{ nmstate_ifs | from_yaml  + [ {'name': item} | combine(removed) ] }}"
     loop: "{{ physical_nics | difference(primary_nic) }}"
     vars:
       primary_nic: "{{ [ network_info.public_ipv4.interface ] }}"
@@ -135,22 +160,32 @@
       name: network
       state: started
 
-  - name: Create systemd unit to add SNAT rule for hostonly network
-    template:
-      src: "standalone_snat.service.j2"
-      dest: "/etc/systemd/system/standalone_hostonly_snat.service"
-      owner: root
-      group: root
-      mode: '0644'
-    vars:
-      cidr: "{{ hostonly_cidr }}"
-      exit_ip: "{{ network_info.public_ipv4.address }}"
+  - name: Set fact for public nic when DPDK is disabled
+    set_fact:
+      public_nic: br-ex
+    when:
+    - dpdk_interface is not defined
 
-  - name: Activate systemd units
-    systemd:
-      name: "{{ item }}.service"
-      enabled: true
-      state: started
-      daemon_reload: true
-    loop:
-    - standalone_hostonly_snat
+  - name: Set fact for public nic when DPDK is enabled
+    set_fact:
+      public_nic: "{{ network_info.public_ipv4.interface }}"
+    when:
+    - dpdk_interface is defined
+
+  - name: Configure SNAT for hostonly
+    include_role:
+      name: snat
+    vars:
+      network_name: hostonly
+      network_cidr: "{{ hostonly_cidr }}"
+      public_ip: "{{ network_info.public_ipv4.address }}"
+
+  - name: Configure SNAT for hostonly_dpdk
+    include_role:
+      name: snat
+    vars:
+      network_name: hostonly_dpdk
+      network_cidr: "{{ hostonly_dpdk_cidr }}"
+      public_ip: "{{ network_info.public_ipv4.address }}"
+    when:
+    - dpdk_interface is defined

@@ -157,7 +157,7 @@
     when:
       # We don't need to reboot when these parameters are defined because
       # we'll reboot after the tripleo deployment anyway. We're saving one reboot.
-      - not (sriov_interface is defined or kernel_args is defined) or ((grub_output.stdout_lines | length) > 1)
+      - not (sriov_interface is defined or dpdk_interface is defined or kernel_args is defined) or ((grub_output.stdout_lines | length) > 1)
     block:
       - name: Check if reboot is required # noqa 301
         shell: |
@@ -270,3 +270,24 @@
         vg: vg_ceph
         lv: db
         size: 4%VG
+  - name: Prepare kernel and reboot
+    when:
+    - kernel_args is defined
+    block:
+    - name: Install driverctl rpm
+      package:
+        name:
+          - driverctl
+        state: present
+    - name: Configure tuned before reboot
+      include_role:
+        name: tuned
+      vars:
+        tuned_profile: cpu-partitioning
+        tuned_isolated_cores: "{{ tuned_isolated_cores | mandatory }}"
+    - name: Configure kernel args and reboot
+      include_role:
+        name: tripleo_kernel
+        tasks_from: kernelargs.yml
+      vars:
+        tripleo_kernel_args: "{{ kernel_args | mandatory }}"

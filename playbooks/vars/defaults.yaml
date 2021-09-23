@@ -59,6 +59,15 @@ hostonly_gateway: "{{ hostonly_cidr | nthhost(1) }}"
 hostonly_fip_pool_start: "{{ hostonly_cidr | nthhost(2) }}"
 hostonly_fip_pool_end: "{{ hostonly_cidr | nthhost(-2) }}"
 
+# `hostonly` variants
+hostonly_sriov_cidr: 192.168.26.0/24
+hostonly_sriov_fip_pool_start: "{{ hostonly_sriov_cidr | nthhost(2) }}"
+hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | nthhost(-2) }}"
+hostonly_dpdk_cidr: 192.168.27.0/24
+hostonly_dpdk_gateway: "{{ hostonly_dpdk_cidr | nthhost(1) }}"
+hostonly_dpdk_fip_pool_start: "{{ hostonly_dpdk_cidr | nthhost(2) }}"
+hostonly_dpdk_fip_pool_end: "{{ hostonly_dpdk_cidr | nthhost(-2) }}"
+
 # Configuration used only by prepare_stack_testconfig, which is not run by
 # default.
 testconfig_private_cidr: 192.168.100.0/24
@@ -90,8 +99,10 @@ low_memory_usage: false
 #
 # extra_heat_params:
 
-neutron_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
-neutron_flat_networks: "external,hostonly"
+# This param can be overriden, but only when overriding the network_config, otherwise the default
+# should work as is:
+#neutron_bridge_mappings:
+neutron_flat_networks: "external,hostonly,hostonly-sriov,hostonly-dpdk"
 
 tripleo_repos_repos:
   - current-tripleo
@@ -138,12 +149,18 @@ update_local_pki: false
 sriov_services:
   - OS::TripleO::Services::NeutronSriovAgent
 
+dpdk_services:
+  - OS::TripleO::Services::ComputeNeutronOvsDpdk
+
 kernel_services:
   - OS::TripleO::Services::BootParams
 
 #sriov_interface:
 #sriov_nic_numvfs:
 #sriov_nova_pci_passthrough:
+
+#dpdk_interface:
+#tuned_isolated_cores:
 
 # Kernel arguments to add at boot
 #kernel_args:

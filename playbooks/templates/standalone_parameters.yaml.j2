@@ -57,8 +57,18 @@ parameter_defaults:
   NeutronBridgeMappings: {{ neutron_bridge_mappings }}
   NeutronFlatNetworks: {{ neutron_flat_networks }}
 {% if sriov_interface is defined %}
-  NeutronPhysicalDevMappings: "hostonly:{{ sriov_interface }}"
+  OVNCMSOptions: "enable-chassis-as-gw"
+  NeutronPhysicalDevMappings: "hostonly-sriov:{{ sriov_interface }}"
   NovaPCIPassthrough: {{sriov_nova_pci_passthrough | mandatory | to_json }}
+{% endif %}
+{% if dpdk_interface is defined %}
+  NovaLibvirtRxQueueSize: 1024
+  NovaLibvirtTxQueueSize: 1024
+  VhostuserSocketGroup: "hugetlbfs"
+{% endif %}
+{% if tuned_isolated_cores is defined %}
+  IsolCpusList: {{ tuned_isolated_cores }}
+  TunedProfileName: "cpu-partitioning"
 {% endif %}
 {% if kernel_args is defined %}
   KernelArgs: "{{ kernel_args }}"
@@ -98,6 +108,7 @@ parameter_defaults:
   CephPoolDefaultPgNum: 8
   CephPoolDefaultSize: 1
   CephSpecFqdn: true
+  NovaComputeStartupDelay: 180
 
   # Don't use ceph for local ephemeral storage by default: its performance is
   # generally not good enough for etcd on a dev-install setup.

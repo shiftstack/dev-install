@@ -1,0 +1,20 @@
+---
+
+- name: "Create systemd unit to add SNAT rule for {{ network_name }} network"
+  template:
+    src: "standalone_snat.service.j2"
+    dest: "/etc/systemd/system/standalone_{{ network_name }}_snat.service"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    cidr: "{{ network_cidr }}"
+    exit_ip: "{{ public_ip }}"
+    exit_nic: "{{ public_nic }}"
+
+- name: Activate systemd units
+  systemd:
+    name: "standalone_{{ network_name }}_snat.service"
+    enabled: true
+    state: started
+    daemon_reload: true

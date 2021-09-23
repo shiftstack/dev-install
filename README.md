@@ -124,6 +124,8 @@ To understand how the SR-IOV configuration works, please have a look at this [up
 | `sriov_nic_numvfs` | `[undefined]` | Number of Virtual Functions that the NIC can handle. |
 | `sriov_nova_pci_passthrough` | `[undefined]` | List of PCI Passthrough whitelist parameters. [Guidelines](https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/16.1/html/configuring_the_compute_service_for_instance_creation/configuring-pci-passthrough#guidelines-for-configuring-novapcipassthrough-osp) to configure it. |
 
+Note: when SR-IOV is enabled, a dedicated provider network will be created and binded to the SR-IOV interface.
+
 Kernel Variables
 ----------------
 
@@ -133,6 +135,33 @@ It is possible to configure the Kernel to boot with specific arguments:
 |-------------------|---------------------|----------------------|
 | `kernel_services` | `['TripleO::Services::BootParams']` | List of TripleO services to add to the default Standalone role |
 | `kernel_args` | `[undefined]` | Kernel arguments to configure when booting the machine. |
+
+DPDK Variables
+--------------
+
+It is possible to configure the deployment to be ready for DPDK:
+
+| Name              | Default Value       | Description          |
+|-------------------|---------------------|----------------------|
+| `dpdk_services` | `['OS::TripleO::Services::ComputeNeutronOvsDpdk']` | List of TripleO services to add to the default Standalone role |
+| `dpdk_interface` | `[undefined]` | Name of the DPDK capable interface. Must be enabled in BIOS. e.g. `ens1f0` |
+| `tuned_isolated_cores` | `[undefined]` | List of logical CPU ids which need to be isolated from the host processes. This input is provided to the tuned profile cpu-partitioning to configure systemd and repin interrupts (IRQ repinning). |
+
+When deploying DPDK, it is suggested to configure these options:
+```
+extra_heat_params:
+  # A list or range of host CPU cores to which processes for pinned instance
+  # CPUs (PCPUs) can be scheduled:
+  NovaComputeCpuDedicatedSet: ['6-47']
+  # Reserved RAM for host processes:
+  NovaReservedHostMemory: 4096
+  # Determine the host CPUs that unpinned instances can be scheduled to:
+  NovaComputeCpuSharedSet: [0,1,2,3]
+  # Sets the amount of hugepage memory to assign per NUMA node:
+  OvsDpdkSocketMemory: "2048,2048"
+  # A list or range of CPU cores for PMD threads to be pinned to:
+  OvsPmdCoreList: "4,5"
+```
 
 ### SSL for public endpoints
 

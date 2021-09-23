@@ -190,10 +190,14 @@
         become: true
         become_user: root
 
+  - name: set fact for dev-install_net_config template
+    set_fact:
+      net_config_template: "{{ dpdk_interface is defined | ternary('dev-install_net_config_dpdk.yaml.j2', 'dev-install_net_config.yaml.j2') }}"
+
   - name: Create dev-install_net_config.yaml
     template:
       mode: 0644
-      src: dev-install_net_config.yaml.j2
+      src: "{{ net_config_template }}"
       dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
   - name: Read dev-install_net_config.yaml
@@ -208,6 +212,10 @@
   - name: Set fact for SR-IOV services overrides
     set_fact:
       sriov_services_fact: "{{ sriov_interface|default(None)| ternary(sriov_services, []) }}"
+
+  - name: Set fact for DPDK services overrides
+    set_fact:
+      dpdk_services_fact: "{{ dpdk_interface|default(None)| ternary(dpdk_services, []) }}"
 
   - name: Set fact for Kernel services overrides
     set_fact:
@@ -238,7 +246,7 @@
     set_fact:
       role_data: >
         {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault |
-        union(sriov_services_fact) | union(kernel_services_fact) | union(manila_services_fact) |
+        union(sriov_services_fact) | union(dpdk_services_fact) | union(kernel_services_fact) | union(manila_services_fact) |
         union(dcn_services_fact) | union(standalone_role_overrides)) %}
         {{ new_role_data }}
 
@@ -262,6 +270,24 @@
     - name: Ensure ceph is enabled
       set_fact:
         ceph_enabled: true
+
+  - name: Set fact for neutron_bridge_mappings
+    when:
+    - neutron_bridge_mappings is not defined
+    block:
+      - name: set fact for base_bridge_mappings when DPDK is disabled
+        set_fact:
+          base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
+        when:
+        - dpdk_interface is not defined
+      - name: set fact for base_bridge_mappings when DPDK is enabled
+        set_fact:
+          base_bridge_mappings: "hostonly:dummy1,hostonly-dpdk:br-dpdk"
+        when:
+        - dpdk_interface is defined
+      - name: construct fact for neutron_bridge_mappings
+        set_fact:
+          neutron_bridge_mappings: "{{ base_bridge_mappings }}"
 
   - name: Create standalone_parameters.yaml
     no_log: true
@@ -387,6 +413,27 @@
       - sriov_interface is defined
       - not ovn_enabled
 
+  - name: Add dpdk-ovn to enabled services
+    set_fact:
+      service_envs: "{{ service_envs | union(dpdk_env) }}"
+    vars:
+      dpdk_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dpdk.yaml
+    when:
+    - dpdk_interface is defined
+    - ovn_enabled
+
+  - name: Add dpdk-ovs to enabled services
+    set_fact:
+      service_envs: "{{ service_envs | union(dpdk_env) }}"
+    vars:
+      dpdk_env:
+        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs.yaml
+        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs-dpdk.yaml
+    when:
+    - dpdk_interface is defined
+    - not ovn_enabled
+
   - name: Reduce the number of workers
     set_fact:
       service_envs: "{{ service_envs | union(lowmem_env) }}"
@@ -455,10 +502,10 @@
           name: redhat-subscription
           tasks_from: unregister.yml
 
-  - name: Reboot if SR-IOV is enabled (to apply kernel changes)
+  - name: Reboot to apply kernel changes
     when:
       # if a new condition is added here, it needs to match with the block in `playbooks/prepare_host.yaml`.
-      - sriov_interface is defined or kernel_args is defined
+      - sriov_interface is defined or dpdk_interface is defined or kernel_args is defined
     block:
       - name: Reboot the node
         become_user: root
