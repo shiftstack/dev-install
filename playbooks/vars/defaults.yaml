@@ -160,6 +160,10 @@ authorized_keys: []
 
 # Red Hat Subscription Manager options
 rhsm_enabled: false
+# If the system is used for production, you want to keep
+# RHSM activated to get upgrades later; so in this case set it
+# to false.
+rhsm_ephemeral: true
 rhsm_repos:
   - rhel-8-for-x86_64-baseos-eus-rpms
   - rhel-8-for-x86_64-appstream-eus-rpms
