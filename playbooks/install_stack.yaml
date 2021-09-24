@@ -442,6 +442,17 @@
       - dcn_az == "central"
     script: files/export-dcn.sh
 
+  - name: Unregister the system from RHSM
+    when:
+      - ansible_facts.distribution == 'RedHat'
+      - rhsm_enabled
+      - rhsm_ephemeral
+    block:
+      - name: Unregister Red Hat Subscription Manager
+        import_role:
+          name: redhat-subscription
+          tasks_from: unregister.yml
+
   - name: Reboot if SR-IOV is enabled (to apply kernel changes)
     when:
       # if a new condition is added here, it needs to match with the block in `playbooks/prepare_host.yaml`.
