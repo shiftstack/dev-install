@@ -1,8 +1,5 @@
 standalone_host: <standalone FQDN>
 public_api: <IP address used to reach the node>
-# Get latest 16.2 puddle
-rhos_release: 16.2
-
 
 # PCIPassthrough example for device " 0b:00.0 VGA compatible controller [0300]: Matrox Electronics Systems Ltd. G200eR2 [102b:0534] (rev 01)"
 # For available device_type values see https://access.redhat.com/documentation/en-us/red_hat_openstack_platform/16.1/html/configuring_the_compute_service_for_instance_creation/configuring-pci-passthrough
