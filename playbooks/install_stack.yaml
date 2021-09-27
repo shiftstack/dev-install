@@ -443,6 +443,8 @@
     script: files/export-dcn.sh
 
   - name: Unregister the system from RHSM
+    become: true
+    become_user: root
     when:
       - ansible_facts.distribution == 'RedHat'
       - rhsm_enabled
