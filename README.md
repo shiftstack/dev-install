@@ -17,7 +17,7 @@ When deploying on TripleO from upstream, you need to deploy on CentOS Stream. If
 
 dev-install requires up to date versions of `ansible` and `make`, both of which must be installed manually before invoking dev-install.
 
-If installing OSP 16.1 with official rhel 8.2 cloud images, it is required that the cloud-init service be disabled before deployment as per [THIS](https://review.opendev.org/c/openstack/tripleo-heat-templates/+/764933)
+If installing OSP 16.2 with official rhel 8.4 cloud images, it is required that the cloud-init service be disabled before deployment as per [THIS](https://review.opendev.org/c/openstack/tripleo-heat-templates/+/764933)
 
 At present the deployment depends on a valid DHCP source for the external interface (br-ex) as per [THIS](https://github.com/shiftstack/dev-install/blob/main/playbooks/templates/dev-install_net_config.yaml.j2#L9)
 
