@@ -87,6 +87,14 @@
       if ! openstack flavor show m1.xlarge.nodisk; then
           openstack flavor create --ram 16384 --disk 0 --vcpu 4 --public m1.xlarge.nodisk
       fi
+      if ! openstack flavor show m1.large.nfv; then
+          openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large.nfv
+          openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.large.nfv
+      fi
+      if ! openstack flavor show m1.xlarge.nfv; then
+          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge.nfv
+          openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.xlarge.nfv
+      fi
     environment:
       OS_CLOUD: standalone
 
@@ -103,7 +111,10 @@
       fi
     environment:
       OS_CLOUD: standalone
-    when: external_fip_pool_start is defined and external_fip_pool_end is defined
+    when:
+    - external_fip_pool_start is defined
+    - external_fip_pool_end is defined
+    - dpdk_interface is not defined
 
   - name: Create hostonly network # noqa 301
     shell: |
@@ -116,6 +127,37 @@
               --dns-nameserver "{{ network_info.dns | first }}" \
               --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
               --network hostonly
+      fi
+    environment:
+      OS_CLOUD: standalone
+
+  - name: Create hostonly-sriov network # noqa 301
+    when: sriov_interface is defined
+    shell: |
+      if ! openstack network show hostonly-sriov; then
+          openstack network create --project openshift --share --external --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
+      fi
+      if ! openstack subnet show hostonly-sriov-subnet; then
+          openstack subnet create --project openshift hostonly-sriov-subnet --subnet-range "{{ hostonly_sriov_cidr }}" \
+              --no-dhcp --gateway none \
+              --allocation-pool "start={{ hostonly_sriov_fip_pool_start }},end={{ hostonly_sriov_fip_pool_end }}" \
+              --network hostonly-sriov
+      fi
+    environment:
+      OS_CLOUD: standalone
+
+  - name: Create hostonly-dpdk network # noqa 301
+    when: dpdk_interface is defined
+    shell: |
+      if ! openstack network show hostonly-dpdk; then
+          openstack network create --project openshift --share --external --provider-physical-network hostonly-dpdk --provider-network-type flat hostonly-dpdk
+      fi
+      if ! openstack subnet show hostonly-dpdk-subnet; then
+          openstack subnet create --project openshift hostonly-dpdk-subnet --subnet-range "{{ hostonly_dpdk_cidr }}" \
+              --dhcp --gateway "{{ hostonly_dpdk_gateway }}" \
+              --dns-nameserver "{{ network_info.dns | first }}" \
+              --allocation-pool "start={{ hostonly_dpdk_fip_pool_start }},end={{ hostonly_dpdk_fip_pool_end }}" \
+              --network hostonly-dpdk
       fi
     environment:
       OS_CLOUD: standalone

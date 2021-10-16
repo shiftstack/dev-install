@@ -1,0 +1,58 @@
+#vi:syntax=yaml
+---
+network_config:
+{% if network_config is defined %}
+{{ network_config | to_nice_yaml }}
+{% else %}
+- type: interface
+  name: {{ network_info.public_ipv4.interface }}
+  use_dhcp: true
+  mtu: {{ network_info.public_ipv4.mtu }}
+- type: interface
+  name: dummy0
+  use_dhcp: false
+  nm_controlled: true
+- type: ovs_user_bridge
+  name: br-hostonly
+  use_dhcp: false
+  ovs_extra:
+  - br-set-external-id br-hostonly bridge-id br-hostonly
+  addresses:
+  - ip_netmask: {{ hostonly_gateway }}/32
+  routes:
+  - destination: {{ hostonly_cidr }}
+    nexthop: {{ hostonly_gateway }}
+  members:
+  - type: interface
+    name: dummy1
+    nm_controlled: true
+    mtu: 1500
+{% if sriov_interface is defined %}
+- type: sriov_pf
+  name: {{ sriov_interface }}
+  use_dhcp: false
+  numvfs: {{ sriov_nic_numvfs | mandatory }}
+  defroute: false
+  nm_controlled: true
+  hotplug: true
+  promisc: false
+{% endif %}
+- type: ovs_user_bridge
+  name: br-dpdk
+  use_dhcp: false
+  ovs_extra:
+  - br-set-external-id br-dpdk bridge-id br-dpdk
+  addresses:
+  - ip_netmask: {{ hostonly_dpdk_gateway }}/32
+  routes:
+  - destination: {{ hostonly_dpdk_cidr }}
+    nexthop: {{ hostonly_dpdk_gateway }}
+  members:
+  - type: ovs_dpdk_port
+    name: dpdk
+    rx_queue: 2
+    members:
+    - type: interface
+      name: {{ dpdk_interface }}
+      mtu: 9000
+{% endif %}

@@ -53,19 +53,19 @@ network_config:
       - remote_ip={{ ip }}
       - key=101
 {% endfor %}
-{% if sriov_interface is defined %}
-  - type: sriov_pf
-    name: {{ sriov_interface }}
-    numvfs: {{ sriov_nic_numvfs | mandatory }}
-    use_dhcp: false
-    defroute: false
-    nm_controlled: false
-    hotplug: true
-    promisc: false
-{% else %}
   - type: interface
     name: dummy1
     nm_controlled: true
     mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
+{% if sriov_interface is defined %}
+- type: sriov_pf
+  name: {{ sriov_interface }}
+  numvfs: {{ sriov_nic_numvfs | mandatory }}
+  mtu: 9000
+  use_dhcp: false
+  defroute: false
+  nm_controlled: true
+  hotplug: true
+  promisc: false
 {% endif %}
 {% endif %}
