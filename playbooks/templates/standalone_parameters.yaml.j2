@@ -120,6 +120,9 @@ parameter_defaults:
   NovaComputeUseCowImages: false
   NovaComputeLibvirtPreAllocateImages: space
 
+{% if admin_password is defined %}
+  AdminPassword: {{ admin_password }}
+{% endif %}
 {% if rhsm_enabled %}
   ContainerImageRegistryCredentials:
     registry.redhat.io:
