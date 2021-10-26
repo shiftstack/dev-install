@@ -1,7 +1,10 @@
 #vi:syntax=yaml
 
-{% if dcn_az is defined %}
 resource_registry:
+{% if sriov_interface is defined %}
+  OS::TripleO::Services::NeutronDhcpAgent: /usr/share/openstack-tripleo-heat-templates/deployment/neutron/neutron-dhcp-container-puppet.yaml
+{% endif %}
+{% if dcn_az is defined %}
   OS::TripleO::Services::NovaAZConfig: /usr/share/openstack-tripleo-heat-templates/deployment/nova/nova-az-config.yaml
 {% if dcn_az != 'central' %}
   OS::TripleO::Services::CinderVolume: /usr/share/openstack-tripleo-heat-templates/deployment/cinder/cinder-volume-container-puppet.yaml
