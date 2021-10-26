@@ -67,10 +67,10 @@
   - name: Create flavors # noqa 301
     shell: |
       if ! openstack flavor show m1.tiny; then
-          openstack flavor create --ram 1024 --disk 10 --vcpu 2 --public m1.tiny
+          openstack flavor create --ram 1024 --disk 10 --vcpu 1 --public m1.tiny
       fi
       if ! openstack flavor show m1.small; then
-          openstack flavor create --ram 2048 --disk 15 --vcpu 2 --public m1.small
+          openstack flavor create --ram 2048 --disk 15 --vcpu 1 --public m1.small
       fi
       if ! openstack flavor show m1.medium; then
           openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
