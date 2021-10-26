@@ -1,7 +1,8 @@
 sriov_interface: enp130s0f0
 sriov_nova_pci_passthrough:
   - devname: "enp130s0f0"
-    physical_network: "hostonly-sriov"
+    physical_network: "hostonly"
+    trusted: true
 sriov_nic_numvfs: 63
 dpdk_interface: enp130s0f1
 kernel_args: "default_hugepagesz=1GB hugepagesz=1G hugepages=128 iommu=pt intel_iommu=on isolcpus=4-47"

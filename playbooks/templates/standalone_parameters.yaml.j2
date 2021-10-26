@@ -58,7 +58,7 @@ parameter_defaults:
   NeutronFlatNetworks: {{ neutron_flat_networks }}
 {% if sriov_interface is defined %}
   OVNCMSOptions: "enable-chassis-as-gw"
-  NeutronPhysicalDevMappings: "hostonly-sriov:{{ sriov_interface }}"
+  NeutronPhysicalDevMappings: "hostonly:{{ sriov_interface }}"
   NovaPCIPassthrough: {{sriov_nova_pci_passthrough | mandatory | to_json }}
 {% endif %}
 {% if dpdk_interface is defined %}

@@ -12,6 +12,16 @@ network_config:
   name: dummy0
   use_dhcp: false
   nm_controlled: true
+{% if sriov_interface is defined %}
+- type: sriov_pf
+  name: {{ sriov_interface }}
+  use_dhcp: false
+  numvfs: {{ sriov_nic_numvfs | mandatory }}
+  defroute: false
+  nm_controlled: true
+  hotplug: true
+  promisc: true
+{% endif %}
 - type: ovs_user_bridge
   name: br-hostonly
   use_dhcp: false
@@ -28,14 +38,9 @@ network_config:
     nm_controlled: true
     mtu: 1500
 {% if sriov_interface is defined %}
-- type: sriov_pf
-  name: {{ sriov_interface }}
-  use_dhcp: false
-  numvfs: {{ sriov_nic_numvfs | mandatory }}
-  defroute: false
-  nm_controlled: true
-  hotplug: true
-  promisc: false
+  - type: sriov_vf
+    device: {{ sriov_interface }}
+    vfid: 0
 {% endif %}
 - type: ovs_user_bridge
   name: br-dpdk

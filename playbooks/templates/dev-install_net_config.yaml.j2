@@ -14,6 +14,16 @@ network_config:
   - type: interface
     name: {{ network_info.public_ipv4.interface }}
     primary: true
+{% if sriov_interface is defined %}
+- type: sriov_pf
+  name: {{ sriov_interface }}
+  numvfs: {{ sriov_nic_numvfs | mandatory }}
+  use_dhcp: false
+  defroute: false
+  nm_controlled: true
+  hotplug: true
+  promisc: true
+{% endif %}
 - type: ovs_bridge
   name: br-ctlplane
   use_dhcp: false
@@ -58,14 +68,8 @@ network_config:
     nm_controlled: true
     mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
 {% if sriov_interface is defined %}
-- type: sriov_pf
-  name: {{ sriov_interface }}
-  numvfs: {{ sriov_nic_numvfs | mandatory }}
-  mtu: 9000
-  use_dhcp: false
-  defroute: false
-  nm_controlled: true
-  hotplug: true
-  promisc: false
+  - type: sriov_vf
+    device: {{ sriov_interface }}
+    vfid: 0
 {% endif %}
 {% endif %}

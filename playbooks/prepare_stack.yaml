@@ -131,21 +131,6 @@
     environment:
       OS_CLOUD: standalone
 
-  - name: Create hostonly-sriov network # noqa 301
-    when: sriov_interface is defined
-    shell: |
-      if ! openstack network show hostonly-sriov; then
-          openstack network create --project openshift --share --external --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
-      fi
-      if ! openstack subnet show hostonly-sriov-subnet; then
-          openstack subnet create --project openshift hostonly-sriov-subnet --subnet-range "{{ hostonly_sriov_cidr }}" \
-              --no-dhcp --gateway none \
-              --allocation-pool "start={{ hostonly_sriov_fip_pool_start }},end={{ hostonly_sriov_fip_pool_end }}" \
-              --network hostonly-sriov
-      fi
-    environment:
-      OS_CLOUD: standalone
-
   - name: Create hostonly-dpdk network # noqa 301
     when: dpdk_interface is defined
     shell: |
