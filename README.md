@@ -112,8 +112,7 @@ your Standalone OpenStack deployment.
 Unfortunately, most of these parameters don't have default values nor can be automatically figured out in
 a Standalone type environment.
 
-SR-IOV Variables
-----------------
+#### SR-IOV Variables
 
 To understand how the SR-IOV configuration works, please have a look at this [upstream guide](https://docs.openstack.org/neutron/latest/admin/config-sriov.html).
 
@@ -126,8 +125,7 @@ To understand how the SR-IOV configuration works, please have a look at this [up
 
 Note: when SR-IOV is enabled, a dedicated provider network will be created and binded to the SR-IOV interface.
 
-Kernel Variables
-----------------
+#### Kernel Variables
 
 It is possible to configure the Kernel to boot with specific arguments:
 
@@ -136,8 +134,7 @@ It is possible to configure the Kernel to boot with specific arguments:
 | `kernel_services` | `['TripleO::Services::BootParams']` | List of TripleO services to add to the default Standalone role |
 | `kernel_args` | `[undefined]` | Kernel arguments to configure when booting the machine. |
 
-DPDK Variables
---------------
+#### DPDK Variables
 
 It is possible to configure the deployment to be ready for DPDK:
 
@@ -163,7 +160,7 @@ extra_heat_params:
   OvsPmdCoreList: "4,5"
 ```
 
-### SSL for public endpoints
+#### SSL for public endpoints
 
 This sections contains configuration procedures for enabling SSL on OpenStack public endpoints.
 
@@ -177,17 +174,17 @@ This sections contains configuration procedures for enabling SSL on OpenStack pu
 | `ssl_ca_cert_path` | `/etc/pki/ca-trust/source/anchors/simpleca.crt` | Path to the CA certificate |
 | `update_local_pki` | `false` | Whether or not we want to update the local PKI with the CA certificate |
 
-### Multi-node deployments
+#### Multi-node deployments
 
 It is possible to deploy Edge-style environments, where multiple AZ are configured.
 
-#### Deploy the Central site
+##### Deploy the Central site
 
 Deploy a regular cloud with dev-install, and make sure you set `dcn_az` parameter to `central`.
 Once this is done, you need to collect the content from `/home/stack/exported-data` into a local directory
 on the host where dev-install is executed.
 
-#### Deploy the "AZ" sites
+##### Deploy the "AZ" sites
 
 Before deploying OSP, you need to scp the content from `exported-data` into the remote hosts into
 `/opt/exported-data`.
@@ -214,4 +211,13 @@ It is possible to perform stack updates on an ephemeral standalone stack.
 
 Copying the generated tripleo_deploy.sh in your deployment users folder (eg. /home/stack/tripleo_deploy.sh) to tripleo_update.sh and add the parameter --force-stack-update.  This will allow you to modify the stack configuration without needing to redeploy the entire cloud which can save you considerable time.
 
+#### Post install script
 
+It is possible to run any script in post-install with `post_install` parameter:
+```
+post_install: |
+  export OS_CLOUD=standalone
+  openstack flavor set --property hw:mem_page_size=large m1.smal
+```
+
+And then run `make post_install`.
