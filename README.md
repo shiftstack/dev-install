@@ -180,7 +180,11 @@ It is possible to deploy Edge-style environments, where multiple AZ are configur
 
 ##### Deploy the Central site
 
-Deploy a regular cloud with dev-install, and make sure you set `dcn_az` parameter to `central`.
+Deploy a regular cloud with dev-install, and make sure you set these parameters: 
+
+* `dcn_az`: has to be `central`.
+* `tunnel_remote_ips`: list of known public IPs of the AZ nodes.
+
 Once this is done, you need to collect the content from `/home/stack/exported-data` into a local directory
 on the host where dev-install is executed.
 
@@ -196,14 +200,28 @@ these parameters:
 * `control_plane_ip`: same as for `local_ip`, pick one that is available (e.g. 192.168.24.11)
 * `hostonly_gateway`: if using provider networks, you'll need to select an available IP (e.g. 192.168.25.2)
 * `tunnel_remote_ips`: the list of known public IPs that will be used to establish the VXLAN tunnels.
+* `hostname`: you got to make sure both central and AZ doesn't use the default hostname (`standalone`), so set it at least on the compute. E.g. `compute1`.
+* `octavia_enabled`: set to `false`.
 
 Notes:
 
+* Control plane IPs (192.168.24.x) are arbitrary, if in doubt just use the example ones.
 * The control plane bridges will be connected thanks to VXLAN tunnels, which is why we need to select control plane IP for AZ nodes that were not taken on the Central site.
 * If you deploy the clouds in OpenStack, you need to make sure that the security groups allow VXLAN (udp/4789).
 * If the public IPs aren't predictable, you'll need to manually change the MTU on the br-ctlplane and br-hostonly on the central
   site and the AZ sites where needed. You can do it by editing the os-net-config configuration file and run os-net-config to apply
   it.
+
+After the installation you can "join" AZs to just have a regular multinode cloud. E.g.:
+```
+openstack aggregate remove host az0 compute1.shiftstack
+openstack aggregate add host central compute1.shiftstack
+```
+
+Then if you're using OVN (you probably are) you got to execute this on compute nodes:
+```
+ovs-vsctl set Open_vSwitch . external-ids:ovn-cms-options="enable-chassis-as-gw,availability-zones=central"
+```
 
 #### Post Deployment Stack Updates
 
