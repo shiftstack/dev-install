@@ -67,5 +67,7 @@ network_config:
   nm_controlled: true
   hotplug: true
   promisc: false
+  addresses:
+  - ip_netmask: {{ hostonly_sriov_gateway }}/{{ hostonly_sriov_prefix }}
 {% endif %}
 {% endif %}
