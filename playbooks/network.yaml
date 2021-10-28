@@ -172,3 +172,13 @@
       network_name: hostonly
       network_cidr: "{{ hostonly_cidr }}"
       public_ip: "{{ network_info.public_ipv4.address }}"
+
+  - name: Configure SNAT for hostonly_sriov
+    include_role:
+      name: snat
+    vars:
+      network_name: hostonly-sriov
+      network_cidr: "{{ hostonly_sriov_cidr }}"
+      public_ip: "{{ network_info.public_ipv4.address }}"
+    when:
+    - sriov_interface is defined
