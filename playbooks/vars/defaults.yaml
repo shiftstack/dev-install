@@ -215,3 +215,11 @@ ephemeral_storage_devices: []
 
 # Whether or not we want OVN to be enabled
 ovn_enabled: true
+
+# In multinode, we create VXLAN tunnels to connect the br-ctlplane bridges
+# and on top of it, Neutron tenant networks will also have tunnels so
+# we need to lower the MTU to 1300 which should be safe to do Geneve tunnels
+# over VXLAN. For PEK2 DSAL boxes you might need to bump that value to e.g.
+# 1350 as apprently there are packets flying with 1260 (and 1300 will give you
+# 1242 on Neutron network which won't be enough).
+neutron_mtu: 1300

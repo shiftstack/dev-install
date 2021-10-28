@@ -155,11 +155,7 @@ parameter_defaults:
   NovaComputeAvailabilityZone: {{ dcn_az }}
   NovaCrossAZAttach: false
   OVNCMSOptions: "enable-chassis-as-gw,availability-zones={{ dcn_az }}"
-  # In multinode, we create VXLAN tunnels to connect the br-ctlplane bridges
-  # and on top of it, Neutron tenant networks will also have tunnels so
-  # we need to lower the MTU to 1300 which should be safe to do Geneve tunnels
-  # over VXLAN.
-  NeutronGlobalPhysnetMtu: 1300 
+  NeutronGlobalPhysnetMtu: {{ neutron_mtu }}
 {% endif %}
 {% if standalone_extra_config|length > 0 or dcn_az is defined or manila_enabled %}
   StandaloneExtraConfig:
