@@ -47,12 +47,11 @@
         ovn_dvr_ha_env:
         - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dvr-ha.yaml
 
-  - name: Enable exported environments from central site when deploying DCN
+  - name: Enable exported environments from central site when deploying DCN or a compute-only
     when:
-      - dcn_az is defined
-      - dcn_az != "central"
+    - compute_only or (dcn_az|default('central') != 'central')
     block:
-    - name: Add DCN environments
+    - name: Add nodes environments
       set_fact:
         service_envs: "{{ service_envs | union(dcn_env) }}"
       vars:
@@ -297,7 +296,9 @@
       dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
   - name: Enable Octavia
-    when: octavia_enabled
+    when:
+    - octavia_enabled
+    - dcn_az|default('central') == 'central'
     block:
       # The Amphora image is broken for OSP17, see:
       # https://review.rdoproject.org/r/32023
@@ -485,8 +486,7 @@
 
   - name: Export Stack data for DCN in /home/stack/exported-data
     when:
-      - dcn_az is defined
-      - dcn_az == "central"
+    - controller_only or (dcn_az|default('central') == 'central')
     script: files/export-dcn.sh
 
   - name: Unregister the system from RHSM

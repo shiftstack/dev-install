@@ -1,9 +1,16 @@
 #vi:syntax=yaml
 
-{% if dcn_az is defined %}
 resource_registry:
+{% if controller_only %}
+  OS::TripleO::Services::ComputeCeilometerAgent: OS::Heat::None
+  OS::TripleO::Services::NovaCompute: OS::Heat::None
+  OS::TripleO::Services::NovaLibvirt: OS::Heat::None
+  OS::TripleO::Services::NovaMigrationTarget: OS::Heat::None
+{% endif %}
+{% if dcn_az is defined %}
   OS::TripleO::Services::NovaAZConfig: /usr/share/openstack-tripleo-heat-templates/deployment/nova/nova-az-config.yaml
-{% if dcn_az != 'central' %}
+{% endif %}
+{% if (dcn_az is defined and dcn_az != 'central') or compute_only %}
   OS::TripleO::Services::CinderVolume: /usr/share/openstack-tripleo-heat-templates/deployment/cinder/cinder-volume-container-puppet.yaml
   OS::TripleO::Services::Etcd: /usr/share/openstack-tripleo-heat-templates/deployment/etcd/etcd-container-puppet.yaml
   OS::TripleO::Services::CACerts: OS::Heat::None
@@ -36,7 +43,6 @@ resource_registry:
   OS::TripleO::Services::SwiftProxy: OS::Heat::None
   OS::TripleO::Services::SwiftRingBuilder: OS::Heat::None
   OS::TripleO::Services::SwiftStorage: OS::Heat::None
-{% endif %}
 {% endif %}
 parameter_defaults:
   CloudName: {{ hostname }}.{{ clouddomain }}
@@ -120,6 +126,10 @@ parameter_defaults:
   NovaComputeUseCowImages: false
   NovaComputeLibvirtPreAllocateImages: space
 
+  # If computes are added afterward, they'll be discovered by nova-scheduler
+  # quite quickly.
+  NovaSchedulerDiscoverHostsInCellsInterval: 120
+
 {% if admin_password is defined %}
   AdminPassword: {{ admin_password }}
 {% endif %}
@@ -142,7 +152,6 @@ parameter_defaults:
 {% endif %}
 {% if dcn_az is defined %}
 {% if dcn_az == 'central' %}
-  NovaSchedulerDiscoverHostsInCellsInterval: 120
   GlanceBackendID: central
   GlanceEnabledImportMethods: web-download,copy-image
   GlanceStoreDescription: 'central rbd glance store'
@@ -157,10 +166,16 @@ parameter_defaults:
   OVNCMSOptions: "enable-chassis-as-gw,availability-zones={{ dcn_az }}"
   NeutronGlobalPhysnetMtu: {{ neutron_mtu }}
 {% endif %}
+{% if controller_only or compute_only %}
+  OVNCMSOptions: "enable-chassis-as-gw,availability-zones={{ dcn_az }}"
+  NeutronGlobalPhysnetMtu: {{ neutron_mtu }}
+{% endif %}
 {% if standalone_extra_config|length > 0 or dcn_az is defined or manila_enabled %}
   StandaloneExtraConfig:
 {% if dcn_az is defined %}
     nova::availability_zone::default_schedule_zone: {{ dcn_az }}
+{% endif %}
+{% if dcn_az is defined or controller_only or compute_only %}
     oslo_messaging_notify_use_ssl: false
     oslo_messaging_rpc_use_ssl: false
 {% endif %}

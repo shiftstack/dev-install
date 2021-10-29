@@ -223,3 +223,7 @@ ovn_enabled: true
 # 1350 as apprently there are packets flying with 1260 (and 1300 will give you
 # 1242 on Neutron network which won't be enough).
 neutron_mtu: 1300
+
+# If a node needs to be a controller or a compute only. They are mutually exclusive.
+controller_only: false
+compute_only: false

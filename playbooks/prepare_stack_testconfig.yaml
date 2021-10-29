@@ -7,6 +7,9 @@
 
   tasks:
 
+  - meta: end_play
+    when: dcn_az != "central" or compute_only
+
   - name: Gather host environment variables
     setup:
       filter: ansible_env

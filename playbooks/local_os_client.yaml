@@ -7,6 +7,9 @@
 
   tasks:
 
+  - meta: end_play
+    when: dcn_az != "central" or compute_only
+
   - name: Read clouds.yaml from standalone host
     slurp:
       src: /home/stack/.config/openstack/clouds.yaml
