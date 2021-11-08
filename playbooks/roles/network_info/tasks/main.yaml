@@ -1,4 +1,11 @@
 ---
+- name: Ensure python3-netaddr is available on controller for ansible ipaddr filter
+  become: true
+  delegate_to: localhost
+  package:
+    name: python3-netaddr
+    state: installed
+
 - name: Read network info if present
   slurp:
     src: &networkinfo /home/stack/dev-install-network-info.yaml
