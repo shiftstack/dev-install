@@ -67,13 +67,6 @@
               prefix-length: {{ control_plane_prefix | int }}
           ipv6:
             enabled: false
-        - name: dummy1
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
 
   # this saves the static route configuration including the default route
   # prior to filtering later
@@ -179,13 +172,3 @@
       network_name: hostonly
       network_cidr: "{{ hostonly_cidr }}"
       public_ip: "{{ network_info.public_ipv4.address }}"
-
-  - name: Configure SNAT for hostonly_dpdk
-    include_role:
-      name: snat
-    vars:
-      network_name: hostonly_dpdk
-      network_cidr: "{{ hostonly_dpdk_cidr }}"
-      public_ip: "{{ network_info.public_ipv4.address }}"
-    when:
-    - dpdk_interface is defined

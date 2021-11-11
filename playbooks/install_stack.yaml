@@ -282,7 +282,7 @@
         - dpdk_interface is not defined
       - name: set fact for base_bridge_mappings when DPDK is enabled
         set_fact:
-          base_bridge_mappings: "hostonly:dummy1,hostonly-dpdk:br-dpdk"
+          base_bridge_mappings: "hostonly:br-hostonly"
         when:
         - dpdk_interface is defined
       - name: construct fact for neutron_bridge_mappings

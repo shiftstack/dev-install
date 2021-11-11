@@ -23,10 +23,13 @@ network_config:
   - destination: {{ hostonly_cidr }}
     nexthop: {{ hostonly_gateway }}
   members:
-  - type: interface
-    name: dummy1
-    nm_controlled: true
-    mtu: 1500
+  - type: ovs_dpdk_port
+    name: dpdk
+    rx_queue: 2
+    members:
+    - type: interface
+      name: {{ dpdk_interface }}
+      mtu: 9000
 {% if sriov_interface is defined %}
 - type: sriov_pf
   name: {{ sriov_interface }}
@@ -37,22 +40,4 @@ network_config:
   hotplug: true
   promisc: false
 {% endif %}
-- type: ovs_user_bridge
-  name: br-dpdk
-  use_dhcp: false
-  ovs_extra:
-  - br-set-external-id br-dpdk bridge-id br-dpdk
-  addresses:
-  - ip_netmask: {{ hostonly_dpdk_gateway }}/32
-  routes:
-  - destination: {{ hostonly_dpdk_cidr }}
-    nexthop: {{ hostonly_dpdk_gateway }}
-  members:
-  - type: ovs_dpdk_port
-    name: dpdk
-    rx_queue: 2
-    members:
-    - type: interface
-      name: {{ dpdk_interface }}
-      mtu: 9000
 {% endif %}
