@@ -55,6 +55,7 @@ external_gateway: "{{ network_info.public_ipv4.gateway }}"
 # the host, and not externally routable.
 # The routable cidr of the hostonly network, even if we can't use all of it.
 hostonly_cidr: 192.168.25.0/24
+hostonly_netmask: "{{ hostonly_cidr | ipaddr('prefix') }}"
 # The IP of the gateway used by the hostonly provider network, which must be
 # within hostonly_cidr.
 hostonly_gateway: "{{ hostonly_cidr | nthhost(1) }}"

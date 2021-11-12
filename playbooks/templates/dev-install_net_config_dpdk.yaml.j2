@@ -18,10 +18,8 @@ network_config:
   ovs_extra:
   - br-set-external-id br-hostonly bridge-id br-hostonly
   addresses:
-  - ip_netmask: {{ hostonly_gateway }}/32
-  routes:
-  - destination: {{ hostonly_cidr }}
-    nexthop: {{ hostonly_gateway }}
+  - ip_netmask: {{ hostonly_gateway }}/{{ hostonly_netmask }}
+    gateway4: {{ hostonly_gateway }}
   members:
   - type: ovs_dpdk_port
     name: dpdk

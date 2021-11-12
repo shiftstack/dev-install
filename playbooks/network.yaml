@@ -161,7 +161,7 @@
 
   - name: Set fact for public nic when DPDK is enabled
     set_fact:
-      public_nic: "{{ network_info.public_ipv4.interface }}"
+      public_nic: br-hostonly
     when:
     - dpdk_interface is defined
 
