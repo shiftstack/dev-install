@@ -146,11 +146,20 @@
     environment:
       OS_CLOUD: standalone
 
-  - name: Create basic security group which allow SSH # noqa 301
+  - name: Create basic security group which allows SSH # noqa 301
     shell: |
       if ! openstack security group show allow_ssh; then
           openstack security group create allow_ssh --project openshift
           openstack security group rule create --protocol tcp --dst-port 22 --project openshift allow_ssh
+      fi
+    environment:
+      OS_CLOUD: standalone
+
+  - name: Create basic security group which allows ping # noqa 301
+    shell: |
+      if ! openstack security group show allow_ping; then
+          openstack security group create allow_ping --project openshift
+          openstack security group rule create --protocol icmp --project openshift allow_ping
       fi
     environment:
       OS_CLOUD: standalone
