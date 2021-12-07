@@ -219,7 +219,7 @@
         fstype: xfs
         state: mounted
 
-  - name: Prepare host for Ceph
+  - name: Prepare host for Ceph (loop device)
     when:
     - ceph_enabled
     - ceph_devices is not defined
@@ -270,6 +270,16 @@
         vg: vg_ceph
         lv: db
         size: 4%VG
+
+  - name: Prepare host for Ceph (disk device)
+    when:
+    - ceph_enabled
+    - ceph_devices is defined
+    block:
+    - name: Wipe filesystem from disk
+      command: wipefs -a "{{ item }}"
+      loop: "{{ ceph_devices }}"
+
   - name: Prepare kernel and reboot
     when:
     - kernel_args is defined
