@@ -275,6 +275,8 @@
     when:
     - ceph_enabled
     - ceph_devices is defined
+    - ceph_devices is string
+    - (ceph_devices | length) > 0
     block:
     - name: Wipe filesystem from disk
       command: wipefs -a "{{ item }}"
