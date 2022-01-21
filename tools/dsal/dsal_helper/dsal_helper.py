@@ -152,8 +152,7 @@ class DSALHelper(object):
             vars['host_ip'] = socket.gethostbyname(args.hostname)
 
         range = netaddr.IPRange(args.fip_pool_start, args.fip_pool_end)
-        vars['control_plane_ip'] = range[0]
-        vars['external_start'] = range[1]
+        vars['external_start'] = range[0]
         vars['external_end'] = range[-1]
 
         self._create_dir('dev-install')
