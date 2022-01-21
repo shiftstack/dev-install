@@ -6,12 +6,14 @@ compute:
     openstack:
       zones: []
       additionalNetworkIDs: []
-  replicas: 3
+      type: m1.large
+  replicas: 2
 controlPlane:
   name: master
   platform:
     openstack:
       zones: []
+      type: m1.xlarge
   replicas: 3
 metadata:
   name: "ostest"
@@ -27,7 +29,7 @@ platform:
     cloud:        	   "{{ cloud }}"
     externalNetwork:   "external"
     region:       	   "regionOne"
-    computeFlavor:	   "m1.xlarge"
+    computeFlavor:     "m1.xlarge"
     lbFloatingIP: 	   "{{ api_fip }}"
     ingressFloatingIP: "{{ ingress_fip }}"
     externalDNS:  	   ["1.1.1.1"]
