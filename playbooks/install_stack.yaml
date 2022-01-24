@@ -465,13 +465,23 @@
     become: true
     become_user: root
 
+  - name: Block to figure out if --standalone needs to be passed when deploying tripleo
+    when:
+    - ansible_facts.distribution == 'CentOS'
+    block:
+      - name: Check if the version of TripleO is recent enough to remove --standalone argument
+        set_fact:
+          standalone_toggle: false
+        when:
+        - (tripleo_repos_branch is defined and tripleo_repos_branch not in ['train', 'ussuri', 'victoria']) or (tripleo_repos_branch is not defined)
+
   - name: Run TripleO deploy
     import_role:
       name: tripleo.operator.tripleo_deploy
     vars:
       openstack_bin: sudo openstack
       tripleo_deploy_deployment_user: stack
-      tripleo_deploy_standalone: true
+      tripleo_deploy_standalone: "{{ standalone_toggle | default(true) }}"
       tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
       tripleo_deploy_local_ip: "{{ local_ip }}"
       tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
