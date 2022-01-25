@@ -15,3 +15,5 @@ jobs:
         targets: |
           playbooks/*.yaml
         args: "-x 602"
+        override-deps: |
+          rich>=9.5.1,<11.0.0
