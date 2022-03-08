@@ -60,6 +60,23 @@ This will configure your local clouds.yaml with 2 entries:
 You can change the name of these entries by editing `local-overrides.yaml` and
 setting `local_cloudname` to something else.
 
+## Validating the installation
+
+dev-install provides an additional playbook to validate the fresh deployment.
+This can be run with:
+
+```
+make prepare_stack_testconfig
+```
+
+This can be used to configure some helpful defaults for validating your
+cluster, namely:
+
+- Configure SSH access
+- Configure routers and security groups to allow external network connectivity
+  for created guests
+- Upload a Cirros image
+
 ## Network configuration
 
 dev-install will create a new OVS bridge called br-ex and move the host's
