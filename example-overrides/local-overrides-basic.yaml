@@ -1,0 +1,13 @@
+# A sample local-overrides.yaml that configures a "basic" deployment.
+# The default services are enabled and an external network is created, allowing
+# for e.g. SSH access to guests. Note that IP addresses are clearly deployment
+# specific and should be updated to reflect your environment.
+standalone_host: openstack.example.com
+ceph_devices:
+  - /dev/sdb
+external_cidr: 10.1.10.2/24
+external_fip_pool_start: 10.1.10.100
+external_fip_pool_end: 10.1.10.104
+external_gateway: 10.1.10.254
+public_api: 10.1.240.48
+local_cloudname: example-cloud
