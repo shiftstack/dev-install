@@ -29,7 +29,15 @@ network_config:
     members:
     - type: interface
       name: {{ dpdk_interface }}
-      mtu: 9000
+      mtu: {{ dcn_az is defined | ternary(8900, 9000) }}
+{% for ip in tunnel_remote_ips %}
+    - type: ovs_tunnel
+      name: "tun-hostonly-{{ ip | to_uuid }}"
+      tunnel_type: vxlan
+      ovs_options:
+        - remote_ip={{ ip }}
+        - key=101
+{% endfor %}
 {% if sriov_interface is defined %}
 - type: sriov_pf
   name: {{ sriov_interface }}
