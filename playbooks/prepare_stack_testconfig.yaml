@@ -33,7 +33,7 @@
       set -e -o pipefail
 
       if ! openstack keypair show default >/dev/null; then
-          openstack keypair create --public-key {{ testconfig_public_key_copy.path }} default
+          openstack keypair create --public-key {{ testconfig_public_key_copy.dest }} default
       fi
       if ! openstack network show private >/dev/null; then
           openstack network create --internal private
