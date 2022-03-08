@@ -107,6 +107,7 @@
   - name: Ensure that container-tools 3.0 is being used
     when:
       - ansible_facts.distribution == 'CentOS'
+      - ansible_facts.distribution_major_version == "8"
     shell: |
       dnf module disable -y container-tools:rhel8
       dnf module enable -y container-tools:3.0

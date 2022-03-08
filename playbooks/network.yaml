@@ -127,7 +127,7 @@
     vars:
       checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"
 
-  # We have seen this creating a CentOS8 VM in OpenStack. We don't understand
+  # We have seen this creating a CentOS VM in OpenStack. We don't understand
   # why they are created. Specifically we see a phantom ens3 device. It's
   # possible they are baked into the image?
   #

@@ -167,7 +167,7 @@ kernel_services:
 #kernel_args:
 
 # This should not be changed unless you know what you're doing
-# because CentOS8 stream is now the only distro supported when deploying
+# because CentOS stream is now the only distro supported when deploying
 # TripleO from upstream.
 tripleo_repos_stream: true
 

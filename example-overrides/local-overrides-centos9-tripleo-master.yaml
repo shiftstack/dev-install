@@ -1,0 +1,8 @@
+standalone_host: <standalone FQDN>
+public_api: <IP address used to reach the node>
+tripleo_repos_repo_branch: master
+cip_config:
+  - set:
+      namespace: quay.io/tripleomastercentos9
+      name_prefix: openstack-
+      tag: current-tripleo
