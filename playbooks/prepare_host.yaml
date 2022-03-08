@@ -165,7 +165,7 @@
           needs-restarting -r
         register: needs_reboot
         # the commands can return non-zero codes if reboot is needed
-        ignore_errors: true
+        failed_when: needs_reboot.rc != 0 and needs_reboot.rc != 1
       - name: Reboot if we updated packages # noqa 503
         reboot:
         when: needs_reboot.rc == 1 or ((grub_output.stdout_lines | length) > 1)
