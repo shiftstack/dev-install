@@ -1,13 +1,13 @@
 #vi:syntax=yaml
 ---
 network_config:
-{% if network_config is defined %}
-{{ network_config | to_nice_yaml }}
-{% else %}
 - type: interface
   name: {{ network_info.public_ipv4.interface }}
   use_dhcp: true
   mtu: {{ network_info.public_ipv4.mtu }}
+{% if network_config is defined %}
+{{ network_config | to_nice_yaml }}
+{% else %}
 - type: interface
   name: dummy0
   use_dhcp: false
