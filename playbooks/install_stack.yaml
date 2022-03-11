@@ -38,6 +38,10 @@
   - name: Enable OVN DVR HA by default when deploying DCN
     when:
       - dcn_az is defined
+      # With OVS-DPDK, there is a performance degradation of services that use tap devices
+      # such as Distributed Virtual Routing (DVR). The resulting performance is not suitable
+      # for a production environment. 
+      - dpdk_interface is not defined
       - ovn_enabled
     block:
     - name: Add OVN DVR HA services
