@@ -10,7 +10,7 @@ jobs:
     - name: checks-out the repository under $GITHUB_WORKSPACE
       uses: actions/checkout@v2
     - name: run ansible-lint
-      uses: ansible/ansible-lint-action@master
+      uses: ansible/ansible-lint-action@main
       with:
         targets: |
           playbooks/*.yaml
