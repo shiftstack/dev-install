@@ -32,9 +32,7 @@
       enabled: true
       state: started
 
-  - name: Define dummy interfaces to be created when not using DPDK
-    when:
-    - dpdk_interface is not defined
+  - name: Define dummy interfaces to be created
     set_fact:
       nmstate_ifs: |
         - name: dummy0
@@ -49,22 +47,6 @@
           state: up
           ipv4:
             enabled: false
-          ipv6:
-            enabled: false
-
-  - name: Define dummy interfaces to be created when using DPDK
-    when:
-    - dpdk_interface is defined
-    set_fact:
-      nmstate_ifs: |
-        - name: dummy0
-          type: dummy
-          state: up
-          ipv4:
-            enabled: true
-            address:
-            - ip: {{ local_ip }}
-              prefix-length: {{ control_plane_prefix | int }}
           ipv6:
             enabled: false
 

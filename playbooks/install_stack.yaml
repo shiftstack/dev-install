@@ -190,14 +190,10 @@
         become: true
         become_user: root
 
-  - name: set fact for dev-install_net_config template
-    set_fact:
-      net_config_template: "{{ dpdk_interface is defined | ternary('dev-install_net_config_dpdk.yaml.j2', 'dev-install_net_config.yaml.j2') }}"
-
   - name: Create dev-install_net_config.yaml
     template:
       mode: 0644
-      src: "{{ net_config_template }}"
+      src: dev-install_net_config.yaml.j2
       dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
   - name: Read dev-install_net_config.yaml
