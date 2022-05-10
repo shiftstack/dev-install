@@ -121,6 +121,7 @@
   # resolv.conf
   - name: Enable NetworkManager ownership of resolv.conf
     when:
+      - false
       - ansible_facts.distribution == 'CentOS'
     block:
       - name: Set main/dns=default in NetworkManager
