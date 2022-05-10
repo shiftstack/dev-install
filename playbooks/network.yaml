@@ -102,7 +102,7 @@
     vars:
       primary_nic: "{{ [ network_info.public_ipv4.interface ] }}"
       removed:
-        state: absent
+        state: up
 
   - name: Log target nmstate
     debug:
