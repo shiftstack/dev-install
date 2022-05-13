@@ -41,6 +41,7 @@ network_config:
   - br-set-external-id br-hostonly bridge-id br-hostonly
   addresses:
   - ip_netmask: {{ hostonly_gateway }}/32
+  - ip_netmask: {{ hostonly_v6_gateway }}/64
   routes:
   - destination: {{ hostonly_cidr }}
     nexthop: {{ hostonly_gateway }}

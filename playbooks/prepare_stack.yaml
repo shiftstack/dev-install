@@ -128,6 +128,12 @@
               --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
               --network hostonly
       fi
+      if ! openstack subnet show hostonly-subnet-v6; then
+          openstack subnet create --project openshift hostonly-subnet-v6 --subnet-range "{{ hostonly_v6_cidr }}" \
+              --dhcp --gateway "{{ hostonly_v6_gateway }}" \
+              --allocation-pool "start={{ hostonly_v6_fip_pool_start }},end={{ hostonly_v6_fip_pool_end }}" \
+              --network hostonly --ip-version 6 --ipv6-ra-mode dhcpv6-stateful --ipv6-address-mode dhcpv6-stateful
+      fi
     environment:
       OS_CLOUD: standalone
 
@@ -161,6 +167,7 @@
       if ! openstack security group show allow_ping; then
           openstack security group create allow_ping --project openshift
           openstack security group rule create --protocol icmp --project openshift allow_ping
+          openstack security group rule create --protocol ipv6-icmp --project openshift allow_ping
       fi
     environment:
       OS_CLOUD: standalone

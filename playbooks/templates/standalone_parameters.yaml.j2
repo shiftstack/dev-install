@@ -49,6 +49,12 @@ parameter_defaults:
 {% endfor %}
   # needed for vip & pacemaker
   KernelIpNonLocalBind: 1
+  # For OSP16
+  ExtraSysctlSettings:
+    net.ipv6.conf.all.forwarding:
+      value: 1
+  # For OSP17 and beyond
+  KernelIpv6ConfAllForwarding: 1
   DockerInsecureRegistryAddress:
     - {{ control_plane_ip }}:8787
   # domain name used by the host
