@@ -4,7 +4,6 @@
   become_user: root
   gather_facts: true
   vars_files: vars/defaults.yaml
-
   tasks:
 
   - name: Create the stack user
@@ -121,15 +120,14 @@
   # resolv.conf
   - name: Enable NetworkManager ownership of resolv.conf
     when:
-      - false
       - ansible_facts.distribution == 'CentOS'
     block:
-      - name: Set main/dns=default in NetworkManager
+      - name: Set main/dns in NetworkManager
         ini_file:
           path: /etc/NetworkManager/conf.d/99-cloud-init.conf
           section: main
           option: dns
-          value: default
+          value: "{{ nm_dns | default('default')}}"
           mode: 0644
       - name: Reload NetworkManager to regenerate resolv.conf
         systemd:

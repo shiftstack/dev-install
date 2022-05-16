@@ -13,17 +13,17 @@
     setup:
       filter: ansible_env
 
-  - name: Create openshift user without any admin privileges # noqa 301
+  - name: "Create {{ os_user }} user without any admin privileges" # noqa 301
     shell: |
-      if ! openstack project show openshift; then
-          openstack project create openshift
+      if ! openstack project show {{ os_project }}; then
+          openstack project create {{ os_project }}
       fi
-      if ! openstack user show openshift; then
-          openstack user create --password '{{ openshift_password }}' openshift
+      if ! openstack user show {{ os_user }}; then
+          openstack user create --password '{{ os_password }}' {{ os_user }}
       fi
       for r in _member_ member; do
           if openstack role show $r; then
-              openstack role add --user openshift --project openshift $r
+              openstack role add --user {{ os_user }} --project {{ os_user }} $r
           fi
       done
 
@@ -53,13 +53,13 @@
           --routers -1 \
           --rbac-policies -1 \
           --subnetpools -1 \
-          openshift
+          {{ os_user }}
 
     environment:
       OS_CLOUD: standalone
 
-  - name: Add swiftoperator role for openshift user
-    command: openstack role add --user openshift --project openshift swiftoperator
+  - name: Add swiftoperator role for {{ os_user }} user
+    command: openstack role add --user {{ os_user }} --project {{ os_project }} swiftoperator
     environment:
       OS_CLOUD: standalone
     when: swiftoperator_enabled
@@ -119,10 +119,10 @@
   - name: Create hostonly network # noqa 301
     shell: |
       if ! openstack network show hostonly; then
-          openstack network create --project openshift --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
+          openstack network create --project {{ os_project }} --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
       fi
       if ! openstack subnet show hostonly-subnet; then
-          openstack subnet create --project openshift hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
+          openstack subnet create --project {{ os_project }} hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
               --dhcp --gateway "{{ hostonly_gateway }}" \
               --dns-nameserver "{{ network_info.dns | first }}" \
               --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
@@ -141,10 +141,10 @@
     when: sriov_interface is defined
     shell: |
       if ! openstack network show hostonly-sriov; then
-          openstack network create --project openshift --share --external --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
+          openstack network create --project {{ os_project }} --share --external --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
       fi
       if ! openstack subnet show hostonly-sriov-subnet; then
-          openstack subnet create --project openshift hostonly-sriov-subnet --subnet-range "{{ hostonly_sriov_cidr }}" \
+          openstack subnet create --project {{ os_project }} hostonly-sriov-subnet --subnet-range "{{ hostonly_sriov_cidr }}" \
               --no-dhcp --gateway "{{ hostonly_sriov_gateway }}" \
               --dns-nameserver "{{ network_info.dns | first }}" \
               --allocation-pool "start={{ hostonly_sriov_fip_pool_start }},end={{ hostonly_sriov_fip_pool_end }}" \
@@ -156,8 +156,8 @@
   - name: Create basic security group which allows SSH # noqa 301
     shell: |
       if ! openstack security group show allow_ssh; then
-          openstack security group create allow_ssh --project openshift
-          openstack security group rule create --protocol tcp --dst-port 22 --project openshift allow_ssh
+          openstack security group create allow_ssh --project {{ os_project }}
+          openstack security group rule create --protocol tcp --dst-port 22 --project {{ os_project }} allow_ssh
       fi
     environment:
       OS_CLOUD: standalone
@@ -165,9 +165,9 @@
   - name: Create basic security group which allows ping # noqa 301
     shell: |
       if ! openstack security group show allow_ping; then
-          openstack security group create allow_ping --project openshift
-          openstack security group rule create --protocol icmp --project openshift allow_ping
-          openstack security group rule create --protocol ipv6-icmp --project openshift allow_ping
+          openstack security group create allow_ping --project {{ os_project }}
+          openstack security group rule create --protocol icmp --project {{ os_project }} allow_ping
+          openstack security group rule create --protocol ipv6-icmp --project {{ os_project }} allow_ping
       fi
     environment:
       OS_CLOUD: standalone
@@ -214,7 +214,7 @@
 
     - name: Increase default quotas for shares and snapshots
       shell: |
-        manila quota-update --shares 150 --snapshots 150 openshift
+        manila quota-update --shares 150 --snapshots 150 {{ os_project }}
       environment: "{{ legacy_vars }}"
       vars:
         legacy_vars: "{{ os_env_vars.stdout | from_json }}"
@@ -239,11 +239,11 @@
       openshift:
         auth:
           auth_url: "{{ standalone['auth']['auth_url'] }}"
-          password: "{{ openshift_password }}"
+          password: "{{ os_password }}"
           project_domain_name: Default
-          project_name: openshift
+          project_name: "{{ os_project }}"
           user_domain_name: Default
-          username: openshift
+          username: "{{ os_user }}"
         cacert: "{{ standalone['cacert'] }}"
         identity_api_version: "{{ standalone['identity_api_version'] }}"
         volume_api_version: "{{ standalone['volume_api_version'] | default('3') }}"

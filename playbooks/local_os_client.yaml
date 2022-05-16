@@ -106,7 +106,7 @@
 
   - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}_openshift
     set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, set_cacert, recursive=true) }}"
+      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_' + os_project: openshift}}, set_cacert, recursive=true) }}"
     vars:
       openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] | combine(set_cacert) }}"
     when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
@@ -116,6 +116,7 @@
       dest: "{{ cloudsyamlpath }}"
       content: "{{ cloudsyaml | to_nice_yaml }}"
       mode: 0755
+    when: manage_cloudsyaml | default(true)
 
   - name: Install openstack client locally
     pip:
