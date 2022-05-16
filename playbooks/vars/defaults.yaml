@@ -53,7 +53,7 @@ external_gateway: "{{ network_info.public_ipv4.gateway }}"
 # external_fip_pool_start
 # external_fip_pool_end
 
-# The `hostonly` provider network
+# The `hostonly` dual-stack provider network
 # This will always be created. It creates a provider network which is local to
 # the host, and not externally routable.
 # The routable cidr of the hostonly network, even if we can't use all of it.
@@ -64,6 +64,11 @@ hostonly_gateway: "{{ hostonly_cidr | nthhost(1) }}"
 # The range of allocatable FIPs within hostonly_cidr
 hostonly_fip_pool_start: "{{ hostonly_cidr | nthhost(2) }}"
 hostonly_fip_pool_end: "{{ hostonly_cidr | nthhost(-2) }}"
+# Same for IPv6
+hostonly_v6_cidr: 2001:db8::/64
+hostonly_v6_gateway: "{{ hostonly_v6_cidr | nthhost(1) }}"
+hostonly_v6_fip_pool_start: "{{ hostonly_v6_cidr | nthhost(2) }}"
+hostonly_v6_fip_pool_end: "{{ hostonly_v6_cidr | nthhost(-2) }}"
 
 # `hostonly` variants
 hostonly_sriov_cidr: 192.168.26.0/24
