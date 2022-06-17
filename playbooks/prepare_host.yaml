@@ -81,7 +81,7 @@
 
       - name: Download container_image_prepare.yaml for "{{ puddle }}"
         get_url:
-          url: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack/{{ rhos_release }}-RHEL-8/{{ puddle }}/container_image_prepare.yaml"
+          url: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack/{{ rhos_release }}-RHEL-{{ ansible_facts.distribution_major_version }}/{{ puddle }}/container_image_prepare.yaml"
           dest: /home/stack/container_image_prepare.yaml
           owner: stack
           group: stack
