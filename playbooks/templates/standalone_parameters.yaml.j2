@@ -109,10 +109,10 @@ parameter_defaults:
     tripleo_kernel_defer_reboot: true
 
 {% if ceph_enabled %}
-  {% if ceph_ansible_enabled %}
-{% include "standalone_parameters.ceph_ansible.yaml.j2" %}
-  {% else %}
+  {% if ceph_adm_enabled %}
 {% include "standalone_parameters.cephadm.yaml.j2" %}
+  {% else %}
+{% include "standalone_parameters.ceph_ansible.yaml.j2" %}
   {% endif %}
 
   CephPoolDefaultPgNum: 8
