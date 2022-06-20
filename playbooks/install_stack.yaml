@@ -162,28 +162,28 @@
   - name: Prepare the deployment for Ceph
     when: ceph_enabled
     block:
-      - name: Check if ceph-ansible can be used to deploy Ceph
+      - name: Check if ceph-adm can be used to deploy Ceph
         stat:
-          path: /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible
+          path: /usr/share/openstack-tripleo-heat-templates/environments/cephadm
         register: st_ceph
-      - name: Create ceph_ansible_enabled fact
+      - name: Create ceph_adm_enabled fact
         set_fact:
-          ceph_ansible_enabled: "{{ st_ceph.stat.isdir is defined and st_ceph.stat.isdir }}"
+          ceph_adm_enabled: "{{ st_ceph.stat.isdir is defined and st_ceph.stat.isdir }}"
       - name: Show a message when ceph_devices is used but empty
         debug:
           msg: >
             ceph_devices contains a list of disks but cephadm is going to use all available SSD/NVME disks.
             Set the param to true to skip this message or remove it if you don't have available SSD/NVME disks.
         when:
-          - not ceph_ansible_enabled
+          - ceph_adm_enabled
           - ceph_devices is defined
           - ceph_devices is not true
           - (ceph_devices | length) > 0
       - name: Create ceph facts
         set_fact:
-          ceph_env_base: "{{ ceph_ansible_enabled | ternary('ceph-ansible', 'cephadm') }}"
-          ceph_env_name: "{{ ceph_ansible_enabled | ternary('ceph-ansible', 'cephadm-rbd-only') }}"
-      - name: "Install {{ ceph_package }}"
+          ceph_env_base: "{{ ceph_adm_enabled | ternary('cephadm', 'ceph-ansible') }}"
+          ceph_env_name: "{{ ceph_adm_enabled | ternary('cephadm-rbd-only', 'ceph-ansible') }}"
+      - name: "Install ceph package"
         yum:
           name:
           - "{{ ceph_env_base }}"
