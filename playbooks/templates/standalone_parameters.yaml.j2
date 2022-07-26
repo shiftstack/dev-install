@@ -38,6 +38,11 @@ resource_registry:
   OS::TripleO::Services::SwiftStorage: OS::Heat::None
 {% endif %}
 {% endif %}
+{% if extra_heat_resource_registry is defined %}
+{% for key, value in extra_heat_resource_registry.items() %}
+  {{ key }}: {{ value }}
+{% endfor %}
+{% endif %}
 parameter_defaults:
   CloudName: {{ hostname }}.{{ clouddomain }}
   ContainerCli: podman
