@@ -116,15 +116,10 @@ parameter_defaults:
     tripleo_kernel_defer_reboot: true
 
 {% if ceph_enabled %}
-  {% if ceph_adm_enabled %}
-{% include "standalone_parameters.cephadm.yaml.j2" %}
-  {% else %}
+  {% if not ceph_adm_enabled %}
 {% include "standalone_parameters.ceph_ansible.yaml.j2" %}
   {% endif %}
 
-  CephPoolDefaultPgNum: 8
-  CephPoolDefaultSize: 1
-  CephSpecFqdn: true
   NovaComputeStartupDelay: 180
 
   # Don't use ceph for local ephemeral storage by default: its performance is

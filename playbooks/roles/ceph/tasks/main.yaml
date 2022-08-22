@@ -1,0 +1,121 @@
+- name: Tasks for ceph-adm
+  when: ceph_adm_enabled
+  block:
+    - name: Set facts for ceph-adm
+      ansible.builtin.set_fact:
+        stack: standalone
+        mon_ip: "{{ local_ip }}"
+        ceph_network: "{{ control_plane_cidr }}"
+        network_data: "{{ ansible_env.HOME }}/network_data.yaml"
+        deployed_network: "{{ ansible_env.HOME }}/deployed_network.yaml"
+        osd_spec: "{{ ansible_env.HOME }}/osd_spec.yaml"
+        initial_ceph_conf: "{{ ansible_env.HOME }}/initial_ceph.conf"
+        ceph_spec: "{{ ansible_env.HOME }}/ceph_spec.yaml"
+        containers_prep: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+        deployed_ceph: "{{ ansible_env.HOME }}/deployed_ceph.yaml"
+
+    - name: Configure Storage Network
+      ansible.builtin.include_tasks: storage-network.yml
+      vars:
+        interface: br-ctlplane
+        dummy_ip_cidr: "{{ mon_ip ~ '/' ~ control_plane_prefix | string }}"
+        dummy_vip: "{{ control_plane_ip }}"
+        start: "{{ control_plane_cidr | nthhost(4) }}"
+        end: "{{ control_plane_cidr | nthhost(250) }}"
+
+    - name: Create OSD spec file
+      ansible.builtin.copy:
+        dest: "{{ osd_spec }}"
+        content: |
+          data_devices:
+            paths:
+          {% if ceph_devices is defined and ceph_devices | length > 0 %}
+              {% for d in ceph_devices %}
+              - {{ d }}
+              {% endfor %}
+          {% else %}
+              - /dev/vg_ceph/data
+          {% endif %}
+        mode: '644'
+
+    - name: Create initial ceph.conf file
+      ansible.builtin.copy:
+        dest: "{{ initial_ceph_conf }}"
+        content: |
+          [global]
+          osd_crush_chooseleaf_type = 0
+          osd pool default size = 1
+          [mon]
+          mon_warn_on_pool_no_redundancy = false
+          [mgr]
+          mgr/cephadm/log_to_cluster_level = debug
+        mode: '644'
+
+    - name: Create Ceph Spec file via tripleo-operator-ansible
+      collections:
+        - tripleo.operator
+      ansible.builtin.include_role:
+        name: tripleo_ceph_spec
+      vars:
+        tripleo_ceph_spec_standalone: true
+        tripleo_ceph_spec_overwrite: true
+        tripleo_ceph_spec_mon_ip: "{{ mon_ip }}"
+        tripleo_ceph_spec_stack: "{{ stack }}"
+        tripleo_ceph_spec_file: "{{ ceph_spec }}"
+        tripleo_ceph_spec_osd_spec: "{{ osd_spec }}"
+        tripleo_ceph_spec_debug: true
+        tripleo_ceph_spec_generate_scripts: true
+
+    - name: Create ceph-admin user via tripleo-operator-ansible
+      collections:
+        - tripleo.operator
+      ansible.builtin.include_role:
+        name: tripleo_ceph_user
+      vars:
+        tripleo_ceph_user_spec: "{{ ceph_spec }}"
+        tripleo_ceph_user_enable: true
+        tripleo_ceph_user_stack: "{{ stack }}"
+        tripleo_ceph_user_standalone: true
+        tripleo_ceph_user_debug: true
+        tripleo_ceph_user_generate_scripts: true
+
+    - name: Deploy Ceph via tripleo-operator-ansible
+      collections:
+        - tripleo.operator
+      ansible.builtin.include_role:
+        name: tripleo_ceph_deploy
+      vars:
+        tripleo_ceph_deploy_standalone: true
+        tripleo_ceph_deploy_single_host_defaults: true
+        tripleo_ceph_deploy_skip_user_create: true
+        tripleo_ceph_deploy_skip_hosts_config: true
+        tripleo_ceph_deploy_skip_container_registry_config: true
+        tripleo_ceph_deploy_mon_ip: "{{ mon_ip }}"
+        tripleo_ceph_deploy_spec: "{{ ceph_spec }}"
+        tripleo_ceph_deploy_stack: "{{ stack }}"
+        tripleo_ceph_deploy_config: "{{ initial_ceph_conf }}"
+        tripleo_ceph_deploy_output: "{{ deployed_ceph }}"
+        tripleo_ceph_deploy_container_image_prepare: "{{ containers_prep }}"
+        tripleo_ceph_deploy_cephadm_extra_args: "--log-to-file --skip-mon-network"
+        tripleo_ceph_deploy_force: true
+        tripleo_ceph_deploy_become: true
+        tripleo_ceph_deploy_overwrite: true
+        tripleo_ceph_deploy_debug: true
+        tripleo_ceph_deploy_generate_scripts: true
+        tripleo_ceph_deploy_network_data: "{{ network_data }}"
+        tripleo_ceph_deploy_cluster_network_name: storage
+
+- name: Add ceph to enabled services
+  ansible.builtin.set_fact:
+    service_envs: "{{ service_envs | union(ceph_env) }}"
+  vars:
+    ceph_env:
+      - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
+
+- name: Add ceph network to enabled services
+  when: ceph_adm_enabled
+  ansible.builtin.set_fact:
+    service_envs: "{{ service_envs | union(deployed_ceph_envs) }}"
+  vars:
+    deployed_ceph_envs:
+      - "{{ deployed_ceph }}"

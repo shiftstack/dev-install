@@ -1,0 +1,76 @@
+---
+- name: Create network_data file
+  ansible.builtin.copy:
+    dest: "{{ network_data }}"
+    mode: '644'
+    content: |
+      - name: Storage
+        mtu: 1350
+        vip: true
+        name_lower: storage
+        dns_domain: storage.mydomain.tld.
+        service_net_map_replace: storage
+        subnets:
+          storage_subnet:
+            ip_subnet: '{{ ceph_network }}'
+            allocation_pools: [{'start': '{{ start }}', 'end': '{{ end }}'}]
+
+- name: Create deployed_network environment file (with VIPs)
+  ansible.builtin.copy:
+    dest: "{{ deployed_network }}"
+    mode: '644'
+    content: |
+      resource_registry:
+        OS::TripleO::Network::Ports::ControlPlaneVipPort: /usr/share/openstack-tripleo-heat-templates/network/ports/deployed_vip_ctlplane.yaml
+        OS::TripleO::Network::Ports::StorageVipPort: network/ports/deployed_vip_storage.yaml
+        OS::TripleO::Network: /usr/share/openstack-tripleo-heat-templates/network/deployed_networks.yaml
+      parameter_defaults:
+        NodePortMap:
+          standalone:
+            ctlplane:
+              ip_address: {{ local_ip }}
+              ip_subnet: {{ local_ip }}/{{ control_plane_prefix }}
+              ip_address_uri: {{ local_ip }}
+            storage:
+              ip_address: {{ mon_ip }}
+              ip_subnet: {{ dummy_ip_cidr }}
+              ip_address_uri: {{ mon_ip }}
+        ControlPlaneVipData:
+          fixed_ips:
+            - ip_address: {{ control_plane_ip }}
+          name: control_virtual_ip
+          network:
+            tags:
+              - "{{ control_plane_cidr }}"
+          subnets:
+            - ip_version: 4
+        VipPortMap:
+          storage:
+            ip_address: {{ dummy_vip }}
+            ip_address_uri: {{ dummy_vip }}
+            ip_subnet: {{ dummy_vip ~ '/' ~ control_plane_prefix | string }}
+        DeployedNetworkEnvironment:
+          net_attributes_map:
+            storage:
+              network:
+                dns_domain: storage.mydomain.tld.
+                mtu: 1350
+                name: storage
+                tags:
+                  - tripleo_network_name=Storage
+                  - tripleo_net_idx=0
+                  - tripleo_service_net_map_replace=storage
+                  - tripleo_vip=true
+              subnets:
+                storage_subnet:
+                  cidr: {{ ceph_network }}
+                  dns_nameservers: []
+                  gateway_ip: null
+                  host_routes: []
+                  ip_version: 4
+                  name: storage_subnet
+          net_cidr_map:
+            storage:
+              - {{ ceph_network }}
+          net_ip_version_map:
+            storage: 4
