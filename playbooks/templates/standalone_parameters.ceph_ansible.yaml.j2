@@ -1,5 +1,9 @@
 #vi:syntax=yaml
 
+  CephPoolDefaultPgNum: 8
+  CephPoolDefaultSize: 1
+  CephSpecFqdn: true
+
 {% if ceph_devices is defined %}
   CephAnsibleDisksConfig:
     osd_scenario: lvm

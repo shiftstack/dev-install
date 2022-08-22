@@ -198,6 +198,11 @@
         src: "{{ net_config_template }}"
         dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
+    - name: Run os-net-config # noqa no-changed-when
+      ansible.builtin.command: "os-net-config --exit-on-validation-errors -d -c {{ ansible_env.HOME }}/dev-install_net_config.yaml"
+      become: true
+      become_user: root
+
     - name: Read dev-install_net_config.yaml
       ansible.builtin.slurp:
         src: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
@@ -375,14 +380,6 @@
         owner: stack
         mode: '644'
 
-    - name: Add ceph to enabled services
-      ansible.builtin.set_fact:
-        service_envs: "{{ service_envs | union(ceph_env) }}"
-      vars:
-        ceph_env:
-          - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
-      when: ceph_enabled
-
     - name: Install tuned cpu partionioning profile
       ansible.builtin.yum:
         name:
@@ -473,6 +470,12 @@
             standalone_toggle: false
           when:
             - (tripleo_repos_branch is defined and tripleo_repos_branch not in ['train', 'ussuri', 'victoria']) or (tripleo_repos_branch is not defined)
+
+    - name: Deploy Ceph
+      ansible.builtin.include_role:
+        name: ceph
+      when:
+        - ceph_enabled
 
     - name: Run TripleO deploy
       ansible.builtin.import_role:
