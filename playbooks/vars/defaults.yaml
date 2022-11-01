@@ -229,4 +229,11 @@ ovn_enabled: true
 # over VXLAN. For PEK2 DSAL boxes you might need to bump that value to e.g.
 # 1350 as apprently there are packets flying with 1260 (and 1300 will give you
 # 1242 on Neutron network which won't be enough).
+# 
+# The default value can be problematic when doing double encapsulaiton with OVN,
+# the value will have to be increased. See the following bug report:
+# https://issues.redhat.com/browse/OCPBUGS-2921
 neutron_mtu: 1300
+ctlplane_mtu: "{{ neutron_mtu + 100 }}"
+hostonly_mtu: "{{ neutron_mtu + 100 }}"
+public_mtu: "{{ ctlplane_mtu + 100 }}"

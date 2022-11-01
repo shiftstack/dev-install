@@ -4,13 +4,14 @@ network_config:
 - type: ovs_bridge
   name: br-ex
   use_dhcp: true
-  mtu: {{ network_info.public_ipv4.mtu }}
+  mtu: {{ public_mtu }}
   ovs_extra:
   - br-set-external-id br-ex bridge-id br-ex
   members:
   - type: interface
     name: {{ network_info.public_ipv4.interface }}
     primary: true
+    mtu: {{ public_mtu }}
 {% if network_config is defined %}
 {{ network_config | to_nice_yaml }}
 {% else %}
@@ -25,7 +26,7 @@ network_config:
   - type: interface
     name: dummy0
     nm_controlled: true
-    mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
+    mtu: {{ dcn_az is defined | ternary(ctlplane_mtu, public_mtu) }}
 {% for ip in tunnel_remote_ips %}
   - type: ovs_tunnel
     name: "tun-ctlplane-{{ ip | to_uuid }}"
@@ -57,7 +58,7 @@ network_config:
   - type: interface
     name: dummy1
     nm_controlled: true
-    mtu: {{ dcn_az is defined | ternary(1400, 1500) }}
+    mtu: {{ dcn_az is defined | ternary(hostonly_mtu, public_mtu) }}
 {% if sriov_interface is defined %}
 - type: sriov_pf
   name: {{ sriov_interface }}
