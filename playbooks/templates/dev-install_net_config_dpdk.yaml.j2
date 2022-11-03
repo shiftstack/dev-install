@@ -4,7 +4,7 @@ network_config:
 - type: interface
   name: {{ network_info.public_ipv4.interface }}
   use_dhcp: true
-  mtu: {{ network_info.public_ipv4.mtu }}
+  mtu: {{ public_mtu }}
 {% if network_config is defined %}
 {{ network_config | to_nice_yaml }}
 {% else %}
