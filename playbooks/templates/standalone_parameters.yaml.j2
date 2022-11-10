@@ -62,6 +62,7 @@ parameter_defaults:
   NeutronDnsDomain: {{ clouddomain }}
   NeutronBridgeMappings: {{ neutron_bridge_mappings }}
   NeutronFlatNetworks: {{ neutron_flat_networks }}
+  NeutronGlobalPhysnetMtu: {{ neutron_mtu }}
 {% if sriov_interface is defined %}
   OVNCMSOptions: "enable-chassis-as-gw"
 {% if neutron_physical_dev_mappings is defined %}
@@ -165,7 +166,6 @@ parameter_defaults:
   NovaComputeAvailabilityZone: {{ dcn_az }}
   NovaCrossAZAttach: false
   OVNCMSOptions: "enable-chassis-as-gw,availability-zones={{ dcn_az }}"
-  NeutronGlobalPhysnetMtu: {{ neutron_mtu }}
 {% endif %}
 {% if standalone_extra_config|length > 0 or dcn_az is defined or manila_enabled %}
   StandaloneExtraConfig:
