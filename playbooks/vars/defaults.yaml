@@ -234,6 +234,6 @@ ovn_enabled: true
 # the value will have to be increased. See the following bug report:
 # https://issues.redhat.com/browse/OCPBUGS-2921
 neutron_mtu: 1300
-ctlplane_mtu: "{{ neutron_mtu + 100 }}"
-hostonly_mtu: "{{ neutron_mtu + 100 }}"
-public_mtu: "{{ ctlplane_mtu + 100 }}"
+ctlplane_mtu: "{{ neutron_mtu|int + 100 }}"
+hostonly_mtu: "{{ neutron_mtu|int + 100 }}"
+public_mtu: "{{ ctlplane_mtu|int + 100 }}"
