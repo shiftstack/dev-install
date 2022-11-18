@@ -39,6 +39,7 @@ resource_registry:
 {% endif %}
 {% endif %}
 {% if extra_heat_resource_registry is defined %}
+resource_registry:
 {% for key, value in extra_heat_resource_registry.items() %}
   {{ key }}: {{ value }}
 {% endfor %}
