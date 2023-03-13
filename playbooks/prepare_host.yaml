@@ -59,10 +59,13 @@
           - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
           disable_gpg_check: True
 
-      - name: Fetch the Red Hat root certificate
+      - name: Fetch the Red Hat root certificates
         get_url:
-          dest: /etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
-          url: https://password.corp.redhat.com/RH-IT-Root-CA.crt
+          dest: "/etc/pki/ca-trust/source/anchors/{{ item }}-IT-Root-CA.pem"
+          url: "https://certs.corp.redhat.com/certs/{{ item }}-IT-Root-CA.pem"
+        loop:
+          - 2015
+          - 2022
         register: rhca
 
       - name: Add the certificate to the local trust bundle
