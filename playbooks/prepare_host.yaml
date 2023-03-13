@@ -4,306 +4,305 @@
   become_user: root
   gather_facts: true
   vars_files: vars/defaults.yaml
-
+  name: Tasks for prepare the host
   tasks:
+    - name: Create the stack user
+      ansible.builtin.user:
+        name: stack
+        groups: wheel
 
-  - name: Create the stack user
-    user:
-      name: stack
-      groups: wheel
-
-  - name: Configure authorized SSH keys for stack user
-    when: (authorized_keys | length) > 0
-    authorized_key:
-      user: stack
-      state: present
-      key: "{{ item }}"
-    loop: "{{ authorized_keys }}"
-
-  - name: Make sure persistent NIC names is not disabled # noqa 301
-    shell: |
-      if grep -q net.ifnames=0 /etc/default/grub; then
-          sed -i 's/net.ifnames=0 //g' /etc/default/grub
-          for f in grub2 grub2-efi; do
-              grub2-mkconfig -o $(readlink -f /etc/$f.cfg)
-          done
-      fi
-    register: grub_output
-
-  - name: Prepare host on RHEL system with Subscription Manager
-    when:
-      - ansible_facts.distribution == 'RedHat'
-      - rhsm_enabled
-    block:
-      - name: Configure Red Hat Subscription Manager
-        import_role:
-          name: redhat-subscription
-      - name: Install container-tools module
-        shell: |
-          dnf module disable -y container-tools:rhel8
-          dnf module enable -y container-tools:"{{ rhsm_container_tools_version }}"
-      - name: Install virt module
-        shell: |
-          dnf module disable -y virt:rhel
-          dnf module enable -y virt:"{{ virt_release }}"
-
-  - name: Prepare host on RHEL system with rhos-release
-    when:
-      - ansible_facts.distribution == 'RedHat'
-      - not rhsm_enabled
-    block:
-      - name: install rhos-release
-        yum:
-          state: installed
-          name:
-          - http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
-          disable_gpg_check: True
-
-      - name: Fetch the Red Hat root certificates
-        get_url:
-          dest: "/etc/pki/ca-trust/source/anchors/{{ item }}-IT-Root-CA.pem"
-          url: "https://certs.corp.redhat.com/certs/{{ item }}-IT-Root-CA.pem"
-        loop:
-          - 2015
-          - 2022
-        register: rhca
-
-      - name: Add the certificate to the local trust bundle
-        shell: |
-          update-ca-trust enable
-          update-ca-trust extract
-        when: rhca.changed
-
-      - name: Configure rhos release "{{ rhos_release }}" and keep puddle name
-        shell: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
-        register: rhos_release_puddle
-
-      - name: Extract puddle name from rhos-release output
-        set_fact:
-          puddle: "{{ rhos_release_puddle.stdout_lines.0 }}"
-
-      - name: Download container_image_prepare.yaml for "{{ puddle }}"
-        get_url:
-          url: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack/{{ rhos_release }}-RHEL-{{ ansible_facts.distribution_major_version }}/{{ puddle }}/container_image_prepare.yaml"
-          dest: /home/stack/container_image_prepare.yaml
-          owner: stack
-          group: stack
-
-  # To ensure that our CentOS users are actually using Stream.
-  # TripleO Master only support Stream now.
-  - name: Migrate to CentOS Stream if not done already
-    when:
-      - ansible_facts.distribution == 'CentOS'
-      - ansible_facts.distribution_release != 'Stream'
-    shell: |
-      if ! rpm --query centos-stream-release; then
-          dnf -y swap centos-linux-repos centos-stream-repos
-          dnf -y distro-sync
-      fi
-    args:
-      warn: false
-    register: stream_output
-    changed_when: (stream_output.stdout_lines | length) > 1
-
-  # To get latest version of podman & dependencies we need this
-  # version for now.
-  - name: Ensure that container-tools 3.0 is being used
-    when:
-      - ansible_facts.distribution == 'CentOS'
-      - ansible_facts.distribution_major_version == "8"
-    shell: |
-      dnf module disable -y container-tools:rhel8
-      dnf module enable -y container-tools:3.0
-    args:
-      warn: false
-
-  # This fixes a bogus resolv.conf entry in the CentOS cloud image. The CentOS
-  # cloud image disables this in /etc/NetworkManager/conf.d/99-cloud-init.conf
-  # by setting [main]/dns=none. Here we replace it with the default, which
-  # re-enables NetworkManager's default behaviour of completely owning
-  # resolv.conf
-  - name: Enable NetworkManager ownership of resolv.conf
-    when:
-      - ansible_facts.distribution == 'CentOS'
-    block:
-      - name: Set main/dns=default in NetworkManager
-        ini_file:
-          path: /etc/NetworkManager/conf.d/99-cloud-init.conf
-          section: main
-          option: dns
-          value: default
-          mode: 0644
-      - name: Reload NetworkManager to regenerate resolv.conf
-        systemd:
-          name: NetworkManager
-          enabled: true
-          state: reloaded
-
-  - name: Prepare host on CentOS system
-    when:
-      - ansible_facts.distribution == 'CentOS'
-    block:
-      - name: configure tripleo repositories
-        import_role:
-          name: tripleo.operator.tripleo_repos
-
-  - name: Install dnf-utils
-    package:
-      name: dnf-utils
-      state: installed
-
-  - name: Upgrade all packages # noqa 403
-    yum:
-      name: '*'
-      state: latest
-
-  - name: Reboot the node when necessary
-    when:
-      # We don't need to reboot when these parameters are defined because
-      # we'll reboot after the tripleo deployment anyway. We're saving one reboot.
-      - not (sriov_interface is defined or dpdk_interface is defined or kernel_args is defined) or ((grub_output.stdout_lines | length) > 1)
-    block:
-      - name: Check if reboot is required # noqa 301
-        shell: |
-          needs-restarting -r
-        register: needs_reboot
-        # the commands can return non-zero codes if reboot is needed
-        failed_when: needs_reboot.rc != 0 and needs_reboot.rc != 1
-      - name: Reboot if we updated packages # noqa 503
-        reboot:
-        when: needs_reboot.rc == 1 or ((grub_output.stdout_lines | length) > 1)
-
-  - name: Set FQDN
-    set_fact:
-      fqdn: "{{ hostname }}.{{ clouddomain }}"
-
-  - name: Set hostname to "{{ fqdn }}"
-    hostname:
-      name: "{{ fqdn }}"
-
-  - name: Allow 'wheel' group to have passwordless sudo
-    lineinfile:
-      dest: /etc/sudoers
-      state: present
-      regexp: '^%wheel'
-      line: '%wheel ALL=(ALL) NOPASSWD: ALL'
-      validate: 'visudo -cf %s'
-
-  - name: Configure disks for local ephemeral storage
-    when:
-    - ephemeral_storage_devices|length > 0
-    block:
-    - name: Ensure we have lvm2
-      package:
-        name:
-          - lvm2
+    - name: Configure authorized SSH keys for stack user
+      when: (authorized_keys | length) > 0
+      ansible.posix.authorized_key:
+        user: stack
         state: present
-    - name: Create VG for local ephemeral storage
-      lvg:
-        vg: vg_nova
-        pvs: "{{ ephemeral_storage_devices | join(',') }}"
-    - name: Create LV for local ephemeral storage
-      lvol:
-        vg: vg_nova
-        lv: data
-        size: 100%VG
-    - name: Create XFS filesystem for local ephemeral storage
-      filesystem:
-        fstype: xfs
-        dev: /dev/vg_nova/data
-    - name: Create /var/lib/nova
-      file:
-        path: /var/lib/nova
-        state: directory
-        mode: 0755
-    - name: Mount /var/lib/nova
-      mount:
-        path: /var/lib/nova
-        src: /dev/vg_nova/data
-        fstype: xfs
-        state: mounted
+        key: "{{ item }}"
+      loop: "{{ authorized_keys }}"
 
-  - name: Prepare host for Ceph (loop device)
-    when:
-    - ceph_enabled
-    - ceph_devices is not defined
-    block:
-    - name: Make sure we have losetup installed/latest
-      package:
-        name:
-          - util-linux
-          - lvm2
-        state: present
-    - name: Create a backing file for ceph
-      command: /usr/bin/fallocate -l {{ ceph_loop_device_size }}G /var/lib/ceph-osd.img
+    - name: Make sure persistent NIC names is not disabled # noqa no-changed-when
+      ansible.builtin.shell: |
+        if grep -q net.ifnames=0 /etc/default/grub; then
+            sed -i 's/net.ifnames=0 //g' /etc/default/grub
+            for f in grub2 grub2-efi; do
+                grub2-mkconfig -o $(readlink -f /etc/$f.cfg)
+            done
+        fi
+      register: grub_output
+
+    - name: Prepare host on RHEL system with Subscription Manager
+      when:
+        - ansible_facts.distribution == 'RedHat'
+        - rhsm_enabled
+      block:
+        - name: Configure Red Hat Subscription Manager
+          ansible.builtin.import_role:
+            name: redhat-subscription
+        - name: Install container-tools module # noqa no-changed-when
+          ansible.builtin.shell: |
+            dnf module disable -y container-tools:rhel8
+            dnf module enable -y container-tools:"{{ rhsm_container_tools_version }}"
+        - name: Install virt module # noqa no-changed-when
+          ansible.builtin.shell: |
+            dnf module disable -y virt:rhel
+            dnf module enable -y virt:"{{ virt_release }}"
+
+    - name: Prepare host on RHEL system with rhos-release
+      when:
+        - ansible_facts.distribution == 'RedHat'
+        - not rhsm_enabled
+      block:
+        - name: Install rhos-release
+          ansible.builtin.yum:
+            state: installed
+            name: http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
+            disable_gpg_check: true
+
+        - name: Fetch the Red Hat root certificates
+          ansible.builtin.get_url:
+            dest: "/etc/pki/ca-trust/source/anchors/{{ item }}-IT-Root-CA.pem"
+            url: "https://certs.corp.redhat.com/certs/{{ item }}-IT-Root-CA.pem"
+            mode: '640'
+          loop:
+            - 2015
+            - 2022
+          register: rhca
+
+        - name: Add the certificate to the local trust bundle # noqa no-changed-when
+          ansible.builtin.shell: |
+            update-ca-trust enable
+            update-ca-trust extract
+          when: rhca.changed
+
+        - name: Configure rhos release and keep puddle name for "{{ rhos_release }}" # noqa no-changed-when
+          ansible.builtin.shell: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
+          register: rhos_release_puddle
+
+        - name: Extract puddle name from rhos-release output
+          ansible.builtin.set_fact:
+            puddle: "{{ rhos_release_puddle.stdout_lines.0 }}"
+            puddle_base: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack"
+
+        - name: Download container_image_prepare.yaml for "{{ puddle }}"
+          ansible.builtin.get_url:
+            url: "{{ puddle_base }}/{{ rhos_release }}-RHEL-{{ ansible_facts.distribution_major_version }}/{{ puddle }}/container_image_prepare.yaml"
+            dest: /home/stack/container_image_prepare.yaml
+            owner: stack
+            group: stack
+            mode: '644'
+
+    # To ensure that our CentOS users are actually using Stream.
+    # TripleO Master only support Stream now.
+    - name: Migrate to CentOS Stream if not done already
+      when:
+        - ansible_facts.distribution == 'CentOS'
+        - ansible_facts.distribution_release != 'Stream'
+      ansible.builtin.shell: |
+        if ! rpm --query centos-stream-release; then
+            dnf -y swap centos-linux-repos centos-stream-repos
+            dnf -y distro-sync
+        fi
       args:
-        creates: /var/lib/ceph-osd.img
-    - name: Create /etc/systemd/system/ceph-osd-losetup.service
-      copy:
-        dest: /etc/systemd/system/ceph-osd-losetup.service
-        mode: 0755
-        content: |
-          [Unit]
-          Description=Ceph OSD losetup
-          After=syslog.target
-          [Service]
-          Type=oneshot
-          ExecStart=/bin/bash -c '/sbin/losetup /dev/loop1 || /sbin/losetup --direct-io=on /dev/loop1 /var/lib/ceph-osd.img'
-          ExecStop=/sbin/losetup -d /dev/loop1
-          RemainAfterExit=yes
-          [Install]
-          WantedBy=multi-user.target
-      register: create_losetup_service
-    - name: Enable ceph-osd-losetup.service
-      systemd:
-        name: ceph-osd-losetup.service
-        enabled: true
-        state: "{{ create_losetup_service.changed | ternary('restarted', 'started') }}"
-        daemon_reload: "{{ create_losetup_service.changed }}"
-    - name: Create volume group for ceph
-      lvg:
-        vg: vg_ceph
-        pvs: /dev/loop1
-    - name: Create ceph data LV
-      lvol:
-        vg: vg_ceph
-        lv: data
-        size: 96%VG
-    - name: Create ceph db LV
-      lvol:
-        vg: vg_ceph
-        lv: db
-        size: 4%VG
+        warn: false
+      register: stream_output
+      changed_when: (stream_output.stdout_lines | length) > 1
 
-  - name: Prepare host for Ceph (disk device)
-    when:
-    - ceph_enabled
-    - ceph_devices is defined
-    - ceph_devices is not true
-    - (ceph_devices | length) > 0
-    block:
-    - name: Wipe filesystem from disk
-      command: wipefs -a "{{ item }}"
-      loop: "{{ ceph_devices }}"
+    # To get latest version of podman & dependencies we need this
+    # version for now.
+    - name: Ensure that container-tools 3.0 is being used # noqa no-changed-when
+      when:
+        - ansible_facts.distribution == 'CentOS'
+        - ansible_facts.distribution_major_version == "8"
+      ansible.builtin.shell: |
+        dnf module disable -y container-tools:rhel8
+        dnf module enable -y container-tools:3.0
+      args:
+        warn: false
 
-  - name: Prepare kernel and reboot
-    when:
-    - kernel_args is defined
-    block:
-    - name: Install driverctl rpm
-      package:
-        name:
-          - driverctl
+    # This fixes a bogus resolv.conf entry in the CentOS cloud image. The CentOS
+    # cloud image disables this in /etc/NetworkManager/conf.d/99-cloud-init.conf
+    # by setting [main]/dns=none. Here we replace it with the default, which
+    # re-enables NetworkManager's default behaviour of completely owning
+    # resolv.conf
+    - name: Enable NetworkManager ownership of resolv.conf
+      when:
+        - ansible_facts.distribution == 'CentOS'
+      block:
+        - name: Set main/dns=default in NetworkManager
+          community.general.ini_file:
+            path: /etc/NetworkManager/conf.d/99-cloud-init.conf
+            section: main
+            option: dns
+            value: default
+            mode: '644'
+        - name: Reload NetworkManager to regenerate resolv.conf
+          ansible.builtin.systemd:
+            name: NetworkManager
+            enabled: true
+            state: reloaded
+
+    - name: Prepare host on CentOS system
+      when:
+        - ansible_facts.distribution == 'CentOS'
+      block:
+        - name: Configure tripleo repositories
+          ansible.builtin.import_role:
+            name: tripleo.operator.tripleo_repos
+
+    - name: Install dnf-utils
+      ansible.builtin.package:
+        name: dnf-utils
+        state: installed
+
+    - name: Upgrade all packages # noqa package-latest
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+
+    - name: Reboot the node when necessary
+      when:
+        # We don't need to reboot when these parameters are defined because
+        # we'll reboot after the tripleo deployment anyway. We're saving one reboot.
+        - not (sriov_interface is defined or dpdk_interface is defined or kernel_args is defined) or ((grub_output.stdout_lines | length) > 1)
+      block:
+        - name: Check if reboot is required # noqa no-changed-when
+          ansible.builtin.shell: |
+            needs-restarting -r
+          register: needs_reboot
+          # the commands can return non-zero codes if reboot is needed
+          failed_when: needs_reboot.rc != 0 and needs_reboot.rc != 1
+        - name: Reboot if we updated packages # noqa no-handler
+          ansible.builtin.reboot:
+          when: needs_reboot.rc == 1 or ((grub_output.stdout_lines | length) > 1)
+
+    - name: Set FQDN
+      ansible.builtin.set_fact:
+        fqdn: "{{ hostname }}.{{ clouddomain }}"
+
+    - name: Set hostname to "{{ fqdn }}"
+      ansible.builtin.hostname:
+        name: "{{ fqdn }}"
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      ansible.builtin.lineinfile:
+        dest: /etc/sudoers
         state: present
-    - name: Configure tuned before reboot
-      include_role:
-        name: tuned
-      vars:
-        tuned_profile: cpu-partitioning
-        tuned_isolated_cores: "{{ tuned_isolated_cores | mandatory }}"
-    - name: Configure kernel args and reboot
-      include_role:
-        name: tripleo_kernel
-        tasks_from: kernelargs.yml
-      vars:
-        tripleo_kernel_args: "{{ kernel_args | mandatory }}"
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Configure disks for local ephemeral storage
+      when:
+        - ephemeral_storage_devices|length > 0
+      block:
+        - name: Ensure we have lvm2
+          ansible.builtin.package:
+            name: lvm2
+            state: present
+        - name: Create VG for local ephemeral storage
+          community.general.lvg:
+            vg: vg_nova
+            pvs: "{{ ephemeral_storage_devices | join(',') }}"
+        - name: Create LV for local ephemeral storage
+          community.general.lvol:
+            vg: vg_nova
+            lv: data
+            size: 100%VG
+        - name: Create XFS filesystem for local ephemeral storage
+          community.general.filesystem:
+            fstype: xfs
+            dev: /dev/vg_nova/data
+        - name: Create /var/lib/nova
+          ansible.builtin.file:
+            path: /var/lib/nova
+            state: directory
+            mode: '755'
+        - name: Mount /var/lib/nova
+          ansible.posix.mount:
+            path: /var/lib/nova
+            src: /dev/vg_nova/data
+            fstype: xfs
+            state: mounted
+
+    - name: Prepare host for Ceph (loop device)
+      when:
+        - ceph_enabled
+        - ceph_devices is not defined
+      block:
+        - name: Make sure we have losetup installed/latest
+          ansible.builtin.package:
+            name:
+              - util-linux
+              - lvm2
+            state: present
+        - name: Create a backing file for ceph
+          ansible.builtin.command: /usr/bin/fallocate -l {{ ceph_loop_device_size }}G /var/lib/ceph-osd.img
+          args:
+            creates: /var/lib/ceph-osd.img
+        - name: Create /etc/systemd/system/ceph-osd-losetup.service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/ceph-osd-losetup.service
+            mode: '755'
+            content: |
+              [Unit]
+              Description=Ceph OSD losetup
+              After=syslog.target
+              [Service]
+              Type=oneshot
+              ExecStart=/bin/bash -c '/sbin/losetup /dev/loop1 || /sbin/losetup --direct-io=on /dev/loop1 /var/lib/ceph-osd.img'
+              ExecStop=/sbin/losetup -d /dev/loop1
+              RemainAfterExit=yes
+              [Install]
+              WantedBy=multi-user.target
+          register: create_losetup_service
+        - name: Enable ceph-osd-losetup.service
+          ansible.builtin.systemd:
+            name: ceph-osd-losetup.service
+            enabled: true
+            state: "{{ create_losetup_service.changed | ternary('restarted', 'started') }}"
+            daemon_reload: "{{ create_losetup_service.changed }}"
+        - name: Create volume group for ceph
+          community.general.lvg:
+            vg: vg_ceph
+            pvs: /dev/loop1
+        - name: Create ceph data LV
+          community.general.lvol:
+            vg: vg_ceph
+            lv: data
+            size: 96%VG
+        - name: Create ceph db LV
+          community.general.lvol:
+            vg: vg_ceph
+            lv: db
+            size: 4%VG
+
+    - name: Prepare host for Ceph (disk device)
+      when:
+        - ceph_enabled
+        - ceph_devices is defined
+        - ceph_devices is not true
+        - (ceph_devices | length) > 0
+      block:
+        - name: Wipe filesystem from disk # noqa no-changed-when
+          ansible.builtin.command: wipefs -a "{{ item }}"
+          loop: "{{ ceph_devices }}"
+
+    - name: Prepare kernel and reboot
+      when:
+        - kernel_args is defined
+      block:
+        - name: Install driverctl rpm # noqa no-changed-when
+          ansible.builtin.package:
+            name:
+              - driverctl
+            state: present
+        - name: Configure tuned before reboot # noqa no-changed-when
+          ansible.builtin.include_role:
+            name: tuned
+          vars:
+            tuned_profile: cpu-partitioning
+        - name: Configure kernel args and reboot # noqa no-changed-when
+          ansible.builtin.include_role:
+            name: tripleo_kernel
+            tasks_from: kernelargs.yml
+          vars:
+            tripleo_kernel_args: "{{ kernel_args | mandatory }}"

@@ -4,31 +4,30 @@
   become_user: root
   gather_facts: false
   vars_files: vars/defaults.yaml
-
+  name: Destroy the OpenStack
   tasks:
-
-  - name: Destroy the OpenStack # noqa 301
-    shell: |
-      pkill -9 heat-all
-      if type pcs &> /dev/null; then
-          pcs cluster destroy
-      fi
-      if type podman &> /dev/null; then
-          podman rm -af
-          podman rmi -af
-      fi
-      rm -rf \
-          /var/lib/tripleo-config \
-          /var/lib/config-data /var/lib/container-config-scripts \
-          /var/lib/container-puppet \
-          /var/lib/heat-config \
-          /var/lib/ceph \
-          /var/lib/image-serve \
-          /etc/systemd/system/tripleo* \
-          /var/lib/mysql/* \
-          /etc/openstack/ \
-          /home/stack/.config/openstack
-      systemctl daemon-reload
-      # Don't cleanup containers. It's basically just a cache and re-downloading
-      # it dominates reinstallation time.
-      # /var/lib/containers
+    - name: Run the command to destroy the OpenStack # noqa no-changed-when
+      ansible.builtin.shell: |
+        pkill -9 heat-all
+        if type pcs &> /dev/null; then
+            pcs cluster destroy
+        fi
+        if type podman &> /dev/null; then
+            podman rm -af
+            podman rmi -af
+        fi
+        rm -rf \
+            /var/lib/tripleo-config \
+            /var/lib/config-data /var/lib/container-config-scripts \
+            /var/lib/container-puppet \
+            /var/lib/heat-config \
+            /var/lib/ceph \
+            /var/lib/image-serve \
+            /etc/systemd/system/tripleo* \
+            /var/lib/mysql/* \
+            /etc/openstack/ \
+            /home/stack/.config/openstack
+        systemctl daemon-reload
+        # Don't cleanup containers. It's basically just a cache and re-downloading
+        # it dominates reinstallation time.
+        # /var/lib/containers

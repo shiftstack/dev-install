@@ -16,7 +16,7 @@
 
 
 - name: Ensure profile directory exists
-  file:
+  ansible.builtin.file:
     path: "/etc/tuned/{{ tuned_profile }}"
     state: directory
     owner: root
@@ -26,7 +26,7 @@
     - (tuned_custom_profile is defined) and ((tuned_custom_profile | length) > 0)
 
 - name: Create custom tuned profile
-  copy:
+  ansible.builtin.copy:
     content: "{{ tuned_custom_profile }}"
     dest: "/etc/tuned/{{ tuned_profile }}/tuned.conf"
     owner: root
@@ -36,17 +36,17 @@
     - (tuned_custom_profile is defined) and ((tuned_custom_profile | length) > 0)
 
 - name: Check tuned active profile
-  slurp:
+  ansible.builtin.slurp:
     src: "/etc/tuned/active_profile"
   register: tuned_active_profile
 
 - name: Check Tuned Configuration file exists
-  stat:
+  ansible.builtin.stat:
     path: "/etc/tuned/{{ tuned_profile }}-variables.conf"
   register: tuned_conf_stat_result
 
 - name: Fail if tuned profile conf is absent but isolated cores is provided
-  fail:
+  ansible.builtin.fail:
     msg: "Tuned profile conf file is not available to configure isolated cores"
   when:
     - tuned_isolated_cores is defined
@@ -54,7 +54,7 @@
     - not (tuned_conf_stat_result.stat.exists | bool)
 
 - name: "Configure isolated cores for profile {{ tuned_profile }}"
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: "/etc/tuned/{{ tuned_profile }}-variables.conf"
     regexp: '^isolated_cores=.*'
     line: 'isolated_cores={{ tuned_isolated_cores }}'
@@ -64,7 +64,7 @@
     - (tuned_conf_stat_result.stat.exists | bool)
 
 - name: Enable tuned profile
-  command: >-
+  ansible.builtin.command: >-
     tuned-adm profile {{ tuned_profile }}
   environment:
     PATH: "/bin:/usr/bin:/sbin:/usr/sbin"

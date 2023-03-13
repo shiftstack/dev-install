@@ -4,522 +4,521 @@
   become_user: stack
   gather_facts: false
   vars_files: vars/defaults.yaml
+  name: Deploy OpenStack
   roles:
-  - network_info
-
+    - network_info
   tasks:
+    - name: Get minimum ansible facts
+      ansible.builtin.setup:
+        gather_subset: min
 
-  - name: Get minimum ansible facts
-    setup:
-      gather_subset: min
+    - name: Initialise service environment list from user provided services
+      ansible.builtin.set_fact:
+        service_envs: "{{ enabled_services }}"
 
-  - name: Initialise service environment list from user provided services
-    set_fact:
-      service_envs: "{{ enabled_services }}"
-
-  - name: Add external network VIP service
-    set_fact:
-      service_envs: "{{ service_envs | union(vip_env) }}"
-    vars:
-      vip_env:
-      - /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
-
-  # OSP16 doesn't have HA enabled by default for all service (HAproxy).
-  # While this is being fixed, we'll force it here.
-  - name: Enable HA by default
-    block:
-    - name: Add HA services
-      set_fact:
-        service_envs: "{{ service_envs | union(ha_env) }}"
+    - name: Add external network VIP service
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(vip_env) }}"
       vars:
-        ha_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml
+        vip_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
 
-  - name: Enable OVN DVR HA by default when deploying DCN
-    when:
-      - dcn_az is defined
-      - ovn_enabled
-    block:
-    - name: Add OVN DVR HA services
-      set_fact:
-        service_envs: "{{ service_envs | union(ovn_dvr_ha_env) }}"
-      vars:
-        ovn_dvr_ha_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dvr-ha.yaml
+    # OSP16 doesn't have HA enabled by default for all service (HAproxy).
+    # While this is being fixed, we'll force it here.
+    - name: Enable HA by default
+      block:
+        - name: Add HA services
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(ha_env) }}"
+          vars:
+            ha_env:
+              - /usr/share/openstack-tripleo-heat-templates/environments/docker-ha.yaml
 
-  - name: Enable exported environments from central site when deploying DCN
-    when:
-      - dcn_az is defined
-      - dcn_az != "central"
-    block:
-    - name: Add DCN environments
-      set_fact:
-        service_envs: "{{ service_envs | union(dcn_env) }}"
-      vars:
-        dcn_env:
-        - /opt/exported-data/passwords.yaml
-        - /opt/exported-data/oslo.yaml
-        - /opt/exported-data/endpoint-map.json
-        - /opt/exported-data/extra-host-file-entries.json
-        - /opt/exported-data/all-nodes-extra-map-data.json
+    - name: Enable OVN DVR HA by default when deploying DCN
+      when:
+        - dcn_az is defined
+        - ovn_enabled
+      block:
+        - name: Add OVN DVR HA services
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(ovn_dvr_ha_env) }}"
+          vars:
+            ovn_dvr_ha_env:
+              - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dvr-ha.yaml
 
-  - name: Enable SSL
-    when: ssl_enabled
-    block:
-    - name: Add SSL service
-      set_fact:
-        service_envs: "{{ service_envs | union(ssl_env) }}"
-      vars:
-        ssl_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/tls-endpoints-public-ip.yaml
-        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/enable-tls.yaml
-        - /usr/share/openstack-tripleo-heat-templates/environments/ssl/inject-trust-anchor.yaml
+    - name: Enable exported environments from central site when deploying DCN
+      when:
+        - dcn_az is defined
+        - dcn_az != "central"
+      block:
+        - name: Add DCN environments
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(dcn_env) }}"
+          vars:
+            dcn_env:
+              - /opt/exported-data/passwords.yaml
+              - /opt/exported-data/oslo.yaml
+              - /opt/exported-data/endpoint-map.json
+              - /opt/exported-data/extra-host-file-entries.json
+              - /opt/exported-data/all-nodes-extra-map-data.json
 
-  - name: Generate SSL self-signed certificate on localhost
-    when: ssl_enabled
-    become: false
-    # We run this block on localhost because we don't want to put the CA key on the remote
-    # server, which could lead to security problems.
-    delegate_to: localhost
-    block:
-    - name: Create temporary directory for SSL files
-      tempfile:
-        state: directory
-        suffix: dev-install-ssl
-      register: ssl_dir
-    - name: Generate SSL self-signed certificate
-      include_role:
-        name: simpleca
-      vars:
-        cert_user: standalone
-        ca_dir: "{{ ssl_dir.path }}/ssl/ca"
-        cert_dir: "{{ ssl_dir.path }}/ssl"
-        cert_name: standalone
+    - name: Enable SSL
+      when: ssl_enabled
+      block:
+        - name: Add SSL service
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(ssl_env) }}"
+          vars:
+            ssl_env:
+              - /usr/share/openstack-tripleo-heat-templates/environments/ssl/tls-endpoints-public-ip.yaml
+              - /usr/share/openstack-tripleo-heat-templates/environments/ssl/enable-tls.yaml
+              - /usr/share/openstack-tripleo-heat-templates/environments/ssl/inject-trust-anchor.yaml
 
-  - name: Prepare the host for SSL
-    when: ssl_enabled
-    no_log: true
-    block:
-      - name: Read and clean SSL files
-        become: false
-        delegate_to: localhost
-        block:
-          - name: Read SSL certificate
-            slurp:
-              src: "{{ ssl_dir.path }}/ssl/standalone.crt"
-            register: ssl_cert_output
-            when: ssl_cert is not defined
-          - name: Read SSL key
-            slurp:
-              src: "{{ ssl_dir.path }}/ssl/standalone.key"
-            register: ssl_key_output
-            when: ssl_key is not defined
-          - name: Read CA certificate
-            slurp:
-              src: "{{ ssl_dir.path }}/ssl/ca/simpleca.crt"
-            register: ssl_ca_cert_output
-            when: ssl_ca_cert is not defined
-          # At this point the files should not be useful, so we can
-          # clear them to avoid any leak on the host where Ansible
-          # is run.
-          - name: Remove temporary directory for SSL files
-            file:
-              state: absent
-              path: "{{ ssl_dir.path }}"
-      - name: Set fact for SSL cert
-        when: ssl_cert is not defined
-        set_fact:
-          ssl_cert: "{{ ssl_cert_output['content'] | b64decode }}"
-      - name: Set fact for SSL key
-        when: ssl_key is not defined
-        set_fact:
-          ssl_key: "{{ ssl_key_output['content'] | b64decode }}"
-      - name: Set fact for CA cert
-        when: ssl_ca_cert is not defined
-        set_fact:
-          ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
-      - name: Copy CA cert into PKI
-        become: true
-        become_user: root
-        copy:
-          dest: "{{ ssl_ca_cert_path }}"
-          content: "{{ ssl_ca_cert }}"
-          mode: '0444'
-          owner: root
-          group: root
-      - name: Update CA trust
-        become: true
-        become_user: root
-        command: update-ca-trust extract
+    - name: Generate SSL self-signed certificate on localhost
+      when: ssl_enabled
+      become: false
+      # We run this block on localhost because we don't want to put the CA key on the remote
+      # server, which could lead to security problems.
+      delegate_to: localhost
+      block:
+        - name: Create temporary directory for SSL files
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: dev-install-ssl
+          register: ssl_dir
+        - name: Generate SSL self-signed certificate
+          ansible.builtin.include_role:
+            name: simpleca
+          vars:
+            cert_user: standalone
+            ca_dir: "{{ ssl_dir.path }}/ssl/ca"
+            cert_dir: "{{ ssl_dir.path }}/ssl"
+            cert_name: standalone
 
-  - name: Install the tripleo client
-    yum:
-      name:
-      - python3-tripleoclient
-    become: true
-    become_user: root
+    - name: Prepare the host for SSL
+      when: ssl_enabled
+      no_log: true
+      block:
+        - name: Read and clean SSL files
+          become: false
+          delegate_to: localhost
+          block:
+            - name: Read SSL certificate
+              ansible.builtin.slurp:
+                src: "{{ ssl_dir.path }}/ssl/standalone.crt"
+              register: ssl_cert_output
+              when: ssl_cert is not defined
+            - name: Read SSL key
+              ansible.builtin.slurp:
+                src: "{{ ssl_dir.path }}/ssl/standalone.key"
+              register: ssl_key_output
+              when: ssl_key is not defined
+            - name: Read CA certificate
+              ansible.builtin.slurp:
+                src: "{{ ssl_dir.path }}/ssl/ca/simpleca.crt"
+              register: ssl_ca_cert_output
+              when: ssl_ca_cert is not defined
+            # At this point the files should not be useful, so we can
+            # clear them to avoid any leak on the host where Ansible
+            # is run.
+            - name: Remove temporary directory for SSL files
+              ansible.builtin.file:
+                state: absent
+                path: "{{ ssl_dir.path }}"
+        - name: Set fact for SSL cert
+          when: ssl_cert is not defined
+          ansible.builtin.set_fact:
+            ssl_cert: "{{ ssl_cert_output['content'] | b64decode }}"
+        - name: Set fact for SSL key
+          when: ssl_key is not defined
+          ansible.builtin.set_fact:
+            ssl_key: "{{ ssl_key_output['content'] | b64decode }}"
+        - name: Set fact for CA cert
+          when: ssl_ca_cert is not defined
+          ansible.builtin.set_fact:
+            ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
+        - name: Copy CA cert into PKI
+          become: true
+          become_user: root
+          ansible.builtin.copy:
+            dest: "{{ ssl_ca_cert_path }}"
+            content: "{{ ssl_ca_cert }}"
+            mode: '444'
+            owner: root
+            group: root
+        - name: Update CA trust # noqa no-changed-when
+          become: true
+          become_user: root
+          ansible.builtin.command: update-ca-trust extract
 
-  - name: Prepare the deployment for Ceph
-    when: ceph_enabled
-    block:
-      - name: Check if ceph-adm can be used to deploy Ceph
-        stat:
-          path: /usr/share/openstack-tripleo-heat-templates/environments/cephadm
-        register: st_ceph
-      - name: Create ceph_adm_enabled fact
-        set_fact:
-          ceph_adm_enabled: "{{ st_ceph.stat.isdir is defined and st_ceph.stat.isdir }}"
-      - name: Show a message when ceph_devices is used but empty
-        debug:
-          msg: >
-            ceph_devices contains a list of disks but cephadm is going to use all available SSD/NVME disks.
-            Set the param to true to skip this message or remove it if you don't have available SSD/NVME disks.
-        when:
-          - ceph_adm_enabled
-          - ceph_devices is defined
-          - ceph_devices is not true
-          - (ceph_devices | length) > 0
-      - name: Create ceph facts
-        set_fact:
-          ceph_env_base: "{{ ceph_adm_enabled | ternary('cephadm', 'ceph-ansible') }}"
-          ceph_env_name: "{{ ceph_adm_enabled | ternary('cephadm-rbd-only', 'ceph-ansible') }}"
-      - name: "Install ceph package"
-        yum:
-          name:
-          - "{{ ceph_env_base }}"
-        become: true
-        become_user: root
+    - name: Install the tripleo client
+      ansible.builtin.yum:
+        name: python3-tripleoclient
+      become: true
+      become_user: root
 
-  - name: set fact for dev-install_net_config template
-    set_fact:
-      net_config_template: "{{ dpdk_interface is defined | ternary('dev-install_net_config_dpdk.yaml.j2', 'dev-install_net_config.yaml.j2') }}"
+    - name: Prepare the deployment for Ceph
+      when: ceph_enabled
+      block:
+        - name: Check if ceph-adm can be used to deploy Ceph
+          ansible.builtin.stat:
+            path: /usr/share/openstack-tripleo-heat-templates/environments/cephadm
+          register: st_ceph
+        - name: Create ceph_adm_enabled fact
+          ansible.builtin.set_fact:
+            ceph_adm_enabled: "{{ st_ceph.stat.isdir is defined and st_ceph.stat.isdir }}"
+        - name: Show a message when ceph_devices is used but empty
+          ansible.builtin.debug:
+            msg: >
+              ceph_devices contains a list of disks but cephadm is going to use all available SSD/NVME disks.
+              Set the param to true to skip this message or remove it if you don't have available SSD/NVME disks.
+          when:
+            - ceph_adm_enabled
+            - ceph_devices is defined
+            - ceph_devices is not true
+            - (ceph_devices | length) > 0
+        - name: Create ceph facts
+          ansible.builtin.set_fact:
+            ceph_env_base: "{{ ceph_adm_enabled | ternary('cephadm', 'ceph-ansible') }}"
+            ceph_env_name: "{{ ceph_adm_enabled | ternary('cephadm-rbd-only', 'ceph-ansible') }}"
+        - name: "Install ceph package"
+          ansible.builtin.yum:
+            name:
+              - "{{ ceph_env_base }}"
+          become: true
+          become_user: root
 
-  - name: Create dev-install_net_config.yaml
-    template:
-      mode: 0644
-      src: "{{ net_config_template }}"
-      dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+    - name: Set fact for dev-install_net_config template
+      ansible.builtin.set_fact:
+        net_config_template: "{{ dpdk_interface is defined | ternary('dev-install_net_config_dpdk.yaml.j2', 'dev-install_net_config.yaml.j2') }}"
 
-  - name: Read dev-install_net_config.yaml
-    slurp:
-      src: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
-    register: net_config
+    - name: Create dev-install_net_config.yaml
+      ansible.builtin.template:
+        mode: '644'
+        src: "{{ net_config_template }}"
+        dest: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
 
-  - name: Create net_config_json fact
-    set_fact:
-      net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
+    - name: Read dev-install_net_config.yaml
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/dev-install_net_config.yaml"
+      register: net_config
 
-  - name: Set fact for SR-IOV services overrides
-    set_fact:
-      sriov_services_fact: "{{ sriov_interface|default(None)| ternary(sriov_services, []) }}"
+    - name: Create net_config_json fact
+      ansible.builtin.set_fact:
+        net_config_json: "{{ net_config['content'] | b64decode | from_yaml }}"
 
-  - name: Set fact for DPDK services overrides
-    set_fact:
-      dpdk_services_fact: "{{ dpdk_interface|default(None)| ternary(dpdk_services, []) }}"
+    - name: Set fact for SR-IOV services overrides
+      ansible.builtin.set_fact:
+        sriov_services_fact: "{{ sriov_interface | default(None) | ternary(sriov_services, []) }}"
 
-  - name: Set fact for Kernel services overrides
-    set_fact:
-      kernel_services_fact: "{{ kernel_args|default(None)| ternary(kernel_services, []) }}"
+    - name: Set fact for DPDK services overrides
+      ansible.builtin.set_fact:
+        dpdk_services_fact: "{{ dpdk_interface | default(None) | ternary(dpdk_services, []) }}"
 
-  - name: Set fact for Manila services overrides
-    set_fact:
-      manila_services_fact: "{{ manila_enabled | ternary(manila_services, []) }}"
+    - name: Set fact for Kernel services overrides
+      ansible.builtin.set_fact:
+        kernel_services_fact: "{{ kernel_args | default(None) | ternary(kernel_services, []) }}"
 
-  - name: Set fact for DCN services overrides
-    set_fact:
-      dcn_services_fact: "{{ dcn_az|default(None)| ternary(dcn_services, []) }}"
+    - name: Set fact for Manila services overrides
+      ansible.builtin.set_fact:
+        manila_services_fact: "{{ manila_enabled | ternary(manila_services, []) }}"
 
-  - name: Read the TripleO role
-    slurp:
-      src: "{{ standalone_role }}"
-    register: role_yaml
+    - name: Set fact for DCN services overrides
+      ansible.builtin.set_fact:
+        dcn_services_fact: "{{ dcn_az | default(None) | ternary(dcn_services, []) }}"
 
-  - name: Parse the role data
-    set_fact:
-      role_data: "{{ role_yaml['content'] | b64decode | from_yaml }}"
+    - name: Read the TripleO role
+      ansible.builtin.slurp:
+        src: "{{ standalone_role }}"
+      register: role_yaml
 
-  - name: Set fact for the new role data
-    set_fact:
-      new_role_data: "{{ role_data }}"
+    - name: Parse the role data
+      ansible.builtin.set_fact:
+        role_data: "{{ role_yaml['content'] | b64decode | from_yaml }}"
 
-  - name: Set the fact for overrides services
-    set_fact:
-      role_data: >
-        {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault |
-        union(sriov_services_fact) | union(dpdk_services_fact) | union(kernel_services_fact) | union(manila_services_fact) |
-        union(dcn_services_fact) | union(standalone_role_overrides)) %}
-        {{ new_role_data }}
+    - name: Set fact for the new role data
+      ansible.builtin.set_fact:
+        new_role_data: "{{ role_data }}"
 
-  - name: Create the new role file
-    copy:
-      dest: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
-      content: "{{ role_data }}"
-      mode: 0644
+    - name: Set the fact for overrides services
+      ansible.builtin.set_fact:
+        role_data: >
+          {% set _ = new_role_data.0.__setitem__('ServicesDefault', new_role_data.0.ServicesDefault |
+          union(sriov_services_fact) | union(dpdk_services_fact) | union(kernel_services_fact) | union(manila_services_fact) |
+          union(dcn_services_fact) | union(standalone_role_overrides)) %}
+          {{ new_role_data }}
 
-  - name: Configure manila
-    when: manila_enabled
-    block:
-    - name: Add manila services
-      set_fact:
-        service_envs: "{{ service_envs | union(manila_env) }}"
-      vars:
-        manila_env:
-        - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/ceph-mds.yaml"
-        - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
+    - name: Create the new role file
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+        content: "{{ role_data }}"
+        mode: '644'
 
-    - name: Ensure ceph is enabled
-      set_fact:
-        ceph_enabled: true
+    - name: Configure manila
+      when: manila_enabled
+      block:
+        - name: Add manila services
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(manila_env) }}"
+          vars:
+            manila_env:
+              - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/ceph-mds.yaml"
+              - /usr/share/openstack-tripleo-heat-templates/environments/manila-cephfsganesha-config.yaml
 
-  - name: Set fact for neutron_bridge_mappings
-    when:
-    - neutron_bridge_mappings is not defined
-    block:
-      - name: set fact for base_bridge_mappings when DPDK is disabled
-        set_fact:
-          base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
-        when:
-        - dpdk_interface is not defined
-      - name: set fact for base_bridge_mappings when DPDK is enabled
-        set_fact:
-          base_bridge_mappings: "hostonly:br-hostonly"
-        when:
-        - dpdk_interface is defined
-      - name: construct fact for neutron_bridge_mappings
-        set_fact:
-          neutron_bridge_mappings: "{{ base_bridge_mappings }}"
+        - name: Ensure ceph is enabled
+          ansible.builtin.set_fact:
+            ceph_enabled: true
 
-  - name: Create standalone_parameters.yaml
-    no_log: true
-    template:
-      mode: 0644
-      src: standalone_parameters.yaml.j2
-      dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
+    - name: Set fact for neutron_bridge_mappings
+      when:
+        - neutron_bridge_mappings is not defined
+      block:
+        - name: Set fact for base_bridge_mappings when DPDK is disabled
+          ansible.builtin.set_fact:
+            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
+          when:
+            - dpdk_interface is not defined
+        - name: Set fact for base_bridge_mappings when DPDK is enabled
+          ansible.builtin.set_fact:
+            base_bridge_mappings: "hostonly:br-hostonly"
+          when:
+            - dpdk_interface is defined
+        - name: Construct fact for neutron_bridge_mappings
+          ansible.builtin.set_fact:
+            neutron_bridge_mappings: "{{ base_bridge_mappings }}"
 
-  - name: Enable Octavia
-    when: octavia_enabled
-    block:
-      # The Amphora image is broken for OSP17, see:
-      # https://review.rdoproject.org/r/32023
-      # Until then this is fine (tested) to use the latest
-      # image from RDO:
-      - name: Download the latest Amphora image for Octavia
-        get_url:
-          url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
-          dest: "{{ ansible_env.HOME }}/amphora.qcow2"
+    - name: Create standalone_parameters.yaml
+      no_log: true
+      ansible.builtin.template:
+        mode: '644'
+        src: standalone_parameters.yaml.j2
+        dest: "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
-      - name: Generate a keypair for Octavia Amphora (needed by TripleO)
-        shell: |
-          if [ ! -f "{{ ansible_env.HOME }}/octavia" ]; then
-              ssh-keygen -b 2048 -t rsa -f "{{ ansible_env.HOME }}/octavia" -q -N ""
-          fi
-        args:
-          creates: "{{ ansible_env.HOME }}/octavia"
+    - name: Enable Octavia
+      when: octavia_enabled
+      block:
+        # The Amphora image is broken for OSP17, see:
+        # https://review.rdoproject.org/r/32023
+        # Until then this is fine (tested) to use the latest
+        # image from RDO:
+        - name: Download the latest Amphora image for Octavia
+          ansible.builtin.get_url:
+            url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
+            dest: "{{ ansible_env.HOME }}/amphora.qcow2"
+            mode: '644'
 
-      - name: Add octavia to enabled services
-        set_fact:
-          service_envs: "{{ service_envs | union(octavia_env) }}"
-        vars:
-          octavia_env:
-            - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
+        - name: Generate a keypair for Octavia Amphora (needed by TripleO)
+          ansible.builtin.shell: |
+            if [ ! -f "{{ ansible_env.HOME }}/octavia" ]; then
+                ssh-keygen -b 2048 -t rsa -f "{{ ansible_env.HOME }}/octavia" -q -N ""
+            fi
+          args:
+            creates: "{{ ansible_env.HOME }}/octavia"
 
-  - name: Generate container_image_prepare.yaml if not using rhos-release
-    when:
-      - cip_config is not defined
-      - ansible_facts.distribution == 'RedHat'
-      - rhsm_enabled
-    command: openstack tripleo container image prepare default --output-env-file /home/stack/containers-prepare-parameters.yaml
+        - name: Add octavia to enabled services
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(octavia_env) }}"
+          vars:
+            octavia_env:
+              - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 
-  # On RHEL/OSP if cip_config is not provided, we download it from latest puddle
-  - name: Set cip_config from downloaded container_image_prepare.yaml
-    when:
-      - cip_config is not defined
-      - ansible_facts.distribution == 'RedHat'
-      - not rhsm_enabled
-    block:
-    - name: Read container_image_prepare.yaml
-      slurp:
-        src: /home/stack/container_image_prepare.yaml
-      register: cip_yaml
-    - name: Extract container image parameters from downloaded container_image_prepare.yaml
-      set_fact:
-        cip_raw: "{{ (cip_yaml.content | b64decode | from_yaml)['container-image-prepare'] | dict2items }}"
+    - name: Generate container_image_prepare.yaml if not using rhos-release # noqa no-changed-when
+      when:
+        - cip_config is not defined
+        - ansible_facts.distribution == 'RedHat'
+        - rhsm_enabled
+      ansible.builtin.command: openstack tripleo container image prepare default --output-env-file /home/stack/containers-prepare-parameters.yaml
+
+    # On RHEL/OSP if cip_config is not provided, we download it from latest puddle
     - name: Set cip_config from downloaded container_image_prepare.yaml
-      set_fact:
-        cip_config: "{{ [{ 'set': dict(keys | zip(values)) }] }}"
+      when:
+        - cip_config is not defined
+        - ansible_facts.distribution == 'RedHat'
+        - not rhsm_enabled
+      block:
+        - name: Read container_image_prepare.yaml
+          ansible.builtin.slurp:
+            src: /home/stack/container_image_prepare.yaml
+          register: cip_yaml
+        - name: Extract container image parameters from downloaded container_image_prepare.yaml
+          ansible.builtin.set_fact:
+            cip_raw: "{{ (cip_yaml.content | b64decode | from_yaml)['container-image-prepare'] | dict2items }}"
+        - name: Set cip_config from downloaded container_image_prepare.yaml
+          ansible.builtin.set_fact:
+            cip_config: "{{ [{'set': dict(keys | zip(values))}] }}"
+          vars:
+            # container_image_prepare.yaml downloaded from the puddle contains some
+            # keys with invalid names, e.g. 'ceph-namespace' instead of
+            # 'ceph_namespace'. We rewrite them.
+            keys: "{{ cip_raw | map(attribute='key') | map('regex_replace', '-', '_') | list }}"
+            values: "{{ cip_raw | map(attribute='value') | list }}"
+
+    - name: Create containers-prepare-parameters.yaml if cip_config is defined
+      when: cip_config is defined
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+        content: "{{ cip_content | to_nice_yaml }}"
+        owner: stack
+        mode: '644'
       vars:
-        # container_image_prepare.yaml downloaded from the puddle contains some
-        # keys with invalid names, e.g. 'ceph-namespace' instead of
-        # 'ceph_namespace'. We rewrite them.
-        keys: "{{ cip_raw | map(attribute='key') | map('regex_replace', '-', '_') | list }}"
-        values: "{{ cip_raw | map(attribute='value') | list }}"
+        cip_content:
+          parameter_defaults:
+            ContainerImagePrepare: "{{ cip_config }}"
 
-  - name: Create containers-prepare-parameters.yaml if cip_config is defined
-    when: cip_config is defined
-    copy:
-      dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
-      content: "{{ cip_content | to_nice_yaml }}"
-      owner: stack
-      mode: 0644
-    vars:
-      cip_content:
-        parameter_defaults:
-          ContainerImagePrepare: "{{ cip_config }}"
+    - name: Download containers-prepare-parameters.yaml from upstream master if cip_config is not defined on CentOS
+      when:
+        - cip_config is not defined
+        - ansible_facts.distribution == 'CentOS'
+      ansible.builtin.get_url:
+        dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+        url: "https://opendev.org/openstack/tripleo-common/raw/branch/master/container-images/container_image_prepare_defaults.yaml"
+        owner: stack
+        mode: '644'
 
-  - name: Download containers-prepare-parameters.yaml from upstream master if cip_config is not defined on CentOS
-    when:
-      - cip_config is not defined
-      - ansible_facts.distribution == 'CentOS'
-    get_url:
-      dest: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
-      url: "https://opendev.org/openstack/tripleo-common/raw/branch/master/container-images/container_image_prepare_defaults.yaml"
-      owner: stack
-      mode: 0644
+    - name: Add ceph to enabled services
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(ceph_env) }}"
+      vars:
+        ceph_env:
+          - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
+      when: ceph_enabled
 
-  - name: Add ceph to enabled services
-    set_fact:
-      service_envs: "{{ service_envs | union(ceph_env) }}"
-    vars:
-      ceph_env:
-        - "/usr/share/openstack-tripleo-heat-templates/environments/{{ ceph_env_base }}/{{ ceph_env_name }}.yaml"
-    when: ceph_enabled
+    - name: Install tuned cpu partionioning profile
+      ansible.builtin.yum:
+        name:
+          - tuned
+          - tuned-profiles-cpu-partitioning
+      become: true
+      become_user: root
 
-  - name: Install tuned cpu partionioning profile
-    yum:
-      name:
-      - tuned
-      - tuned-profiles-cpu-partitioning
-    become: true
-    become_user: root
+    - name: Add sriov-ovn to enabled services
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(sriov_env) }}"
+      vars:
+        sriov_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-sriov.yaml
+      when:
+        - sriov_interface is defined
+        - ovn_enabled
 
-  - name: Add sriov-ovn to enabled services
-    set_fact:
-      service_envs: "{{ service_envs | union(sriov_env) }}"
-    vars:
-      sriov_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-sriov.yaml
-    when:
-      - sriov_interface is defined
-      - ovn_enabled
+    - name: Add sriov-ovs to enabled services
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(sriov_env) }}"
+      vars:
+        sriov_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs.yaml
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-sriov.yaml
+      when:
+        - sriov_interface is defined
+        - not ovn_enabled
 
-  - name: Add sriov-ovs to enabled services
-    set_fact:
-      service_envs: "{{ service_envs | union(sriov_env) }}"
-    vars:
-      sriov_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs.yaml
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-sriov.yaml
-    when:
-      - sriov_interface is defined
-      - not ovn_enabled
+    - name: Add dpdk-ovn to enabled services
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(dpdk_env) }}"
+      vars:
+        dpdk_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dpdk.yaml
+      when:
+        - dpdk_interface is defined
+        - ovn_enabled
 
-  - name: Add dpdk-ovn to enabled services
-    set_fact:
-      service_envs: "{{ service_envs | union(dpdk_env) }}"
-    vars:
-      dpdk_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovn-dpdk.yaml
-    when:
-    - dpdk_interface is defined
-    - ovn_enabled
+    - name: Add dpdk-ovs to enabled services
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(dpdk_env) }}"
+      vars:
+        dpdk_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs.yaml
+          - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs-dpdk.yaml
+      when:
+        - dpdk_interface is defined
+        - not ovn_enabled
 
-  - name: Add dpdk-ovs to enabled services
-    set_fact:
-      service_envs: "{{ service_envs | union(dpdk_env) }}"
-    vars:
-      dpdk_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs.yaml
-        - /usr/share/openstack-tripleo-heat-templates/environments/services/neutron-ovs-dpdk.yaml
-    when:
-    - dpdk_interface is defined
-    - not ovn_enabled
+    - name: Reduce the number of workers
+      ansible.builtin.set_fact:
+        service_envs: "{{ service_envs | union(lowmem_env) }}"
+      vars:
+        lowmem_env:
+          - /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml
+      when: low_memory_usage
 
-  - name: Reduce the number of workers
-    set_fact:
-      service_envs: "{{ service_envs | union(lowmem_env) }}"
-    vars:
-      lowmem_env:
-        - /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml
-    when: low_memory_usage
+    - name: Create default_tripleo_envs fact
+      ansible.builtin.set_fact:
+        default_tripleo_envs:
+          - /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml
+          - "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
 
-  - name: Create default_tripleo_envs fact
-    set_fact:
-      default_tripleo_envs:
-        - /usr/share/openstack-tripleo-heat-templates/environments/standalone/standalone-tripleo.yaml
-        - "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
+    - name: Create tripleo_override_envs fact
+      ansible.builtin.set_fact:
+        tripleo_override_envs:
+          - "{{ ansible_env.HOME }}/standalone_parameters.yaml"
 
-  - name: Create tripleo_override_envs fact
-    set_fact:
-      tripleo_override_envs:
-        - "{{ ansible_env.HOME }}/standalone_parameters.yaml"
+    # Until https://review.opendev.org/c/openstack/tripleo-heat-templates/+/793836
+    # is merged upstream.
+    - name: Create the VIP env file
+      ansible.builtin.copy:
+        dest: /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
+        content: |
+          resource_registry:
+            OS::TripleO::Network::Ports::ExternalVipPort: ../network/ports/external_from_pool.yaml
+        mode: '644'
+      become: true
+      become_user: root
 
-  # Until https://review.opendev.org/c/openstack/tripleo-heat-templates/+/793836
-  # is merged upstream.
-  - name: Create the VIP env file
-    copy:
-      dest: /usr/share/openstack-tripleo-heat-templates/environments/external-network-vip.yaml
-      content: |
-        resource_registry:
-          OS::TripleO::Network::Ports::ExternalVipPort: ../network/ports/external_from_pool.yaml
-      mode: 0644
-    become: true
-    become_user: root
+    - name: Block to figure out if --standalone needs to be passed when deploying tripleo
+      when:
+        - ansible_facts.distribution == 'CentOS'
+      block:
+        - name: Check if the version of TripleO is recent enough to remove --standalone argument
+          ansible.builtin.set_fact:
+            standalone_toggle: false
+          when:
+            - (tripleo_repos_branch is defined and tripleo_repos_branch not in ['train', 'ussuri', 'victoria']) or (tripleo_repos_branch is not defined)
 
-  - name: Block to figure out if --standalone needs to be passed when deploying tripleo
-    when:
-    - ansible_facts.distribution == 'CentOS'
-    block:
-      - name: Check if the version of TripleO is recent enough to remove --standalone argument
-        set_fact:
-          standalone_toggle: false
-        when:
-        - (tripleo_repos_branch is defined and tripleo_repos_branch not in ['train', 'ussuri', 'victoria']) or (tripleo_repos_branch is not defined)
+    - name: Run TripleO deploy
+      ansible.builtin.import_role:
+        name: tripleo.operator.tripleo_deploy
+      vars:
+        openstack_bin: sudo openstack
+        tripleo_deploy_deployment_user: stack
+        tripleo_deploy_standalone: "{{ standalone_toggle | default(true) }}"
+        tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
+        tripleo_deploy_local_ip: "{{ local_ip }}"
+        tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
+        tripleo_deploy_public_virtual_ip: "{{ public_api }}"
+        tripleo_deploy_environment_files: "{{ default_tripleo_envs + service_envs + tripleo_override_envs }}"
+        tripleo_deploy_generate_scripts: true
+        tripleo_deploy_keep_running: true
+        tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
+        tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
+        tripleo_deploy_networks_file: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
 
-  - name: Run TripleO deploy
-    import_role:
-      name: tripleo.operator.tripleo_deploy
-    vars:
-      openstack_bin: sudo openstack
-      tripleo_deploy_deployment_user: stack
-      tripleo_deploy_standalone: "{{ standalone_toggle | default(true) }}"
-      tripleo_deploy_output_dir: "{{ ansible_env.HOME }}"
-      tripleo_deploy_local_ip: "{{ local_ip }}"
-      tripleo_deploy_control_virtual_ip: "{{ control_plane_ip }}"
-      tripleo_deploy_public_virtual_ip: "{{ public_api }}"
-      tripleo_deploy_environment_files: "{{ default_tripleo_envs + service_envs + tripleo_override_envs }}"
-      tripleo_deploy_generate_scripts: true
-      tripleo_deploy_keep_running: true
-      tripleo_deploy_home_dir: "{{ ansible_env.HOME }}"
-      tripleo_deploy_roles_file: "{{ ansible_env.HOME }}/tripleo_standalone_role.yaml"
-      tripleo_deploy_networks_file: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
+    - name: Export Stack data for DCN in /home/stack/exported-data
+      when:
+        - dcn_az is defined
+        - dcn_az == "central"
+      ansible.builtin.script: files/export-dcn.sh
 
-  - name: Export Stack data for DCN in /home/stack/exported-data
-    when:
-      - dcn_az is defined
-      - dcn_az == "central"
-    script: files/export-dcn.sh
+    - name: Unregister the system from RHSM
+      become: true
+      become_user: root
+      when:
+        - ansible_facts.distribution == 'RedHat'
+        - rhsm_enabled
+        - rhsm_ephemeral
+      block:
+        - name: Unregister Red Hat Subscription Manager
+          ansible.builtin.import_role:
+            name: redhat-subscription
+            tasks_from: unregister.yml
 
-  - name: Unregister the system from RHSM
-    become: true
-    become_user: root
-    when:
-      - ansible_facts.distribution == 'RedHat'
-      - rhsm_enabled
-      - rhsm_ephemeral
-    block:
-      - name: Unregister Red Hat Subscription Manager
-        import_role:
-          name: redhat-subscription
-          tasks_from: unregister.yml
-
-  - name: Reboot to apply kernel changes
-    when:
-      # if a new condition is added here, it needs to match with the block in `playbooks/prepare_host.yaml`.
-      - sriov_interface is defined or dpdk_interface is defined or kernel_args is defined
-    block:
-      - name: Reboot the node
-        become_user: root
-        reboot:
-      - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
-        pause:
-          minutes: 2
+    - name: Reboot to apply kernel changes
+      when:
+        # if a new condition is added here, it needs to match with the block in `playbooks/prepare_host.yaml`.
+        - sriov_interface is defined or dpdk_interface is defined or kernel_args is defined
+      block:
+        - name: Reboot the node
+          become_user: root
+          ansible.builtin.reboot:
+        - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
+          ansible.builtin.pause:
+            minutes: 2

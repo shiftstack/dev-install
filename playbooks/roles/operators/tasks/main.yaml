@@ -4,15 +4,15 @@
 - name: Check ansible version
   tags: always
   when: ansible_version.full is version('2.9.0', 'lt', strict=True)
-  fail:
+  ansible.builtin.fail:
     msg: Please update your ansible version to 2.9.x
 
 - name: Ensure we have ~/.ansible
   tags:
     - always
     - lab
-  file:
-    mode: 0755
+  ansible.builtin.file:
+    mode: '755'
     path: ~/.ansible
     state: directory
 
@@ -21,23 +21,23 @@
   tags:
     - always
     - lab
-  git:
+  ansible.builtin.git:
     dest: ~/.ansible/tripleo-operator-ansible
     repo: https://opendev.org/openstack/tripleo-operator-ansible
     update: "{{ update_operator | bool }}"
     version: master
 
-- name: Build operator collection # noqa 503
+- name: Build operator collection # noqa no-handler no-changed-when
   tags: always
   when: git_operator is changed
-  command: "ansible-galaxy collection build --force --output-path /tmp/collections"
+  ansible.builtin.command: "ansible-galaxy collection build --force --output-path /tmp/collections"
   register: collection_name
   args:
     chdir: ~/.ansible/tripleo-operator-ansible
 
-- name: Install operator collection # noqa 503
+- name: Install operator collection # noqa no-handler no-changed-when
   tags: always
   when: git_operator is changed
-  command: "ansible-galaxy collection install --force {{ collection_name.stdout.split(' ')[-1] }}"
+  ansible.builtin.command: "ansible-galaxy collection install --force {{ collection_name.stdout.split(' ')[-1] }}"
   args:
     chdir: ~/.ansible/tripleo-operator-ansible

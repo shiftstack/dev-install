@@ -14,8 +14,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-- name: Get the command line args of the node # noqa 301
-  command: cat /proc/cmdline
+- name: Get the command line args of the node # noqa no-changed-when
+  ansible.builtin.command: cat /proc/cmdline
   register: cmdline
 
 - name: TSX KernelArgs compute node reboot prevention
@@ -23,7 +23,7 @@
     - '"nova_libvirt" in groups'
   block:
     - name: Check if node has a nova.conf
-      stat:
+      ansible.builtin.stat:
         path: /var/lib/config-data/puppet-generated/nova_libvirt/etc/nova/nova.conf
       register: nova_conf_check
 
@@ -39,7 +39,7 @@
               Please schedule a manual reboot after this deployment is completed.
 
         - name: Setting defer reboot fact
-          set_fact:
+          ansible.builtin.set_fact:
             tripleo_kernel_defer_reboot: true
             tripleo_kernel_reboot_protection: true
 
@@ -58,23 +58,23 @@
     # In order to fix it for FFU (queens to train), TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS has been renamed
     # Ensure the fresh deployment is also alinged with the same name
     - name: Delete older name TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS entries if present
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/default/grub
         regexp: 'TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS'
         state: absent
     - name: Ensure the kernel args ( {{ tripleo_kernel_args }} ) is present as GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/default/grub
         regexp: '^GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS.*'
         insertafter: '^GRUB_CMDLINE_LINUX.*'
         line: 'GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS=" {{ tripleo_kernel_args }} "'
     - name: Add GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS to the GRUB_CMDLINE_LINUX parameter
-      lineinfile:
+      ansible.builtin.lineinfile:
         dest: /etc/default/grub
         line: 'GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX:+$GRUB_CMDLINE_LINUX }${GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS}"'
         insertafter: '^GRUB_TRIPLEO_HEAT_TEMPLATE_KERNEL_ARGS.*'
     - name: Check grub config paths
-      stat:
+      ansible.builtin.stat:
         path: "{{ item }}"
       register: grub_stat
       loop:
@@ -83,25 +83,25 @@
         - /boot/efi/EFI/centos
         - /boot/efi/EFI/fedora
     - name: Generate grub config
-      command: "grub2-mkconfig -o /boot/grub2/grub.cfg"
+      ansible.builtin.command: "grub2-mkconfig -o /boot/grub2/grub.cfg"
 
     - name: Generate EFI grub config
-      command: "grub2-mkconfig -o {{ item.stat.path }}/grub.cfg"
+      ansible.builtin.command: "grub2-mkconfig -o {{ item.stat.path }}/grub.cfg"
       when: item.stat.exists|bool
       loop: "{{ grub_stat.results }}"
 
     - name: Copy grubenv to EFI directory
-      copy:
+      ansible.builtin.copy:
         remote_src: true
         src: /boot/grub2/grubenv
         dest: "{{ item.stat.path }}/grubenv"
-        mode: '0600'
+        mode: '600'
         owner: root
         group: root
       when: item.stat.exists|bool
       loop: "{{ grub_stat.results }}"
     - name: Set reboot required fact
-      set_fact:
+      ansible.builtin.set_fact:
         reboot_required: true
   become: true
   when:
@@ -111,7 +111,7 @@
 
 # Apply DPDK workarounds before reboot
 - name: Apply DPDK workarounds
-  include_role:
+  ansible.builtin.include_role:
     name: tripleo_ovs_dpdk
     tasks_from: workarounds.yml
   when: reboot_required is defined and reboot_required
@@ -132,4 +132,4 @@
     - not tripleo_kernel_reboot_protection|bool
   block:
     - name: Reboot tasks
-      include_tasks: reboot.yaml
+      ansible.builtin.include_tasks: reboot.yaml

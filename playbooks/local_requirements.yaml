@@ -3,6 +3,7 @@
   vars:
     update_operator: true
     update_rhsm: true
+  name: Deploy local requirements
   roles:
     - operators
     - rhsm

@@ -8,12 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checks-out the repository under $GITHUB_WORKSPACE
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: run ansible-lint
       uses: ansible/ansible-lint-action@main
       with:
-        targets: |
-          playbooks/*.yaml
-        args: "-x 602"
-        override-deps: |
-          rich>=9.5.1,<11.0.0
+        path: playbooks/
