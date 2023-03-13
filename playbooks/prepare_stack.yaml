@@ -5,252 +5,253 @@
   gather_facts: false
   vars_files: vars/defaults.yaml
   roles:
-  - network_info
-
+    - network_info
+  name: Create OpenStack resources
   tasks:
+    - name: Gather host environment variables
+      ansible.builtin.setup:
+        filter: ansible_env
 
-  - name: Gather host environment variables
-    setup:
-      filter: ansible_env
+    - name: Create openshift user without any admin privileges # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack project show openshift; then
+            openstack project create openshift
+        fi
+        if ! openstack user show openshift; then
+            openstack user create --password '{{ openshift_password }}' openshift
+        fi
+        for r in _member_ member; do
+            if openstack role show $r; then
+                openstack role add --user openshift --project openshift $r
+            fi
+        done
 
-  - name: Create openshift user without any admin privileges # noqa 301
-    shell: |
-      if ! openstack project show openshift; then
-          openstack project create openshift
-      fi
-      if ! openstack user show openshift; then
-          openstack user create --password '{{ openshift_password }}' openshift
-      fi
-      for r in _member_ member; do
-          if openstack role show $r; then
-              openstack role add --user openshift --project openshift $r
-          fi
-      done
+        # Unlimited quota
+        openstack quota set \
+            --cores -1 \
+            --fixed-ips -1 \
+            --injected-file-size -1 \
+            --injected-files -1 \
+            --instances -1 \
+            --key-pairs -1 \
+            --properties -1 \
+            --ram -1 \
+            --server-groups -1 \
+            --server-group-members -1 \
+            --backups -1 \
+            --backup-gigabytes -1 \
+            --per-volume-gigabytes -1 \
+            --snapshots -1 \
+            --volumes -1 \
+            --floating-ips -1 \
+            --secgroup-rules -1 \
+            --secgroups -1 \
+            --networks -1 \
+            --subnets -1 \
+            --ports -1 \
+            --routers -1 \
+            --rbac-policies -1 \
+            --subnetpools -1 \
+            openshift
 
-      # Unlimited quota
-      openstack quota set \
-          --cores -1 \
-          --fixed-ips -1 \
-          --injected-file-size -1 \
-          --injected-files -1 \
-          --instances -1 \
-          --key-pairs -1 \
-          --properties -1 \
-          --ram -1 \
-          --server-groups -1 \
-          --server-group-members -1 \
-          --backups -1 \
-          --backup-gigabytes -1 \
-          --per-volume-gigabytes -1 \
-          --snapshots -1 \
-          --volumes -1 \
-          --floating-ips -1 \
-          --secgroup-rules -1 \
-          --secgroups -1 \
-          --networks -1 \
-          --subnets -1 \
-          --ports -1 \
-          --routers -1 \
-          --rbac-policies -1 \
-          --subnetpools -1 \
-          openshift
-
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Add swiftoperator role for openshift user
-    command: openstack role add --user openshift --project openshift swiftoperator
-    environment:
-      OS_CLOUD: standalone
-    when: swiftoperator_enabled
-
-  - name: Create flavors # noqa 301
-    shell: |
-      if ! openstack flavor show m1.tiny; then
-          openstack flavor create --ram 1024 --disk 10 --vcpu 1 --public m1.tiny
-      fi
-      if ! openstack flavor show m1.small; then
-          openstack flavor create --ram 2048 --disk 15 --vcpu 1 --public m1.small
-      fi
-      if ! openstack flavor show m1.medium; then
-          openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
-      fi
-      if ! openstack flavor show m1.large; then
-          openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large
-      fi
-      if ! openstack flavor show m1.large.nodisk; then
-          openstack flavor create --ram 8192 --disk 0 --vcpu 4 --public m1.large.nodisk
-      fi
-      if ! openstack flavor show m1.xlarge; then
-          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
-      fi
-      if ! openstack flavor show m1.xlarge.nodisk; then
-          openstack flavor create --ram 16384 --disk 0 --vcpu 4 --public m1.xlarge.nodisk
-      fi
-      if ! openstack flavor show m1.large.nfv; then
-          openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large.nfv
-          openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.large.nfv
-      fi
-      if ! openstack flavor show m1.xlarge.nfv; then
-          openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge.nfv
-          openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.xlarge.nfv
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Create external network
-    shell: |
-      if ! openstack network show external; then
-          openstack network create --external --provider-physical-network external --provider-network-type flat external
-      fi
-      if ! openstack subnet show external-subnet; then
-          openstack subnet create external-subnet --subnet-range "{{ external_cidr }}" \
-              --no-dhcp --gateway "{{ external_gateway }}" \
-              --allocation-pool "start={{ external_fip_pool_start }},end={{ external_fip_pool_end }}" \
-              --network external
-      fi
-    environment:
-      OS_CLOUD: standalone
-    when:
-    - external_fip_pool_start is defined
-    - external_fip_pool_end is defined
-    - dpdk_interface is not defined
-
-  - name: Create hostonly network # noqa 301
-    shell: |
-      if ! openstack network show hostonly; then
-          openstack network create --project openshift --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
-      fi
-      if ! openstack subnet show hostonly-subnet; then
-          openstack subnet create --project openshift hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
-              --dhcp --gateway "{{ hostonly_gateway }}" \
-              --dns-nameserver "{{ network_info.dns | first }}" \
-              --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
-              --network hostonly
-      fi
-      if ! openstack subnet show hostonly-subnet-v6; then
-          openstack subnet create --project openshift hostonly-subnet-v6 --subnet-range "{{ hostonly_v6_cidr }}" \
-              --dhcp --gateway "{{ hostonly_v6_gateway }}" \
-              --allocation-pool "start={{ hostonly_v6_fip_pool_start }},end={{ hostonly_v6_fip_pool_end }}" \
-              --network hostonly --ip-version 6 --ipv6-ra-mode dhcpv6-stateful --ipv6-address-mode dhcpv6-stateful
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Create hostonly-sriov network # noqa 301
-    when: sriov_interface is defined
-    shell: |
-      if ! openstack network show hostonly-sriov; then
-          openstack network create --project openshift --share --external --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
-      fi
-      if ! openstack subnet show hostonly-sriov-subnet; then
-          openstack subnet create --project openshift hostonly-sriov-subnet --subnet-range "{{ hostonly_sriov_cidr }}" \
-              --no-dhcp --gateway "{{ hostonly_sriov_gateway }}" \
-              --dns-nameserver "{{ network_info.dns | first }}" \
-              --allocation-pool "start={{ hostonly_sriov_fip_pool_start }},end={{ hostonly_sriov_fip_pool_end }}" \
-              --network hostonly-sriov
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Create basic security group which allows SSH # noqa 301
-    shell: |
-      if ! openstack security group show allow_ssh; then
-          openstack security group create allow_ssh --project openshift
-          openstack security group rule create --protocol tcp --dst-port 22 --project openshift allow_ssh
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  - name: Create basic security group which allows ping # noqa 301
-    shell: |
-      if ! openstack security group show allow_ping; then
-          openstack security group create allow_ping --project openshift
-          openstack security group rule create --protocol icmp --project openshift allow_ping
-          openstack security group rule create --protocol ipv6-icmp --project openshift allow_ping
-      fi
-    environment:
-      OS_CLOUD: standalone
-
-  # openstack cli doesn't have manila support (no openstack share type ...)in RHEL/OSP
-  - name: Create Manila default share type # noqa 301
-    when: manila_enabled
-    block:
-
-    - name: Convert clouds.yaml to legacy environment variables
-      script: files/cloud-to-env.py
-      register: os_env_vars
       environment:
         OS_CLOUD: standalone
 
-    # type-show MUST NOT have OS_SHARE_API_VERSION set
-    # type-create MUST have OS_SHARE_API_VERSION set
-    - name: Create Manila default share type
-      shell: |
-        if ! OS_SHARE_API_VERSION= manila type-show default; then
-            manila type-create default false
+    - name: Add swiftoperator role for openshift user # noqa no-changed-when
+      ansible.builtin.command: openstack role add --user openshift --project openshift swiftoperator
+      environment:
+        OS_CLOUD: standalone
+      when: swiftoperator_enabled
+
+    - name: Create flavors # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack flavor show m1.tiny; then
+            openstack flavor create --ram 1024 --disk 10 --vcpu 1 --public m1.tiny
         fi
-      environment: "{{ legacy_vars | combine(extra_vars) }}"
+        if ! openstack flavor show m1.small; then
+            openstack flavor create --ram 2048 --disk 15 --vcpu 1 --public m1.small
+        fi
+        if ! openstack flavor show m1.medium; then
+            openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
+        fi
+        if ! openstack flavor show m1.large; then
+            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large
+        fi
+        if ! openstack flavor show m1.large.nodisk; then
+            openstack flavor create --ram 8192 --disk 0 --vcpu 4 --public m1.large.nodisk
+        fi
+        if ! openstack flavor show m1.xlarge; then
+            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
+        fi
+        if ! openstack flavor show m1.xlarge.nodisk; then
+            openstack flavor create --ram 16384 --disk 0 --vcpu 4 --public m1.xlarge.nodisk
+        fi
+        if ! openstack flavor show m1.large.nfv; then
+            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large.nfv
+            openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.large.nfv
+        fi
+        if ! openstack flavor show m1.xlarge.nfv; then
+            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge.nfv
+            openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.xlarge.nfv
+        fi
+      environment:
+        OS_CLOUD: standalone
+
+    - name: Create external network # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack network show external; then
+            openstack network create --external --provider-physical-network external --provider-network-type flat external
+        fi
+        if ! openstack subnet show external-subnet; then
+            openstack subnet create external-subnet --subnet-range "{{ external_cidr }}" \
+                --no-dhcp --gateway "{{ external_gateway }}" \
+                --allocation-pool "start={{ external_fip_pool_start }},end={{ external_fip_pool_end }}" \
+                --network external
+        fi
+      environment:
+        OS_CLOUD: standalone
+      when:
+        - external_fip_pool_start is defined
+        - external_fip_pool_end is defined
+        - dpdk_interface is not defined
+
+    - name: Create hostonly network # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack network show hostonly; then
+            openstack network create --project openshift --share --external --provider-physical-network hostonly --provider-network-type flat hostonly
+        fi
+        if ! openstack subnet show hostonly-subnet; then
+            openstack subnet create --project openshift hostonly-subnet --subnet-range "{{ hostonly_cidr }}" \
+                --dhcp --gateway "{{ hostonly_gateway }}" \
+                --dns-nameserver "{{ network_info.dns | first }}" \
+                --allocation-pool "start={{ hostonly_fip_pool_start }},end={{ hostonly_fip_pool_end }}" \
+                --network hostonly
+        fi
+        if ! openstack subnet show hostonly-subnet-v6; then
+            openstack subnet create --project openshift hostonly-subnet-v6 --subnet-range "{{ hostonly_v6_cidr }}" \
+                --dhcp --gateway "{{ hostonly_v6_gateway }}" \
+                --allocation-pool "start={{ hostonly_v6_fip_pool_start }},end={{ hostonly_v6_fip_pool_end }}" \
+                --network hostonly --ip-version 6 --ipv6-ra-mode dhcpv6-stateful --ipv6-address-mode dhcpv6-stateful
+        fi
+      environment:
+        OS_CLOUD: standalone
+
+    - name: Create hostonly-sriov network # noqa no-changed-when
+      when: sriov_interface is defined
+      ansible.builtin.shell: |
+        if ! openstack network show hostonly-sriov; then
+            openstack network create --project openshift --share --external \
+                --provider-physical-network hostonly-sriov --provider-network-type flat hostonly-sriov
+        fi
+        if ! openstack subnet show hostonly-sriov-subnet; then
+            openstack subnet create --project openshift hostonly-sriov-subnet \
+                --subnet-range "{{ hostonly_sriov_cidr }}" \
+                --no-dhcp --gateway "{{ hostonly_sriov_gateway }}" \
+                --dns-nameserver "{{ network_info.dns | first }}" \
+                --allocation-pool "start={{ hostonly_sriov_fip_pool_start }},end={{ hostonly_sriov_fip_pool_end }}" \
+                --network hostonly-sriov
+        fi
+      environment:
+        OS_CLOUD: standalone
+
+    - name: Create basic security group which allows SSH # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack security group show allow_ssh; then
+            openstack security group create allow_ssh --project openshift
+            openstack security group rule create --protocol tcp --dst-port 22 --project openshift allow_ssh
+        fi
+      environment:
+        OS_CLOUD: standalone
+
+    - name: Create basic security group which allows ping # noqa no-changed-when
+      ansible.builtin.shell: |
+        if ! openstack security group show allow_ping; then
+            openstack security group create allow_ping --project openshift
+            openstack security group rule create --protocol icmp --project openshift allow_ping
+            openstack security group rule create --protocol ipv6-icmp --project openshift allow_ping
+        fi
+      environment:
+        OS_CLOUD: standalone
+
+    # openstack cli doesn't have manila support (no openstack share type ...)in RHEL/OSP
+    - name: Create Manila default share type # noqa no-changed-when
+      when: manila_enabled
+      block:
+
+        - name: Convert clouds.yaml to legacy environment variables
+          ansible.builtin.script: files/cloud-to-env.py
+          register: os_env_vars
+          environment:
+            OS_CLOUD: standalone
+
+        # type-show MUST NOT have OS_SHARE_API_VERSION set
+        # type-create MUST have OS_SHARE_API_VERSION set
+        - name: Create Manila default share type # noqa no-changed-when
+          ansible.builtin.shell: |
+            if ! OS_SHARE_API_VERSION= manila type-show default; then
+                manila type-create default false
+            fi
+          environment: "{{ legacy_vars | combine(extra_vars) }}"
+          vars:
+            legacy_vars: "{{ os_env_vars.stdout | from_json }}"
+            extra_vars:
+              # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
+              OS_SHARE_API_VERSION: 2.60
+
+        - name: Gather the package facts
+          ansible.builtin.package_facts:
+            manager: auto
+
+        - name: Disable snapshot support on pre-Wallaby Manila # noqa no-changed-when
+          when: ansible_facts.packages['python3-manilaclient'][0].version is version('2.6.0', '<')
+          ansible.builtin.shell: |
+            manila type-key default set snapshot_support=False
+          environment: "{{ legacy_vars | combine(extra_vars) }}"
+          vars:
+            legacy_vars: "{{ os_env_vars.stdout | from_json }}"
+            extra_vars:
+              # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
+              OS_SHARE_API_VERSION: 2.60
+
+        - name: Increase default quotas for shares and snapshots # noqa no-changed-when
+          ansible.builtin.shell: |
+            manila quota-update --shares 150 --snapshots 150 openshift
+          environment: "{{ legacy_vars }}"
+          vars:
+            legacy_vars: "{{ os_env_vars.stdout | from_json }}"
+
+    - name: Read clouds.yaml
+      ansible.builtin.slurp:
+        src: &cloudsyamlpath /home/stack/.config/openstack/clouds.yaml
+      register: cloudsyaml
+
+    - name: Parse cloud.yaml
+      ansible.builtin.set_fact:
+        cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
+
+    - name: Extract standalone cloud config
+      ansible.builtin.set_fact:
+        standalone: "{{ cloudsyaml['clouds']['standalone'] }}"
+
+    - name: Add shiftstack entry to clouds.yaml
+      ansible.builtin.set_fact:
+        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {'openshift': openshift}}, recursive=true) }}"
       vars:
-        legacy_vars: "{{ os_env_vars.stdout | from_json }}"
-        extra_vars:
-          # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
-          OS_SHARE_API_VERSION: 2.60
+        openshift:
+          auth:
+            auth_url: "{{ standalone['auth']['auth_url'] }}"
+            password: "{{ openshift_password }}"
+            project_domain_name: Default
+            project_name: openshift
+            user_domain_name: Default
+            username: openshift
+          cacert: "{{ standalone['cacert'] }}"
+          identity_api_version: "{{ standalone['identity_api_version'] }}"
+          volume_api_version: "{{ standalone['volume_api_version'] | default('3') }}"
+          region_name: "{{ standalone['region_name'] }}"
 
-    - name: Gather the package facts
-      ansible.builtin.package_facts:
-        manager: auto
-
-    - name: Disable snapshot support on pre-Wallaby Manila
-      when: ansible_facts.packages['python3-manilaclient'][0].version is version('2.6.0', '<')
-      shell: |
-        manila type-key default set snapshot_support=False
-      environment: "{{ legacy_vars | combine(extra_vars) }}"
-      vars:
-        legacy_vars: "{{ os_env_vars.stdout | from_json }}"
-        extra_vars:
-          # https://bugzilla.redhat.com/show_bug.cgi?id=1960710
-          OS_SHARE_API_VERSION: 2.60
-
-    - name: Increase default quotas for shares and snapshots
-      shell: |
-        manila quota-update --shares 150 --snapshots 150 openshift
-      environment: "{{ legacy_vars }}"
-      vars:
-        legacy_vars: "{{ os_env_vars.stdout | from_json }}"
-
-  - name: Read clouds.yaml
-    slurp:
-      src: &cloudsyamlpath /home/stack/.config/openstack/clouds.yaml
-    register: cloudsyaml
-
-  - name: Parse cloud.yaml
-    set_fact:
-      cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
-
-  - name: Extract standalone cloud config
-    set_fact:
-      standalone: "{{ cloudsyaml['clouds']['standalone'] }}"
-
-  - name: Add shiftstack entry to clouds.yaml
-    set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {'openshift': openshift}}, recursive=true) }}"
-    vars:
-      openshift:
-        auth:
-          auth_url: "{{ standalone['auth']['auth_url'] }}"
-          password: "{{ openshift_password }}"
-          project_domain_name: Default
-          project_name: openshift
-          user_domain_name: Default
-          username: openshift
-        cacert: "{{ standalone['cacert'] }}"
-        identity_api_version: "{{ standalone['identity_api_version'] }}"
-        volume_api_version: "{{ standalone['volume_api_version'] | default('3') }}"
-        region_name: "{{ standalone['region_name'] }}"
-
-  - name: Write updated clouds.yaml
-    copy:
-      dest: *cloudsyamlpath
-      content: "{{ cloudsyaml | to_nice_yaml }}"
-      mode: 0755
+    - name: Write updated clouds.yaml
+      ansible.builtin.copy:
+        dest: *cloudsyamlpath
+        content: "{{ cloudsyaml | to_nice_yaml }}"
+        mode: '755'

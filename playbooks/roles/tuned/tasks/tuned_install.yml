@@ -22,9 +22,9 @@
     state: present
   register: _tuned_install_result
 
-- name: Restart tuned # noqa 503
+- name: Restart tuned # noqa no-handler
   become: true
-  systemd:
+  ansible.builtin.systemd:
     name: tuned
     state: restarted
     enabled: true

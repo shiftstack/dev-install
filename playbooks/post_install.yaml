@@ -3,7 +3,8 @@
   become: true
   become_user: stack
   gather_facts: false
+  name: Run post-install
   tasks:
-  - name: Run post-install script # noqa 305
-    shell: "{{ post_install }}"
-    when: post_install is defined
+    - name: Run post-install script # noqa no-changed-when command-instead-of-shell
+      ansible.builtin.shell: "{{ post_install }}"
+      when: post_install is defined

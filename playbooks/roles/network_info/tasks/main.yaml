@@ -1,45 +1,45 @@
 ---
 - name: Read network info if present
-  slurp:
+  ansible.builtin.slurp:
     src: &networkinfo /home/stack/dev-install-network-info.yaml
   register: networkinfo_file
   ignore_errors: true
 
 - name: Set network_info from file
-  set_fact:
+  ansible.builtin.set_fact:
     network_info: "{{ networkinfo_file['content'] | b64decode | from_json }}"
   when: not networkinfo_file.failed
 
 - name: Store network info before we change it
-  block:
-  - name: Gather host network info
-    setup:
-      gather_subset: "network"
-
-  - name: Set ip with netmask facts
-    set_fact:
-      public_ipv4_full: "{{ ansible_facts.default_ipv4.address + '/' + ansible_facts.default_ipv4.netmask }}"
-
-  - name: Set network_info from gathered facts
-    set_fact:
-      network_info:
-        dns: "{{ ansible_facts.dns.nameservers }}"
-        public_ipv4: "{{ ansible_facts.default_ipv4 }}"
-        public_ipv6: "{{ ansible_facts.default_ipv6 }}"
-        public_ipv4_cidr: "{{ public_ipv4_full | ipaddr('prefix') }}"
-
-  - name: Write network_info to file
-    copy:
-      dest: *networkinfo
-      content: "{{ network_info | to_nice_json }}"
-      mode: 0755
   when: networkinfo_file.failed
+  block:
+    - name: Gather host network info
+      ansible.builtin.setup:
+        gather_subset: "network"
+
+    - name: Set ip with netmask facts
+      ansible.builtin.set_fact:
+        public_ipv4_full: "{{ ansible_facts.default_ipv4.address + '/' + ansible_facts.default_ipv4.netmask }}"
+
+    - name: Set network_info from gathered facts
+      ansible.builtin.set_fact:
+        network_info:
+          dns: "{{ ansible_facts.dns.nameservers }}"
+          public_ipv4: "{{ ansible_facts.default_ipv4 }}"
+          public_ipv6: "{{ ansible_facts.default_ipv6 }}"
+          public_ipv4_cidr: "{{ public_ipv4_full | ansible.utils.ipaddr('prefix') }}"
+
+    - name: Write network_info to file
+      ansible.builtin.copy:
+        dest: *networkinfo
+        content: "{{ network_info | to_nice_json }}"
+        mode: '755'
 
 - name: Find network devices with a device link
-  find:
+  ansible.builtin.find:
     paths: /sys/class/net
     patterns:
-    - device
+      - device
     file_type: link
     follow: true
     depth: 2
@@ -48,45 +48,45 @@
   register: device_links
 
 - name: Extract paths from device_links
-  set_fact:
+  ansible.builtin.set_fact:
     device_links: "{{ device_links.files | map(attribute='path') | list }}"
 
 - name: Extract device names from device_links
-  set_fact:
-    physical_nics: "{{ physical_nics + [ item | dirname | basename ] }}"
+  ansible.builtin.set_fact:
+    physical_nics: "{{ physical_nics + [item | dirname | basename] }}"
   loop: "{{ device_links }}"
   vars:
     physical_nics: []
 
 - name: Initialise SR-IOV PFs to an empty list
-  set_fact:
+  ansible.builtin.set_fact:
     sriov_pfs: []
 
 - name: Find SR-IOV PFs
-  find:
+  ansible.builtin.find:
     paths: "{{ device_links }}"
     patterns:
-    - sriov_totalvfs
+      - sriov_totalvfs
   register: sriov_totalvfs
 
 - name: Extract device names for SR-IOV PFs
-  set_fact:
-    sriov_pfs: "{{ sriov_pfs + [ item | dirname | dirname | basename ] }}"
+  ansible.builtin.set_fact:
+    sriov_pfs: "{{ sriov_pfs + [item | dirname | dirname | basename] }}"
   loop: "{{ sriov_totalvfs.files | map(attribute='path') | list }}"
 
 - name: Initialise SR-IOV VFs to an empty list
-  set_fact:
+  ansible.builtin.set_fact:
     sriov_vfs: []
 
 - name: Find SR-IOV VFs
-  find:
+  ansible.builtin.find:
     paths: "{{ device_links }}"
     patterns:
-    - physfn
+      - physfn
     file_type: link
   register: sriov_physfndir
 
 - name: Extract device names for SR-IOV VFs
-  set_fact:
-    sriov_vfs: "{{ sriov_vfs + [ item | dirname | dirname | basename ] }}"
+  ansible.builtin.set_fact:
+    sriov_vfs: "{{ sriov_vfs + [item | dirname | dirname | basename] }}"
   loop: "{{ sriov_physfndir.files | map(attribute='path') | list }}"

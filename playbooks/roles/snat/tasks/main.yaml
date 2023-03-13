@@ -1,19 +1,19 @@
 ---
 
-- name: "Create systemd unit to add SNAT rule for {{ network_name }} network"
-  template:
+- name: "Create systemd unit to add SNAT rule for network {{ network_name }}"
+  ansible.builtin.template:
     src: "standalone_snat.service.j2"
     dest: "/etc/systemd/system/standalone_{{ network_name }}_snat.service"
     owner: root
     group: root
-    mode: '0644'
+    mode: '644'
   vars:
     cidr: "{{ network_cidr }}"
     exit_ip: "{{ public_ip }}"
     exit_nic: "{{ public_nic }}"
 
 - name: Activate systemd units
-  systemd:
+  ansible.builtin.systemd:
     name: "standalone_{{ network_name }}_snat.service"
     enabled: true
     state: started

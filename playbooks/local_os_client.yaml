@@ -4,147 +4,145 @@
   become_user: stack
   gather_facts: false
   vars_files: vars/defaults.yaml
-
+  name: Grab the remote clouds.yaml
   tasks:
+    - name: Read clouds.yaml from standalone host
+      ansible.builtin.slurp:
+        src: /home/stack/.config/openstack/clouds.yaml
+      register: cloudsyaml
 
-  - name: Read clouds.yaml from standalone host
-    slurp:
-      src: /home/stack/.config/openstack/clouds.yaml
-    register: cloudsyaml
+    - name: Create fact for cloudsyaml
+      ansible.builtin.set_fact:
+        cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
 
-  - name: Create fact for cloudsyaml
-    set_fact:
-      cloudsyaml: "{{ cloudsyaml['content'] | b64decode | from_yaml }}"
-
-  - name: Grab the CA certificate
-    when: ssl_enabled
-    block:
-      - name: Read CA certificate
-        slurp:
-          src: "{{ ssl_ca_cert_path }}"
-        register: ssl_ca_cert_output
-      - name: Set fact for CA cert
-        set_fact:
-          ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
-      - name: Copy CA cert into PKI
-        when: update_local_pki
-        become: true
-        become_user: root
-        delegate_to: localhost
-        copy:
-          dest: "{{ ssl_ca_cert_path }}"
-          content: "{{ ssl_ca_cert }}"
-          mode: '0444'
-          owner: root
-          group: root
-      - name: Update CA trust
-        when: update_local_pki
-        become: true
-        become_user: root
-        delegate_to: localhost
-        command: update-ca-trust extract
+    - name: Grab the CA certificate
+      when: ssl_enabled
+      block:
+        - name: Read CA certificate
+          ansible.builtin.slurp:
+            src: "{{ ssl_ca_cert_path }}"
+          register: ssl_ca_cert_output
+        - name: Set fact for CA cert
+          ansible.builtin.set_fact:
+            ssl_ca_cert: "{{ ssl_ca_cert_output['content'] | b64decode }}"
+        - name: Copy CA cert into PKI
+          when: update_local_pki
+          become: true
+          become_user: root
+          delegate_to: localhost
+          ansible.builtin.copy:
+            dest: "{{ ssl_ca_cert_path }}"
+            content: "{{ ssl_ca_cert }}"
+            mode: '444'
+            owner: root
+            group: root
+        - name: Update CA trust # noqa no-changed-when
+          when: update_local_pki
+          become: true
+          become_user: root
+          delegate_to: localhost
+          ansible.builtin.command: update-ca-trust extract
 
 - hosts: localhost
   gather_facts: false
   vars_files: vars/defaults.yaml
-
+  name: Configure the local clouds.yaml
   tasks:
+    - name: Load Ansible env
+      ansible.builtin.setup:
+        filter: ansible_env
 
-  - name: Load Ansible env
-    setup:
-      filter: ansible_env
+    - name: Ensure ~/.config/openstack dir exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/openstack"
+        state: directory
+        mode: '755'
 
-  - name: Ensure ~/.config/openstack dir exists
-    file:
-      path: "{{ ansible_env.HOME }}/.config/openstack"
-      state: directory
-      mode: 0755
+    - name: Set path of local clouds.yaml
+      ansible.builtin.set_fact:
+        cloudsyamlpath: "{{ ansible_env.HOME }}/.config/openstack/clouds.yaml"
 
-  - name: Set path of local clouds.yaml
-    set_fact:
-      cloudsyamlpath: "{{ ansible_env.HOME }}/.config/openstack/clouds.yaml"
+    - name: Initialise cloudsyaml
+      block:
+        - name: Read local cloudsyaml
+          ansible.builtin.set_fact:
+            cloudsyaml: "{{ lookup('file', cloudsyamlpath) | from_yaml }}"
+      rescue:
+        - name: Initialise empty cloudsyaml
+          ansible.builtin.set_fact:
+            cloudsyaml: "{{ {'clouds': {}} }}"
 
-  - name: Initialise cloudsyaml
-    block:
-    - name: Read local cloudsyaml
-      set_fact:
-        cloudsyaml: "{{ lookup('file', cloudsyamlpath) | from_yaml }}"
-    rescue:
-      - name: Initialise empty cloudsyaml
-        set_fact:
-          cloudsyaml: "{{ {'clouds': {}} }}"
+    - name: Configure cacert locally
+      when: ssl_enabled
+      block:
+        - name: Set local path of cacert
+          ansible.builtin.set_fact:
+            cacert_path: "{{ ansible_env.HOME }}/.config/openstack/{{ local_cloudname }}-ca.crt"
 
-  - name: Configure cacert locally
-    when: ssl_enabled
-    block:
-    - name: Set local path of cacert
-      set_fact:
-        cacert_path: "{{ ansible_env.HOME }}/.config/openstack/{{ local_cloudname }}-ca.crt"
+        - name: Copy CA cert into local config directory
+          ansible.builtin.copy:
+            dest: "{{ cacert_path }}"
+            content: "{{ hostvars['standalone']['ssl_ca_cert'] }}"
+            mode: '644'
 
-    - name: Copy CA cert into local config directory
-      copy:
-        dest: "{{ cacert_path }}"
-        content: "{{ hostvars['standalone']['ssl_ca_cert'] }}"
+        - name: Set cacert in clouds.yaml
+          ansible.builtin.set_fact:
+            set_cacert: "{{ {'cacert': cacert_path} }}"
+
+    - name: Don't set cacert in clouds.yaml
+      when: not ssl_enabled
+      ansible.builtin.set_fact:
+      vars:
+        set_cacert: {}
+
+    - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
+      ansible.builtin.set_fact:
+        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: standalone}}, recursive=true) }}"
+      vars:
+        standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] | combine(set_cacert) }}"
+      when: "'standalone' in hostvars['standalone']['cloudsyaml']['clouds']"
+
+    - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
+      ansible.builtin.set_fact:
+        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, set_cacert, recursive=true) }}"
+      vars:
+        openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] | combine(set_cacert) }}"
+      when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
+
+    - name: Update local clouds.yaml
+      ansible.builtin.copy:
+        dest: "{{ cloudsyamlpath }}"
+        content: "{{ cloudsyaml | to_nice_yaml }}"
+        mode: '0755'
+
+    - name: Install openstack client locally
+      ansible.builtin.pip:
+        name: python-openstackclient
+        extra_args: "{% if not is_local_virtualenv %} --user {% endif %}"
+
+    - name: Create the scripts if it does not exist
+      ansible.builtin.file:
+        path: ../scripts
+        state: directory
+        mode: '755'
+
+    - name: Write sshuttle script
+      ansible.builtin.template:
+        src: sshuttle-standalone.sh.j2
+        dest: ../scripts/sshuttle-standalone.sh
+        mode: '0755'
+
+    - name: Write openstack environment script
+      ansible.builtin.template:
+        src: env.sh.j2
+        dest: ../scripts/env.sh
         mode: '0644'
 
-    - name: Set cacert in clouds.yaml
-      set_fact:
-        set_cacert: "{{ {'cacert': cacert_path} }}"
-
-  - name: Don't set cacert in clouds.yaml
-    when: not ssl_enabled
-    set_fact:
-    vars:
-      set_cacert: {}
-
-  - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
-    set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: standalone}}, recursive=true) }}"
-    vars:
-      standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] | combine(set_cacert) }}"
-    when: "'standalone' in hostvars['standalone']['cloudsyaml']['clouds']"
-
-  - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}_openshift
-    set_fact:
-      cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, set_cacert, recursive=true) }}"
-    vars:
-      openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] | combine(set_cacert) }}"
-    when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
-
-  - name: Update local clouds.yaml
-    copy:
-      dest: "{{ cloudsyamlpath }}"
-      content: "{{ cloudsyaml | to_nice_yaml }}"
-      mode: 0755
-
-  - name: Install openstack client locally
-    pip:
-      name: python-openstackclient
-      extra_args: "{% if not is_local_virtualenv %} --user {% endif %}"
-
-  - name: Create the scripts if it does not exist
-    ansible.builtin.file:
-      path: ../scripts
-      state: directory
-      mode: '0755'
-
-  - name: Write sshuttle script
-    template:
-      src: sshuttle-standalone.sh.j2
-      dest: ../scripts/sshuttle-standalone.sh
-      mode: 0755
-
-  - name: Write openstack environment script
-    template:
-      src: env.sh.j2
-      dest: ../scripts/env.sh
-      mode: 0644
-
-  - name: Print useful infos
-    debug:
-      msg:
-      - "{{ cloudsyamlpath }} has been updated."
-      - "To connect to your cloud set OS_CLOUD={{ local_cloudname }} and update your local routes."
-      - "For convenience:"
-      - "  `scripts/sshuttle-standalone.sh` will start a correctly configure sshuttle."
-      - "  `source scripts/env.sh` will set OS_CLOUD correctly."
+    - name: Print useful infos
+      ansible.builtin.debug:
+        msg:
+          - "{{ cloudsyamlpath }} has been updated."
+          - "To connect to your cloud set OS_CLOUD={{ local_cloudname }} and update your local routes."
+          - "For convenience:"
+          - "  `scripts/sshuttle-standalone.sh` will start a correctly configure sshuttle."
+          - "  `source scripts/env.sh` will set OS_CLOUD correctly."

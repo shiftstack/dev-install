@@ -18,7 +18,7 @@
 # "{{ role_name }}" will search for and load any operating system variable file
 # found within the "vars/" path. If no OS files are found the task will skip.
 - name: Gather variables for each operating system
-  include_vars: "{{ item }}"
+  ansible.builtin.include_vars: "{{ item }}"
   with_first_found:
     - skip: true
       files:
@@ -31,12 +31,12 @@
   tags:
     - always
 
-- include_tasks: tuned_install.yml
+- ansible.builtin.include_tasks: tuned_install.yml
   when:
     - (tuned_system_packages | length) > 0
 
 - name: Check for tuned-adm
-  command: >-
+  ansible.builtin.command: >-
     which tuned-adm
   environment:
     PATH: "/bin:/usr/bin:/sbin:/usr/sbin"
@@ -44,7 +44,7 @@
   failed_when: false
   register: tuned_check
 
-- include_tasks: tuned_config.yml
+- ansible.builtin.include_tasks: tuned_config.yml
   when:
     - not ansible_check_mode
     - tuned_check.rc == 0

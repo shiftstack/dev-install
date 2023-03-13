@@ -1,0 +1,24 @@
+---
+# .ansible-lint
+
+exclude_paths:
+  # these roles were copy/pasted from tripleo
+  - playbooks/roles/tripleo_kernel
+  - playbooks/roles/tripleo_module_load
+  - playbooks/roles/tripleo_ovs_dpdk
+  - playbooks/roles/tuned
+
+mock_modules:
+  - community.crypto.openssl_csr
+  - community.crypto.openssl_privatekey
+  - community.crypto.x509_certificate
+  - community.general.filesystem
+  - community.general.ini_file
+  - community.general.lvg
+  - community.general.lvol
+  - community.general.modprobe
+
+mock_roles:
+  - redhat-subscription
+  - tripleo.operator.tripleo_deploy
+  - tripleo.operator.tripleo_repos

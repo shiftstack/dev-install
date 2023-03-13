@@ -3,13 +3,13 @@
   tags:
     - always
     - lab
-  file:
-    mode: 0755
+  ansible.builtin.file:
+    mode: '755'
     path: ~/.ansible/roles
     state: directory
 
 - name: Clone ansible-role-redhat-subscription
-  git:
+  ansible.builtin.git:
     dest: ~/.ansible/roles/redhat-subscription
     repo: https://opendev.org/openstack/ansible-role-redhat-subscription
     update: "{{ update_rhsm | bool }}"

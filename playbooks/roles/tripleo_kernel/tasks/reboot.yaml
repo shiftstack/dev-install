@@ -37,7 +37,7 @@
     # files which will avoid all the tap interfaces. This takes a while but
     # results in less memory utilization for the rest of the deployment.
     - name: Get ifcfg facts
-      setup:
+      ansible.builtin.setup:
         gather_subset:
           - '!all'
           - '!min'

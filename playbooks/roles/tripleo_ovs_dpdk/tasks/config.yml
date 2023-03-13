@@ -15,7 +15,7 @@
 # under the License.
 
 - name: Check valid input for tripleo_ovs_dpdk_pmd_core_list
-  fail:
+  ansible.builtin.fail:
     msg: "List of PMD cores cannot be empty - tripleo_ovs_dpdk_pmd_core_list"
   when: not tripleo_ovs_dpdk_pmd_core_list|string or tripleo_ovs_dpdk_pmd_core_list == 'null'
 
@@ -47,7 +47,7 @@
   when: not tripleo_ovs_dpdk_lcore_list|string or tripleo_ovs_dpdk_lcore_list == 'null'
 
 - name: Add memory channels to dpdk extra
-  set_fact:
+  ansible.builtin.set_fact:
     tripleo_ovs_dpdk_extra_internal: "{{ tripleo_ovs_dpdk_extra }} -n {{ tripleo_ovs_dpdk_memory_channels }}"
 
 - name: Apply DPDK extra

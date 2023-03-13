@@ -5,180 +5,179 @@
   gather_facts: false
   vars_files: vars/defaults.yaml
   roles:
-  - network_info
-
+    - network_info
+  name: Configure the network
   tasks:
+    - name: Install ovs tools
+      ansible.builtin.yum:
+        state: installed
+        name:
+          - rhosp-openvswitch
+          - NetworkManager-ovs
+          - nmstate
+          - iptables
+      register: installovs
 
-  - name: Install ovs tools
-    yum:
-      state: installed
-      name:
-      - rhosp-openvswitch
-      - NetworkManager-ovs
-      - nmstate
-      - iptables
-    register: installovs
+    - name: Restart NetworkManager to load ovs plugin # noqa no-handler
+      ansible.builtin.systemd:
+        name: "NetworkManager.service"
+        enabled: true
+        state: restarted
+      when: installovs.changed
 
-  - name: Restart NetworkManager to load ovs plugin # noqa 503
-    systemd:
-      name: "NetworkManager.service"
-      enabled: true
-      state: restarted
-    when: installovs.changed
+    - name: Start openvswitch
+      ansible.builtin.systemd:
+        name: openvswitch.service
+        enabled: true
+        state: started
 
-  - name: Start openvswitch
-    systemd:
-      name: openvswitch.service
-      enabled: true
-      state: started
+    - name: Define dummy interfaces to be created when not using DPDK
+      when:
+        - dpdk_interface is not defined
+      ansible.builtin.set_fact:
+        nmstate_ifs: |
+          - name: dummy0
+            type: dummy
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
+          - name: dummy1
+            type: dummy
+            state: up
+            ipv4:
+              enabled: false
+            ipv6:
+              enabled: false
 
-  - name: Define dummy interfaces to be created when not using DPDK
-    when:
-    - dpdk_interface is not defined
-    set_fact:
-      nmstate_ifs: |
-        - name: dummy0
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
-        - name: dummy1
-          type: dummy
-          state: up
-          ipv4:
-            enabled: false
-          ipv6:
-            enabled: false
+    - name: Define dummy interfaces to be created when using DPDK
+      when:
+        - dpdk_interface is defined
+      ansible.builtin.set_fact:
+        nmstate_ifs: |
+          - name: dummy0
+            type: dummy
+            state: up
+            ipv4:
+              enabled: true
+              address:
+                - ip: {{ local_ip }}
+                  prefix-length: {{ control_plane_prefix | int }}
+            ipv6:
+              enabled: false
 
-  - name: Define dummy interfaces to be created when using DPDK
-    when:
-    - dpdk_interface is defined
-    set_fact:
-      nmstate_ifs: |
-        - name: dummy0
-          type: dummy
-          state: up
-          ipv4:
-            enabled: true
-            address:
-            - ip: {{ local_ip }}
-              prefix-length: {{ control_plane_prefix | int }}
-          ipv6:
-            enabled: false
+    # this saves the static route configuration including the default route
+    # prior to filtering later
 
-  # this saves the static route configuration including the default route
-  # prior to filtering later
+    - name: Save route info # noqa no-changed-when
+      ansible.builtin.command: nmstatectl show --json
+      register: pre
 
-  - name: Save route info # noqa 301
-    command: nmstatectl show --json
-    register: pre
+    - name: Create fact for nmstate_routes
+      ansible.builtin.set_fact:
+        nmstate_routes: "{{ pre.stdout | from_json | json_query(q) }}"
+      vars:
+        q: "routes.config"
 
-  - name: Create fact for nmstate_routes
-    set_fact:
-      nmstate_routes: "{{ pre.stdout | from_json | json_query(q) }}"
-    vars:
-      q: "routes.config"
+    # This works round a TripleO installation failure caused by NM-managed
+    # interfaces 'failing' because:
+    # * The default NM configuration specifies DHCP
+    # * They have an active link, but
+    # * The network they are plugged into doesn't have DHCP
+    #
+    # To work round this we remove all interfaces from NM control except the
+    # public interface.
+    #
+    # The public interface will also be remove from NM control later by TripleO,
+    # but we don't touch it here because:
+    # * We are confident that it is correctly configured in NM because we're
+    #   connected over it
+    # * We need it for installation
+    - name: Remove all physical nics from NM control except the public interface
+      ansible.builtin.set_fact:
+        nmstate_ifs: "{{ nmstate_ifs | from_yaml + [{'name': item} | combine(removed)] }}"
+      loop: "{{ physical_nics | difference(primary_nic) }}"
+      vars:
+        primary_nic: "{{ [network_info.public_ipv4.interface] }}"
+        removed:
+          state: absent
 
-  # This works round a TripleO installation failure caused by NM-managed
-  # interfaces 'failing' because:
-  # * The default NM configuration specifies DHCP
-  # * They have an active link, but
-  # * The network they are plugged into doesn't have DHCP
-  #
-  # To work round this we remove all interfaces from NM control except the
-  # public interface.
-  #
-  # The public interface will also be remove from NM control later by TripleO,
-  # but we don't touch it here because:
-  # * We are confident that it is correctly configured in NM because we're
-  #   connected over it
-  # * We need it for installation
-  - name: Remove all physical nics from NM control except the public interface
-    set_fact:
-      nmstate_ifs: "{{ nmstate_ifs | from_yaml  + [ {'name': item} | combine(removed) ] }}"
-    loop: "{{ physical_nics | difference(primary_nic) }}"
-    vars:
-      primary_nic: "{{ [ network_info.public_ipv4.interface ] }}"
-      removed:
-        state: absent
+    - name: Log target nmstate
+      ansible.builtin.debug:
+        var: nmstate_ifs
 
-  - name: Log target nmstate
-    debug:
-      var: nmstate_ifs
+    - name: Set nmstate # noqa no-changed-when
+      ansible.builtin.command: nmstatectl set --no-commit --timeout 60
+      args:
+        stdin: "{{ network_state | to_nice_json }}"
+      vars:
+        network_state:
+          interfaces: "{{ nmstate_ifs }}"
+          # add saved static routes
+          routes:
+            config: "{{ nmstate_routes }}"
+      register: nmstateset
 
-  - name: Set nmstate # noqa 301
-    command: nmstatectl set --no-commit --timeout 60
-    args:
-      stdin: "{{ network_state | to_nice_json }}"
-    vars:
-      network_state:
-        interfaces: "{{ nmstate_ifs }}"
-        # add saved static routes
-        routes:
-          config: "{{ nmstate_routes }}"
-    register: nmstateset
+    # Doing this in 2 steps means that we'll automatically rollback if we break
+    # networking such that ansible can no longer connect
+    - name: Commit the new network state # noqa no-changed-when
+      ansible.builtin.command: nmstatectl commit "{{ checkpoint }}"
+      vars:
+        checkpoint: "{{ (nmstateset.stdout_lines | last).split()[1] }}"
 
-  # Doing this in 2 steps means that we'll automatically rollback if we break
-  # networking such that ansible can no longer connect
-  - name: Commit the new network state # noqa 301
-    command: nmstatectl commit "{{ checkpoint }}"
-    vars:
-      checkpoint: "{{ (nmstateset.stdout_lines|last).split()[1] }}"
+    # We have seen this creating a CentOS VM in OpenStack. We don't understand
+    # why they are created. Specifically we see a phantom ens3 device. It's
+    # possible they are baked into the image?
+    #
+    # nmstate doesn't report them, so we can't use nmstate to delete them.
+    #
+    # They cause installation failure due to the failure of the connection to
+    # come up.
+    - name: Get a list of phantom NM connections with no associated device # noqa no-changed-when
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli -g uuid,device connection | awk -F: '$2 == "" {print $1}'
+      register: phantom_connections
+      changed_when: false
 
-  # We have seen this creating a CentOS VM in OpenStack. We don't understand
-  # why they are created. Specifically we see a phantom ens3 device. It's
-  # possible they are baked into the image?
-  #
-  # nmstate doesn't report them, so we can't use nmstate to delete them.
-  #
-  # They cause installation failure due to the failure of the connection to
-  # come up.
-  - name: Get a list of phantom NM connections with no associated device # noqa 301
-    shell: |
-      set -o pipefail
-      nmcli -g uuid,device connection | awk -F: '$2 == "" {print $1}'
-    register: phantom_connections
-    changed_when: false
+    - name: Delete phantom NM connections # noqa no-changed-when
+      ansible.builtin.command: nmcli connection delete uuid "{{ item }}"
+      loop: "{{ phantom_connections.stdout_lines }}"
 
-  - name: Delete phantom NM connections # noqa 301
-    command: nmcli connection delete uuid "{{ item }}"
-    loop: "{{ phantom_connections.stdout_lines }}"
+    # This prevents OpenStack installation failure later if the network unit
+    # failed because not all physical interfaces have DHCP
+    - name: Ensure network systemd unit is up
+      ansible.builtin.systemd:
+        name: network
+        state: started
 
-  # This prevents OpenStack installation failure later if the network unit
-  # failed because not all physical interfaces have DHCP
-  - name: Ensure network systemd unit is up
-    systemd:
-      name: network
-      state: started
+    - name: Set fact for public nic when DPDK is disabled
+      ansible.builtin.set_fact:
+        public_nic: br-ex
+      when:
+        - dpdk_interface is not defined
 
-  - name: Set fact for public nic when DPDK is disabled
-    set_fact:
-      public_nic: br-ex
-    when:
-    - dpdk_interface is not defined
+    - name: Set fact for public nic when DPDK is enabled
+      ansible.builtin.set_fact:
+        public_nic: "{{ network_info.public_ipv4.interface }}"
+      when:
+        - dpdk_interface is defined
 
-  - name: Set fact for public nic when DPDK is enabled
-    set_fact:
-      public_nic: "{{ network_info.public_ipv4.interface }}"
-    when:
-    - dpdk_interface is defined
+    - name: Configure SNAT for hostonly
+      ansible.builtin.include_role:
+        name: snat
+      vars:
+        network_name: hostonly
+        network_cidr: "{{ hostonly_cidr }}"
+        public_ip: "{{ network_info.public_ipv4.address }}"
 
-  - name: Configure SNAT for hostonly
-    include_role:
-      name: snat
-    vars:
-      network_name: hostonly
-      network_cidr: "{{ hostonly_cidr }}"
-      public_ip: "{{ network_info.public_ipv4.address }}"
-
-  - name: Configure SNAT for hostonly_sriov
-    include_role:
-      name: snat
-    vars:
-      network_name: hostonly-sriov
-      network_cidr: "{{ hostonly_sriov_cidr }}"
-      public_ip: "{{ network_info.public_ipv4.address }}"
-    when:
-    - sriov_interface is defined
+    - name: Configure SNAT for hostonly_sriov
+      ansible.builtin.include_role:
+        name: snat
+      vars:
+        network_name: hostonly-sriov
+        network_cidr: "{{ hostonly_sriov_cidr }}"
+        public_ip: "{{ network_info.public_ipv4.address }}"
+      when:
+        - sriov_interface is defined

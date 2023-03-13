@@ -1,9 +1,11 @@
 ---
 - hosts: localhost
+  name: Deploy the CA
   gather_facts: false
   vars_files: vars/defaults.yaml
   roles:
-  - role: simpleca
-    vars:
-      cert_user: quay
-      cert_name: "{{ standalone_host }}"
+    - name: Deploy the CA with the simplaca role
+      role: simpleca
+      vars:
+        cert_user: quay
+        cert_name: "{{ standalone_host }}"
