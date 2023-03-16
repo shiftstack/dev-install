@@ -2,7 +2,7 @@
 - hosts: standalone
   become: true
   become_user: root
-  gather_facts: false
+  gather_facts: true
   vars_files: vars/defaults.yaml
   roles:
     - network_info
@@ -108,7 +108,7 @@
         var: nmstate_ifs
 
     - name: Set nmstate # noqa no-changed-when
-      ansible.builtin.command: nmstatectl set --no-commit --timeout 60
+      ansible.builtin.command: nmstatectl apply --no-commit --timeout 60
       args:
         stdin: "{{ network_state | to_nice_json }}"
       vars:
@@ -119,12 +119,28 @@
             config: "{{ nmstate_routes }}"
       register: nmstateset
 
+    - name: Set fact for nmstate checkpoing on RHEL8
+      when:
+        - ansible_facts.distribution_major_version == "8"
+      ansible.builtin.set_fact:
+        checkpoint: "{{ (nmstateset.stdout_lines | last).split()[1] }}"
+
+    - name: Set fact for nmstate checkpoing on RHEL9
+      when:
+        - ansible_facts.distribution_major_version == "9"
+      ansible.builtin.set_fact:
+        checkpoint: "{{ (nmstateset.stderr_lines | last).split()[-1] }}"
+
+    - name: Fail if the checkpoint has not been found or is incorrect
+      when:
+        - '"/org/freedesktop/NetworkManager/Checkpoint/" not in checkpoint'
+      ansible.builtin.fail:
+        msg: "nmstate checkpoint was not found or is incorrect: {{ checkpoint }}"
+
     # Doing this in 2 steps means that we'll automatically rollback if we break
     # networking such that ansible can no longer connect
     - name: Commit the new network state # noqa no-changed-when
-      ansible.builtin.command: nmstatectl commit "{{ checkpoint }}"
-      vars:
-        checkpoint: "{{ (nmstateset.stdout_lines | last).split()[1] }}"
+      ansible.builtin.command: "nmstatectl commit {{ checkpoint }}"
 
     # We have seen this creating a CentOS VM in OpenStack. We don't understand
     # why they are created. Specifically we see a phantom ens3 device. It's
