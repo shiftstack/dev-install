@@ -106,6 +106,7 @@ parameter_defaults:
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "{{ ansible_env.HOME }}/octavia.pub"
   OctaviaAmphoraImageFilename: "{{ ansible_env.HOME }}/amphora.qcow2"
+  BarbicanSimpleCryptoGlobalDefault: true
   CinderApiPolicies:
     cinder-vol-state-set:
       key: "volume_extension:volume_admin_actions:reset_status"

@@ -139,6 +139,8 @@ ceph_loop_device_size: 100
 
 octavia_enabled: true
 
+barbican_enabled: false
+
 manila_enabled: false
 # Workaround for BZ#1969962
 manila_services:

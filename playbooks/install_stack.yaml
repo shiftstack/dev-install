@@ -327,6 +327,17 @@
             octavia_env:
               - /usr/share/openstack-tripleo-heat-templates/environments/services/octavia.yaml
 
+    - name: Enable Barbican
+      when: barbican_enabled
+      block:
+        - name: Add barbican to enabled services
+          ansible.builtin.set_fact:
+            service_envs: "{{ service_envs | union(barbican_env) }}"
+          vars:
+            barbican_env:
+              - /usr/share/openstack-tripleo-heat-templates/environments/services/barbican.yaml
+              - /usr/share/openstack-tripleo-heat-templates/environments/barbican-backend-simple-crypto.yaml
+
     - name: Generate container_image_prepare.yaml if not using rhos-release # noqa no-changed-when
       when:
         - cip_config is not defined
