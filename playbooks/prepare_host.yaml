@@ -67,14 +67,14 @@
             - 2022
           register: rhca
 
-        - name: Add the certificate to the local trust bundle # noqa no-changed-when
+        - name: Add the certificate to the local trust bundle # noqa no-changed-when no-handler
           ansible.builtin.shell: |
             update-ca-trust enable
             update-ca-trust extract
           when: rhca.changed
 
         - name: Configure rhos release and keep puddle name for "{{ rhos_release }}" # noqa no-changed-when
-          ansible.builtin.shell: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
+          ansible.builtin.command: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
           register: rhos_release_puddle
 
         - name: Extract puddle name from rhos-release output
