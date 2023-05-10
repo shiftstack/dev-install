@@ -74,7 +74,9 @@
           when: rhca.changed
 
         - name: Configure rhos release and keep puddle name for "{{ rhos_release }}" # noqa no-changed-when
-          ansible.builtin.command: rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
+          ansible.builtin.shell: |
+            set -o pipefail
+            rhos-release "{{ rhos_release }}" | awk '/^# rhos-release/ { print $5 }'
           register: rhos_release_puddle
 
         - name: Extract puddle name from rhos-release output
