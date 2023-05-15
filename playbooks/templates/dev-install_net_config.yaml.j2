@@ -12,6 +12,11 @@ network_config:
     name: {{ network_info.public_ipv4.interface }}
     primary: true
     mtu: {{ public_mtu }}
+{% if public_default_route %}
+  routes:
+  - default: true
+    next_hop: {{ network_info.public_ipv4.gateway }}
+{% endif %}
 {% if network_config is defined %}
 {{ network_config | to_nice_yaml }}
 {% else %}

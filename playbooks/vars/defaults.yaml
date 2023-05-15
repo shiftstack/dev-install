@@ -32,6 +32,9 @@ control_plane_ip: "{{ control_plane_cidr | nthhost(2) }}"
 # By default we use the default IP of the host
 public_api: "{{ network_info.public_ipv4.address }}"
 
+# Whether or not manually create the default route via br-ex, in case it's not applicable via DHCP.
+public_default_route: false
+
 # For advanced network configurations (e.g. SR-IOV), network_config can be overriden
 # The format is for os-net-config, check dev-install_net_config.yaml.j2 template.
 # network_config
