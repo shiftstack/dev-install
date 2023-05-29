@@ -111,6 +111,9 @@ parameter_defaults:
     cinder-vol-state-set:
       key: "volume_extension:volume_admin_actions:reset_status"
       value: "rule:admin_or_owner"
+    cinder-vol-force-detach:
+      key: "volume_extension:volume_admin_actions:force_detach"
+      value: "rule:admin_or_owner"
   # We never want the node to reboot during tripleo deploy, but defer to later
   KernelArgsDeferReboot: true
   StandaloneExtraGroupVars:
