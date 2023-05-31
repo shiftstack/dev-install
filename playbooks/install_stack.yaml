@@ -389,9 +389,11 @@
     # Therefore it is easier to use the config.json method for podman.
     - name: Setup Docker registry authentication
       when: cip_config is defined
+      become: true
+      become_user: root
       block:
         - name: Ensure the .docker directory exists
-          file:
+          ansible.builtin.file:
             path: "/root/.docker"
             state: directory
             mode: '0755'
@@ -399,14 +401,12 @@
             group: "root"
 
         - name: Copy config.json to remote host
-          copy:
+          ansible.builtin.copy:
             src: "{{ registry_auth_file }}"
             dest: "/root/.docker/config.json"
             owner: "root"
             group: "root"
             mode: '0644'
-      become: true
-      become_user: root
 
     - name: Download containers-prepare-parameters.yaml from upstream master if cip_config is not defined on CentOS
       when:
