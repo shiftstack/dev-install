@@ -380,6 +380,33 @@
         cip_content:
           parameter_defaults:
             ContainerImagePrepare: "{{ cip_config }}"
+            ContainerImageRegistryLogin: true
+
+    # Red Hat Service Accounts have fixed usernames that incorporate a pipe character
+    # there is a lot of work required to handle this vs. a straight username because of to_nice_yaml
+    # when the rhcs5 portion of the build is started.
+    #
+    # Therefore it is easier to use the config.json method for podman.
+    - name: Setup Docker registry authentication
+      when: cip_config is defined
+      block:
+        - name: Ensure the .docker directory exists
+          file:
+            path: "/root/.docker"
+            state: directory
+            mode: '0755'
+            owner: "root"
+            group: "root"
+
+        - name: Copy config.json to remote host
+          copy:
+            src: "{{ registry_auth_file }}"
+            dest: "/root/.docker/config.json"
+            owner: "root"
+            group: "root"
+            mode: '0644'
+      become: true
+      become_user: root
 
     - name: Download containers-prepare-parameters.yaml from upstream master if cip_config is not defined on CentOS
       when:

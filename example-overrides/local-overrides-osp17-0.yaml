@@ -1,0 +1,67 @@
+# Override default variables by putting them in this file
+standalone_host: 192.168.124.131
+public_api: 192.168.124.131
+rhos_release: 17.0
+hostname: rhos-17
+clouddomain: home.lan
+local_cloudname: rhos-17
+openshift_password: openshift
+ceph_devices:
+  - /dev/sda
+rhsm_release: 9.0
+rhsm_repos:
+  - rhel-9-for-x86_64-baseos-eus-rpms
+  - rhel-9-for-x86_64-appstream-eus-rpms
+  - rhel-9-for-x86_64-highavailability-eus-rpms
+  - openstack-17-for-rhel-9-x86_64-rpms
+  - fast-datapath-for-rhel-9-x86_64-rpms
+  - rhceph-5-tools-for-rhel-9-x86_64-rpms
+rhsm_enabled: true
+# Get your organization ID and create your activation key at:
+# https://console.redhat.com/settings/connector/activation-keys
+rhsm_org_id: replace-with-numeric-org-id
+rhsm_activation_key: replace-with-org-activation-key
+
+# rhcs5 installation doesnt seem to play well with redhat registry service accounts
+# due to the mandatory pipe character in the username it issues.
+#
+# the workaround is to configure root podman directly at the url below
+#
+# https://access.redhat.com/terms-based-registry/#/accounts
+#
+# You can also create service accounts for redhat_registry_credentials here as well
+registry_auth_file: "/home/greg/dev-install/config.json"
+
+redhat_registry_credentials:
+    'numeric-org-id|service-account-name': 'long-password-data-string'
+
+cip_config:
+  - set:
+      ceph_alertmanager_image: ose-prometheus-alertmanager
+      ceph_alertmanager_namespace: registry.redhat.io/openshift4
+      ceph_alertmanager_tag: 4.6
+      ceph_grafana_image: rhceph-5-dashboard-rhel8
+      ceph_grafana_namespace: registry.redhat.io/rhceph
+      ceph_grafana_tag: latest
+      ceph_image: rhceph-5-rhel8
+      ceph_namespace: registry.redhat.io/rhceph
+      ceph_node_exporter_image: ose-prometheus-node-exporter
+      ceph_node_exporter_namespace: registry.redhat.io/openshift4
+      ceph_node_exporter_tag: v4.6
+      ceph_prometheus_image: ose-prometheus
+      ceph_prometheus_namespace: registry.redhat.io/openshift4
+      ceph_prometheus_tag: 4.6
+      ceph_tag: latest
+      name_prefix: openstack-
+      name_suffix: ''
+      namespace: registry.redhat.io/rhosp-rhel9
+      neutron_driver: ovn
+      rhel_containers: false
+      tag: '17.0'
+    tag_from_label: '{version}-{release}'
+
+
+# fix for the following bug:
+# https://bugzilla.redhat.com/show_bug.cgi?id=1498621
+extra_heat_params:
+  NovaComputeStartupDelay: 0

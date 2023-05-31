@@ -113,7 +113,7 @@
         stdin: "{{ network_state | to_nice_json }}"
       vars:
         network_state:
-          interfaces: "{{ nmstate_ifs }}"
+          interfaces: "{{ nmstate_ifs | from_yaml }}"
           # add saved static routes
           routes:
             config: "{{ nmstate_routes }}"
@@ -125,11 +125,11 @@
       ansible.builtin.set_fact:
         checkpoint: "{{ (nmstateset.stdout_lines | last).split()[1] }}"
 
-    - name: Set fact for nmstate checkpoing on RHEL9
+    - name: Set fact for nmstate checkpoint on RHEL9
       when:
         - ansible_facts.distribution_major_version == "9"
       ansible.builtin.set_fact:
-        checkpoint: "{{ (nmstateset.stderr_lines | last).split()[-1] }}"
+        checkpoint: "{{ (nmstateset.stdout_lines | select('search', 'Checkpoint: NetworkManager\\|') | last).split()[1] }}"
 
     - name: Fail if the checkpoint has not been found or is incorrect
       when:
