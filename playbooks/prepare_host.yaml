@@ -56,7 +56,7 @@
         - name: Install rhos-release
           ansible.builtin.yum:
             state: installed
-            name: http://download.devel.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
+            name: http://download.hosts.prod.upshift.rdu2.redhat.com/rcm-guest/puddles/OpenStack/rhos-release/rhos-release-latest.noarch.rpm
             disable_gpg_check: true
 
         - name: Fetch the Red Hat root certificates
@@ -84,7 +84,7 @@
         - name: Extract puddle name from rhos-release output
           ansible.builtin.set_fact:
             puddle: "{{ rhos_release_puddle.stdout_lines.0 }}"
-            puddle_base: "http://download-node-02.eng.bos.redhat.com/rcm-guest/puddles/OpenStack"
+            puddle_base: "http://download.hosts.prod.upshift.rdu2.redhat.com/rcm-guest/puddles/OpenStack"
 
         - name: Download container_image_prepare.yaml for "{{ puddle }}"
           ansible.builtin.get_url:
