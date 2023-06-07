@@ -388,7 +388,10 @@
     #
     # Therefore it is easier to use the config.json method for podman.
     - name: Setup Docker registry authentication
-      when: cip_config is defined
+      when:
+        - cip_config is defined
+        - rhsm_enabled is defined
+        - registry_auth_file is defined
       become: true
       become_user: root
       block:
