@@ -159,6 +159,7 @@
       ansible.builtin.yum:
         name: '*'
         state: latest
+        nobest: True
 
     - name: Reboot the node when necessary
       when:
