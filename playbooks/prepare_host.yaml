@@ -156,9 +156,10 @@
         state: installed
 
     - name: Upgrade all packages # noqa package-latest
-      ansible.builtin.yum:
+      ansible.builtin.dnf:
         name: '*'
         state: latest
+        nobest: true
 
     - name: Reboot the node when necessary
       when:

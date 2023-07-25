@@ -292,6 +292,13 @@
           ansible.builtin.set_fact:
             neutron_bridge_mappings: "{{ base_bridge_mappings }}"
 
+    - name: Downgrade leatherman as workaround for https://bugs.launchpad.net/tripleo/+bug/1845274
+      ansible.builtin.dnf:
+        name: 'leatherman-1.4.5-6.el8ost.1'
+        allow_downgrade: true
+      become: true
+      become_user: root
+
     - name: Create standalone_parameters.yaml
       no_log: true
       ansible.builtin.template:
