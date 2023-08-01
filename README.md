@@ -6,6 +6,7 @@ dev-install installs [TripleO standalone](https://docs.openstack.org/project-dep
 
 dev-install requires that:
 * an appropriate OS has already been installed
+* EPEL repositories aren't deployed, they aren't compatible with OpenStack repositories
 * the machine running dev-install can SSH to the standalone host as either root or a user with passwordless sudo access
 * this machine has Ansible installed, and some dependencies like python3-netaddr.
 
