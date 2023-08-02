@@ -40,16 +40,16 @@
             type: dummy
             state: up
             ipv4:
-              enabled: false
+              enabled: true
             ipv6:
-              enabled: false
+              enabled: true
           - name: dummy1
             type: dummy
             state: up
             ipv4:
-              enabled: false
+              enabled: true
             ipv6:
-              enabled: false
+              enabled: true
 
     - name: Define dummy interfaces to be created when using DPDK
       when:
@@ -65,7 +65,7 @@
                 - ip: {{ local_ip }}
                   prefix-length: {{ control_plane_prefix | int }}
             ipv6:
-              enabled: false
+              enabled: true
 
     # this saves the static route configuration including the default route
     # prior to filtering later
