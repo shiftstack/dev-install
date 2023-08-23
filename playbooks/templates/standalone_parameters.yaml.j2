@@ -140,9 +140,12 @@ parameter_defaults:
   AdminPassword: {{ admin_password }}
 {% endif %}
 {% if rhsm_enabled %}
+{% if ntp_server is defined %}
+  NtpServer: {{ ntp_server }}
+{% endif %}
   ContainerImageRegistryCredentials:
     registry.redhat.io:
-      {{ redhat_registry_credentials | mandatory }}
+      {{ redhat_registry_credentials.username | ansible.builtin.mandatory | ansible.builtin.quote }}: {{ redhat_registry_credentials.password | ansible.builtin.mandatory | ansible.builtin.quote }}
   ContainerImageRegistryLogin: true
 {% endif %}
 {% if ssl_enabled %}

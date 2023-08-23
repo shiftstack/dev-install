@@ -10,7 +10,15 @@ dev-install requires that:
 * the machine running dev-install can SSH to the standalone host as either root or a user with passwordless sudo access
 * this machine has Ansible installed, and some dependencies like python3-netaddr.
 
-For OSP 16.2, the recommended OS is RHEL 8.4. For OSP 17, the recommended RHEL will be 9.
+You need to deploy the right RHEL version depending on which OSP version you want:
+
+| OSP version  | RHEL Version |
+|--------------|--------------|
+| 16.2         | 8.4          |
+| 17.1*        | 9.2          |
+
+> * Current default in dev-install
+
 There is no need to do any other configuration prior to running dev-install.
 When deploying on TripleO from upstream, you need to deploy on CentOS Stream. If CentOS is not Stream, dev-install will migrate it.
 

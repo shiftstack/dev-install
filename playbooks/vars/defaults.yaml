@@ -1,5 +1,5 @@
 ---
-rhos_release: 16.2
+rhos_release: 17.1
 hostname: standalone
 clouddomain: shiftstack
 
@@ -133,8 +133,9 @@ tripleo_repos_repos:
 
 ceph_enabled: true
 # List of devices to use for ceph. If unset, we use a loop device instead.
+# NOTE: on RHEL 9, this has to be a list of disk paths, and not /dev/sdX.
 # ceph_devices:
-#   - /dev/sdc
+#   - /dev/disk/by-path/pci-0000:45:00.0-ata-3
 
 # Size of the loop device that will be
 # used for Ceph (in GB).
@@ -207,22 +208,24 @@ rhsm_enabled: false
 # to false.
 rhsm_ephemeral: true
 rhsm_repos:
-  - advanced-virt-for-rhel-8-x86_64-rpms
-  - ansible-2.9-for-rhel-8-x86_64-rpms
-  - fast-datapath-for-rhel-8-x86_64-rpms
-  - openstack-16.2-for-rhel-8-x86_64-rpms
-  - rhceph-4-tools-for-rhel-8-x86_64-rpms
-  - rhel-8-for-x86_64-appstream-eus-rpms
-  - rhel-8-for-x86_64-baseos-eus-rpms
-  - rhel-8-for-x86_64-highavailability-eus-rpms
+  - rhel-9-for-x86_64-baseos-eus-rpms
+  - rhel-9-for-x86_64-appstream-eus-rpms
+  - rhel-9-for-x86_64-highavailability-eus-rpms
+  - openstack-17.1-for-rhel-9-x86_64-rpms
+  - fast-datapath-for-rhel-9-x86_64-rpms
+  - rhceph-6-tools-for-rhel-9-x86_64-rpms
 rhsm_method: "portal"
-rhsm_release: 8.4
+rhsm_release: 9.2
+# Note: to install 16.1 on RHEL 8.2, you need rhsm_container_tools_version set to "2.0"
+# For OSP 16.2 on RHEL 8.4, you need "3.0".
 rhsm_container_tools_version: '3.0'
 # Note: to install 16.1 on RHEL 8.2, you need virt_release set to "8.2"
 # For OSP 16.2 on RHEL 8.4, you need "av".
 virt_release: av
 # Red Hat Registry credentials have to be set when deploying OSP on RHEL
-# redhat_registry_credentials
+# redhat_registry_credentials:
+#   username: joe
+#   password: secrete
 
 # Edge parameters
 # The central site must be named "central", otherwise for other AZs it's up to the user.
@@ -233,6 +236,7 @@ dcn_services:
 
 # A list of block devices which will be combined and used as ephemeral local
 # storage
+# NOTE: on RHEL 9, this has to be a list of disk paths, and not /dev/sdX.
 ephemeral_storage_devices: []
 
 # Whether or not we want OVN to be enabled
@@ -252,3 +256,8 @@ neutron_mtu: 1400
 ctlplane_mtu: "{{ neutron_mtu | int + 100 }}"
 hostonly_mtu: "{{ neutron_mtu | int + 100 }}"
 public_mtu: "{{ ctlplane_mtu | int + 100 }}"
+
+# This is a safe default value for NTP server.
+# Usually people don't use RHSM when deploying from the internal RH network, but use
+# the puddles; so they'll get our internal NTP server.
+ntp_server: "{{ rhsm_enabled | ternary('0.pool.ntp.org', 'clock.redhat.com') }}"
