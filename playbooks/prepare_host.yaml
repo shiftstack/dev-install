@@ -41,10 +41,12 @@
           ansible.builtin.shell: |
             dnf module disable -y container-tools:rhel8
             dnf module enable -y container-tools:"{{ rhsm_container_tools_version }}"
+          when: ansible_distribution_major_version | int < 9
         - name: Install virt module # noqa no-changed-when
           ansible.builtin.shell: |
             dnf module disable -y virt:rhel
             dnf module enable -y virt:"{{ virt_release }}"
+          when: ansible_distribution_major_version | int < 9
 
     - name: Prepare host on RHEL system with rhos-release
       when:

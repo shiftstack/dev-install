@@ -14,6 +14,18 @@
         containers_prep: "{{ ansible_env.HOME }}/containers-prepare-parameters.yaml"
         deployed_ceph: "{{ ansible_env.HOME }}/deployed_ceph.yaml"
 
+    - name: Login into registry.redhat.io
+      become: true
+      become_user: root
+      when:
+        - rhsm_enabled
+      block:
+        - name: Login to registry.redhat.io
+          containers.podman.podman_login:
+            username: "{{ redhat_registry_credentials.username | ansible.builtin.mandatory }}"
+            password: "{{ redhat_registry_credentials.password | ansible.builtin.mandatory }}"
+            registry: registry.redhat.io
+
     - name: Configure Storage Network
       ansible.builtin.include_tasks: storage-network.yml
       vars:
@@ -104,6 +116,8 @@
         tripleo_ceph_deploy_generate_scripts: true
         tripleo_ceph_deploy_network_data: "{{ network_data }}"
         tripleo_ceph_deploy_cluster_network_name: storage
+        tripleo_ceph_deploy_with_ntp: "{{ ntp_server is defined | ternary(true, false) }}"
+        tripleo_ceph_deploy_ntp_server: "{{ ntp_server | default(omit) }}"
 
 - name: Add ceph to enabled services
   ansible.builtin.set_fact:
