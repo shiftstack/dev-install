@@ -43,7 +43,7 @@
         content: |
           data_devices:
             paths:
-          {% if ceph_devices is defined and ceph_devices | length > 0 %}
+          {% if ceph_devices is defined and (ceph_devices | length > 0) and (ceph_devices is not true) and (not ceph_devices_to_lvm | default(false)) %}
               {% for d in ceph_devices %}
               - {{ d }}
               {% endfor %}
