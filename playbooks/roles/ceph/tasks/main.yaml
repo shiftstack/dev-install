@@ -1,5 +1,7 @@
 - name: Tasks for ceph-adm
   when: ceph_adm_enabled
+  become: true
+  become_user: stack
   block:
     - name: Set facts for ceph-adm
       ansible.builtin.set_fact:
@@ -77,6 +79,7 @@
         tripleo_ceph_spec_osd_spec: "{{ osd_spec }}"
         tripleo_ceph_spec_debug: true
         tripleo_ceph_spec_generate_scripts: true
+        tripleo_ceph_spec_become: true
 
     - name: Create ceph-admin user via tripleo-operator-ansible
       collections:
@@ -90,6 +93,7 @@
         tripleo_ceph_user_standalone: true
         tripleo_ceph_user_debug: true
         tripleo_ceph_user_generate_scripts: true
+        tripleo_ceph_user_become: true
 
     - name: Deploy Ceph via tripleo-operator-ansible
       collections:
