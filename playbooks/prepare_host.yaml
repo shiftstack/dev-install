@@ -289,6 +289,23 @@
         - name: Wipe filesystem from disk # noqa no-changed-when
           ansible.builtin.command: wipefs -a "{{ item }}"
           loop: "{{ ceph_devices }}"
+        - name: Expose Ceph devices to LVM
+          when:
+            - ceph_devices_to_lvm
+          block:
+            - name: Ensure we have lvm2
+              ansible.builtin.package:
+                name: lvm2
+                state: present
+            - name: Create VG for ceph devices
+              community.general.lvg:
+                vg: vg_ceph
+                pvs: "{{ ceph_devices | join(',') }}"
+            - name: Create LV for ceph devices
+              community.general.lvol:
+                vg: vg_ceph
+                lv: data
+                size: 100%VG
 
     - name: Prepare kernel and reboot
       when:

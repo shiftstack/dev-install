@@ -137,6 +137,13 @@ ceph_enabled: true
 # ceph_devices:
 #   - /dev/disk/by-path/pci-0000:45:00.0-ata-3
 
+# It will create a LVM PV from all `ceph_devices` and then
+# create a VG and LV. Then the VG will be exposed to Ceph to
+# create the OSD on it.
+# This can be used to workaround hardware issues like
+# reported here: https://bugzilla.redhat.com/show_bug.cgi?id=2235819
+ceph_devices_to_lvm: false
+
 # Size of the loop device that will be
 # used for Ceph (in GB).
 ceph_loop_device_size: 100
