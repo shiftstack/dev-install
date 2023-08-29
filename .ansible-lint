@@ -22,6 +22,7 @@ mock_roles:
   - redhat-subscription
   - tripleo.operator.tripleo_deploy
   - tripleo.operator.tripleo_repos
+  - tripleo.operator.tripleo_container_image_prepare_default
 
 skip_list:
   # Variables names from within roles should use role_name_ as a prefix

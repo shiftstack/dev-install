@@ -343,7 +343,11 @@
         - cip_config is not defined
         - ansible_facts.distribution == 'RedHat'
         - rhsm_enabled
-      ansible.builtin.command: openstack tripleo container image prepare default --output-env-file /home/stack/containers-prepare-parameters.yaml
+      ansible.builtin.import_role:
+        name: tripleo.operator.tripleo_container_image_prepare_default
+      vars:
+        tripleo_container_image_prepare_default_debug: true
+        tripleo_container_image_prepare_default_output_env_file: /home/stack/containers-prepare-parameters.yaml
 
     # On RHEL/OSP if cip_config is not provided, we download it from latest puddle
     - name: Set cip_config from downloaded container_image_prepare.yaml
