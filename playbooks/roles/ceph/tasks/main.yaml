@@ -122,6 +122,7 @@
         tripleo_ceph_deploy_cluster_network_name: storage
         tripleo_ceph_deploy_with_ntp: "{{ ntp_server is defined | ternary(true, false) }}"
         tripleo_ceph_deploy_ntp_server: "{{ ntp_server | default(omit) }}"
+        tripleo_ceph_deploy_cluster: "{{ (dcn_az is not defined or (dcn_az is defined and dcn_az == 'central')) | ternary('', dcn_az) }}"
 
 - name: Add ceph to enabled services
   ansible.builtin.set_fact:
