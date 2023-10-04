@@ -22,7 +22,7 @@
     - name: Make sure persistent NIC names is not disabled # noqa no-changed-when
       ansible.builtin.shell: |
         if grep -q net.ifnames=0 /etc/default/grub; then
-            sed -i 's/net.ifnames=0 //g' /etc/default/grub
+            sed -i 's/net.ifnames=0//g' /etc/default/grub
             for f in grub2 grub2-efi; do
                 grub2-mkconfig -o $(readlink -f /etc/$f.cfg)
             done
