@@ -1,6 +1,7 @@
 #vi:syntax=yaml
 ---
 network_config:
+{% if external_fip_pool_start is defined %}
 - type: ovs_bridge
   name: br-ex
   use_dhcp: true
@@ -16,6 +17,7 @@ network_config:
   routes:
   - default: true
     next_hop: {{ network_info.public_ipv4.gateway }}
+{% endif %}
 {% endif %}
 {% if network_config is defined %}
 {{ network_config | to_nice_yaml }}

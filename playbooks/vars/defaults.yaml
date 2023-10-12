@@ -35,6 +35,11 @@ public_api: "{{ network_info.public_ipv4.address }}"
 # Whether or not manually create the default route via br-ex, in case it's not applicable via DHCP.
 public_default_route: false
 
+# You can ensure the primary_nic won't be modified if primary_nic_state is set to 'up'.
+# It could be useful if a bond interface is provided by baremetal provider and
+# should not be modified during network setup.
+primary_nic_state: "absent"
+
 # For advanced network configurations (e.g. SR-IOV), network_config can be overriden
 # The format is for os-net-config, check dev-install_net_config.yaml.j2 template.
 # network_config

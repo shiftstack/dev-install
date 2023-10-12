@@ -101,7 +101,7 @@
       vars:
         primary_nic: "{{ [network_info.public_ipv4.interface] }}"
         removed:
-          state: absent
+          state: "{{ primary_nic_state }}"
 
     - name: Log target nmstate
       ansible.builtin.debug:
