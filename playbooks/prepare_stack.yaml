@@ -66,32 +66,32 @@
     - name: Create flavors # noqa no-changed-when
       ansible.builtin.shell: |
         if ! openstack flavor show m1.tiny; then
-            openstack flavor create --ram 1024 --disk 10 --vcpu 1 --public m1.tiny
+            openstack flavor create --ram 1024 --disk 10 --vcpu 1 --ephemeral 1 --public m1.tiny
         fi
         if ! openstack flavor show m1.small; then
-            openstack flavor create --ram 2048 --disk 15 --vcpu 1 --public m1.small
+            openstack flavor create --ram 2048 --disk 15 --vcpu 1 --ephemeral 1 --public m1.small
         fi
         if ! openstack flavor show m1.medium; then
-            openstack flavor create --ram 4096 --disk 20 --vcpu 2 --public m1.medium
+            openstack flavor create --ram 4096 --disk 20 --vcpu 2 --ephemeral 2 --public m1.medium
         fi
         if ! openstack flavor show m1.large; then
-            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large
+            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --ephemeral 5 --public m1.large
         fi
         if ! openstack flavor show m1.large.nodisk; then
             openstack flavor create --ram 8192 --disk 0 --vcpu 4 --public m1.large.nodisk
         fi
         if ! openstack flavor show m1.xlarge; then
-            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge
+            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --ephemeral 10 --public m1.xlarge
         fi
         if ! openstack flavor show m1.xlarge.nodisk; then
             openstack flavor create --ram 16384 --disk 0 --vcpu 4 --public m1.xlarge.nodisk
         fi
         if ! openstack flavor show m1.large.nfv; then
-            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --public m1.large.nfv
+            openstack flavor create --ram 8192 --disk 25 --vcpu 4 --ephemeral 5 --public m1.large.nfv
             openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.large.nfv
         fi
         if ! openstack flavor show m1.xlarge.nfv; then
-            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --public m1.xlarge.nfv
+            openstack flavor create --ram 16384 --disk 40 --vcpu 4 --ephemeral 10 --public m1.xlarge.nfv
             openstack flavor set --property hw:cpu_policy=dedicated --property hw:mem_page_size=large m1.xlarge.nfv
         fi
       environment:
