@@ -114,6 +114,11 @@ class DSALHelper(object):
                                            help='external network to use for '
                                                 'FIPs, defaults to "external"',
                                            default='external')
+        openshift_install_cfg.add_argument('--external-dns',
+                                           help='external DNS address to use, '
+                                                'use lab one if in doubt, '
+                                                'defaults to 1.1.1.1',
+                                           action='append')
         openshift_install_cfg.add_argument('--api-fip',
                                            help='FIP to use for API, if not '
                                                 'set will try to find or '
@@ -175,6 +180,9 @@ class DSALHelper(object):
             with open(vars[key], 'r') as f:
                 content = f.read()
             vars[key] = content.strip()
+
+        if not vars['external_dns']:
+            vars['external_dns'] = ['1.1.1.1']
 
         fips = self.neutron.ips(port_id=None)
         for key in ('api_fip', 'ingress_fip'):
