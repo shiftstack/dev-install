@@ -8,7 +8,7 @@
 SHELL=/bin/bash
 
 host ?= my_osp_host
-user ?= root
+user ?= stack
 ansible_args ?=
 overrides ?= local-overrides.yaml
 
