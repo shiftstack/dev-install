@@ -308,7 +308,7 @@
         # image from RDO:
         - name: Download the latest Amphora image for Octavia
           ansible.builtin.get_url:
-            url: https://images.rdoproject.org/octavia/master/amphora-x64-haproxy-centos.qcow2
+            url: https://tarballs.opendev.org/openstack/octavia/test-images/test-only-amphora-x64-haproxy-centos-9-stream.qcow2
             dest: "{{ ansible_env.HOME }}/amphora.qcow2"
             mode: '644'
 
