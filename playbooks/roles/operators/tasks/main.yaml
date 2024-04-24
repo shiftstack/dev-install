@@ -19,7 +19,8 @@
     dest: ~/.ansible/tripleo-operator-ansible
     repo: https://opendev.org/openstack/tripleo-operator-ansible
     update: "{{ update_operator | bool }}"
-    version: master
+    # Upstream repo has been retired, this is the latest commit
+    version: e1abb34ef8eddaebaee63012730b5c65ca731c24
 
 - name: Build operator collection # noqa no-handler no-changed-when
   tags: always
