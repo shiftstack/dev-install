@@ -13,4 +13,5 @@
     dest: ~/.ansible/roles/redhat-subscription
     repo: https://opendev.org/openstack/ansible-role-redhat-subscription
     update: "{{ update_rhsm | bool }}"
-    version: master
+    # Upstream repo has been retired, this is the latest commit
+    version: eefe5019238a7b88bda0a9df1a6d9b02267e4902
