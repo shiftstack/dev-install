@@ -27,12 +27,17 @@ networking:
 platform:
   openstack:
     cloud:        	   "{{ cloud }}"
-    externalNetwork:   "external"
+    externalNetwork:   "{{ external_network }}"
     region:       	   "regionOne"
     computeFlavor:     "m1.xlarge"
     lbFloatingIP: 	   "{{ api_fip }}"
     ingressFloatingIP: "{{ ingress_fip }}"
-    externalDNS:  	   ["1.1.1.1"]
+    {%- if external_dns %}
+    externalDNS:
+    {%- for dns in external_dns %}
+    - {{ dns }}
+    {%- endfor %}
+    {%- endif %}
     clusterOSImage:    "rhcos"
 pullSecret: |
   {{ pull_secret }}
