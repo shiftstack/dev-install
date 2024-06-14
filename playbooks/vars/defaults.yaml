@@ -80,6 +80,13 @@ hostonly_sriov_prefix: "{{ hostonly_sriov_cidr | ansible.utils.ipaddr('prefix') 
 hostonly_sriov_fip_pool_start: "{{ hostonly_sriov_cidr | nthhost(2) }}"
 hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | nthhost(-2) }}"
 
+hostonly_nfs_cidr: 192.168.27.0/24
+hostonly_nfs_gateway: "{{ hostonly_nfs_cidr | nthhost(1) }}"
+hostonly_nfs_prefix: "{{ hostonly_nfs_cidr | ansible.utils.ipaddr('prefix') }}"
+hostonly_nfs_fip_pool_start: "{{ hostonly_nfs_cidr | nthhost(3) }}"
+hostonly_nfs_fip_pool_end: "{{ hostonly_nfs_cidr | nthhost(-2) }}"
+hostonly_nfs_ganesha: "{{ hostonly_nfs_cidr | nthhost(2) }}"
+
 # Configuration used only by prepare_stack_testconfig, which is not run by
 # default.
 testconfig_private_cidr: 192.168.100.0/24
@@ -121,7 +128,7 @@ low_memory_usage: false
 # This param can be overriden, but only when overriding the network_config, otherwise the default
 # should work as is:
 # neutron_bridge_mappings:
-neutron_flat_networks: "external,hostonly,hostonly-sriov"
+neutron_flat_networks: "external,hostonly,hostonly-sriov,hostonly-nfs"
 
 # If we have more than one SR-IOV device, it can be useful to override this one, but the default is safe
 # if we only use `sriov_interface` for one device.

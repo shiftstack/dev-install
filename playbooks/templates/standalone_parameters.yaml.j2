@@ -183,9 +183,9 @@ parameter_defaults:
     oslo_messaging_rpc_use_ssl: false
 {% endif %}
 {% if manila_enabled %}
-    ganesha_vip: "{{ public_api }}"
+    ganesha_vip: "{{ hostonly_nfs_ganesha }}"
     # for cephadm support on OSP 17
-    tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
+    tripleo_cephadm_ceph_nfs_bind_addr: "{{ hostonly_nfs_ganesha }}"
 {% endif %}
 {% if standalone_extra_config|length > 0 %}
 {% for key, value in standalone_extra_config.items() %}

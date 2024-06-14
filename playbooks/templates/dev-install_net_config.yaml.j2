@@ -64,6 +64,29 @@ network_config:
     name: dummy1
     nm_controlled: true
     mtu: {{ dcn_az is defined | ternary(hostonly_mtu, public_mtu) }}
+- type: ovs_bridge
+  name: br-hostonly-nfs
+  use_dhcp: false
+  ovs_extra:
+  - br-set-external-id br-hostonly-nfs bridge-id br-hostonly-nfs
+  addresses:
+  - ip_netmask: {{ hostonly_nfs_gateway }}/32
+  routes:
+  - destination: {{ hostonly_nfs_cidr }}
+    nexthop: {{ hostonly_nfs_gateway }}
+  members:
+{% for ip in tunnel_remote_ips %}
+  - type: ovs_tunnel
+    name: "tun-hostonly-nfs-{{ ip | to_uuid }}"
+    tunnel_type: vxlan
+    ovs_options:
+      - remote_ip={{ ip }}
+      - key=102
+{% endfor %}
+  - type: interface
+    name: dummy2
+    nm_controlled: true
+    mtu: {{ dcn_az is defined | ternary(hostonly_mtu, public_mtu) }}
 {% if sriov_interface is defined %}
 - type: sriov_pf
   name: {{ sriov_interface }}
