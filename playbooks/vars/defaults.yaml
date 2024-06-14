@@ -83,9 +83,8 @@ hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | nthhost(-2) }}"
 hostonly_nfs_cidr: 192.168.27.0/24
 hostonly_nfs_gateway: "{{ hostonly_nfs_cidr | nthhost(1) }}"
 hostonly_nfs_prefix: "{{ hostonly_nfs_cidr | ansible.utils.ipaddr('prefix') }}"
-hostonly_nfs_fip_pool_start: "{{ hostonly_nfs_cidr | nthhost(3) }}"
+hostonly_nfs_fip_pool_start: "{{ hostonly_nfs_cidr | nthhost(2) }}"
 hostonly_nfs_fip_pool_end: "{{ hostonly_nfs_cidr | nthhost(-2) }}"
-hostonly_nfs_ganesha: "{{ hostonly_nfs_cidr | nthhost(2) }}"
 
 # Configuration used only by prepare_stack_testconfig, which is not run by
 # default.
