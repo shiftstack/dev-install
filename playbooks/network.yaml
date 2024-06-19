@@ -50,13 +50,6 @@
               enabled: false
             ipv6:
               enabled: false
-          - name: dummy2
-            type: dummy
-            state: up
-            ipv4:
-              enabled: false
-            ipv6:
-              enabled: false
 
     - name: Define dummy interfaces to be created when using DPDK
       when:
