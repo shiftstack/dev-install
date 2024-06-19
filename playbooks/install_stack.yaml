@@ -280,7 +280,7 @@
       block:
         - name: Set fact for base_bridge_mappings when DPDK is disabled
           ansible.builtin.set_fact:
-            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly,hostonly-nfs:br-hostonly-nfs"
+            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
           when:
             - dpdk_interface is not defined
         - name: Set fact for base_bridge_mappings when DPDK is enabled

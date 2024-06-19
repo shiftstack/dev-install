@@ -157,15 +157,15 @@
     - name: Create hostonly nfs network # noqa no-changed-when
       when: manila_enabled
       ansible.builtin.shell: |
-        if ! openstack network show hostonly-nfs; then
-            openstack network create --project openshift --share --external --provider-physical-network hostonly-nfs --provider-network-type flat hostonly-nfs
+        if ! openstack network show StorageNFS; then
+            openstack network create StorageNFS --share  --provider-network-type vlan --provider-physical-network datacentre --provider-segment 70
         fi
-        if ! openstack subnet show hostonly-nfs-subnet; then
-            openstack subnet create --project openshift hostonly-nfs-subnet --subnet-range "{{ hostonly_nfs_cidr }}" \
-                --dhcp --gateway "{{ hostonly_nfs_gateway }}" \
+        if ! openstack subnet show StorageNFSSubnet; then
+            openstack subnet create --project openshift StorageNFSSubnet --subnet-range "{{ hostonly_nfs_cidr }}" \
+                --dhcp --gateway none \
                 --dns-nameserver "{{ network_info.dns | first }}" \
                 --allocation-pool "start={{ hostonly_nfs_fip_pool_start }},end={{ hostonly_nfs_fip_pool_end }}" \
-                --network hostonly-nfs
+                --network StorageNFS
         fi
       environment:
         OS_CLOUD: standalone
