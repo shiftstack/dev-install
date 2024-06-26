@@ -14,6 +14,16 @@
           storage_subnet:
             ip_subnet: '{{ ceph_network }}'
             allocation_pools: [{'start': '{{ start }}', 'end': '{{ end }}'}]
+      - name: StorageNFS
+        mtu: 1500
+        vlan: 70
+        vip: true
+        name_lower: storage_nfs
+        service_net_map_replace: storage_nfs
+        subnets:
+          storage_subnet:
+            ip_subnet: '{{ hostonly_nfs_cidr }}'
+            allocation_pools: [{'start': '{{ hostonly_nfs_fip_pool_start }}', 'end': '{{ hostonly_nfs_fip_pool_end }}'}]
 
 - name: Create deployed_network environment file (with VIPs)
   ansible.builtin.copy:
@@ -35,6 +45,10 @@
               ip_address: {{ mon_ip }}
               ip_subnet: {{ dummy_ip_cidr }}
               ip_address_uri: {{ mon_ip }}
+            storage_nfs:
+              ip_address: {{ hostonly_nfs_cidr | nthhost(1) }}
+              ip_subnet: {{ hostonly_nfs_cidr }}
+              ip_address_uri: {{ hostonly_nfs_cidr | nthhost(1) }}
         ControlPlaneVipData:
           fixed_ips:
             - ip_address: {{ control_plane_ip }}
@@ -49,6 +63,12 @@
             ip_address: {{ dummy_vip }}
             ip_address_uri: {{ dummy_vip }}
             ip_subnet: {{ dummy_vip ~ '/' ~ control_plane_prefix | string }}
+          storage_nfs:
+            ip_address: {{ hostonly_nfs_ganesha }}
+            ip_address_uri: {{ hostonly_nfs_ganesha }}
+            ip_subnet: {{ hostonly_nfs_cidr }}
+        VipSubnetMap:
+          StorageNFS: storage_nfs_subnet
         DeployedNetworkEnvironment:
           net_attributes_map:
             storage:
@@ -69,8 +89,31 @@
                   host_routes: []
                   ip_version: 4
                   name: storage_subnet
+            storage_nfs:
+              network:
+              dns_domain: storagenfs.mydomain.tld.
+              mtu: 1500
+              name: storage_nfs
+              tags:
+                - tripleo_network_name=StorageNFS
+                - tripleo_net_idx=1
+                - tripleo_service_net_map_replace=storage_nfs
+                - tripleo_vip=true
+              subnets:
+                storage_nfs_subnet:
+                  cidr: {{ hostonly_nfs_cidr }}
+                  dns_nameservers: []
+                  gateway_ip: null
+                  host_routes: []
+                  ip_version: 4
+                  name: storage_nfs_subnet
+                  tags:
+                  - tripleo_vlan_id=70
           net_cidr_map:
             storage:
               - {{ ceph_network }}
+            storage_nfs:
+              - {{ hostonly_nfs_cidr }}
           net_ip_version_map:
             storage: 4
+            storage_nfs: 4

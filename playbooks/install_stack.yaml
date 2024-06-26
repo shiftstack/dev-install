@@ -293,7 +293,7 @@
             neutron_bridge_mappings: "{{ base_bridge_mappings }}"
 
     - name: Create standalone_parameters.yaml
-      no_log: true
+      no_log: false
       ansible.builtin.template:
         mode: '644'
         src: standalone_parameters.yaml.j2

@@ -80,7 +80,7 @@ hostonly_sriov_prefix: "{{ hostonly_sriov_cidr | ansible.utils.ipaddr('prefix') 
 hostonly_sriov_fip_pool_start: "{{ hostonly_sriov_cidr | nthhost(2) }}"
 hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | nthhost(-2) }}"
 
-hostonly_nfs_cidr: 172.17.0.0/24
+hostonly_nfs_cidr: 172.17.5.0/24
 hostonly_nfs_ganesha: "{{ hostonly_nfs_cidr | nthhost(129) }}"
 hostonly_nfs_prefix: "{{ hostonly_nfs_cidr | ansible.utils.ipaddr('prefix') }}"
 hostonly_nfs_fip_pool_start: "{{ hostonly_nfs_cidr | nthhost(150) }}"
