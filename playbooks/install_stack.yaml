@@ -475,6 +475,7 @@
         mode: '644'
       become: true
       become_user: root
+      when: manila_enabled
 
     - name: Block to figure out if --standalone needs to be passed when deploying tripleo
       when:
@@ -492,7 +493,7 @@
       when:
         - ceph_enabled
 
-    - name: Add StorageNFS into Network Data Undercloud 
+    - name: Add StorageNFS into Network Data Undercloud
       ansible.builtin.blockinfile:
         dest: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
         append_newline: true
