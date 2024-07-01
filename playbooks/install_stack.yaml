@@ -492,7 +492,7 @@
         name: ceph
       when:
         - ceph_enabled
-
+    
     - name: Add StorageNFS into Network Data Undercloud
       ansible.builtin.blockinfile:
         dest: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
