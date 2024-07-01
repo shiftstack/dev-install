@@ -492,6 +492,18 @@
       when:
         - ceph_enabled
 
+    - name: Add StorageNFS into Network Data Undercloud 
+      ansible.builtin.blockinfile:
+        dest: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
+        append_newline: true
+        prepend_newline: true
+        block: |
+          - name: StorageNFS
+            vip: true
+            name_lower: storage_nfs
+      become: true
+      become_user: root
+
     - name: Run TripleO deploy
       ansible.builtin.import_role:
         name: tripleo.operator.tripleo_deploy
