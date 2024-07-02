@@ -15,8 +15,7 @@
             ip_subnet: '{{ ceph_network }}'
             allocation_pools: [{'start': '{{ start }}', 'end': '{{ end }}'}]
       - name: StorageNFS
-        mtu: 1500
-        vlan: 70
+        mtu: 1350
         vip: true
         name_lower: storage_nfs
         service_net_map_replace: storage_nfs
@@ -92,7 +91,7 @@
             storage_nfs:
               network:
               dns_domain: storagenfs.mydomain.tld.
-              mtu: 1500
+              mtu: 1350
               name: storage_nfs
               tags:
                 - tripleo_network_name=StorageNFS
@@ -106,9 +105,7 @@
                   gateway_ip: null
                   host_routes: []
                   ip_version: 4
-                  name: storage_nfs_subnet
-                  tags:
-                  - tripleo_vlan_id=70
+                  name: storage_nfs_subnet  
           net_cidr_map:
             storage:
               - {{ ceph_network }}

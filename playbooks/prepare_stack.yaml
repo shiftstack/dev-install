@@ -158,7 +158,7 @@
       when: manila_enabled
       ansible.builtin.shell: |
         if ! openstack network show StorageNFS; then
-            openstack network create StorageNFS --share  --provider-network-type vlan --provider-physical-network datacentre --provider-segment 70
+            openstack network create --project openshift --share --external --provider-physical-network storage_nfs --provider-network-type flat StorageNFS
         fi
         if ! openstack subnet show StorageNFSSubnet; then
             openstack subnet create --project openshift StorageNFSSubnet --subnet-range "{{ hostonly_nfs_cidr }}" \

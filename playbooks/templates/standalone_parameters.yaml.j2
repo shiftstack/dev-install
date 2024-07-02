@@ -52,7 +52,9 @@ parameter_defaults:
   StorageNFS: true
   ServiceNetMap:
     GaneshaNetwork: storage_nfs
-  StorageNFSNetworkVlanID: 70
+  # Define StorageNFSIPs
+  StorageNfsIp: 172.17.5.1
+  StorageNfsVip: 172.17.5.129
   # Define network configuration for StorageNFS
   StorageNFSNetCidr: {{ hostonly_nfs_cidr }}
   StorageNFSAllocationPools:
