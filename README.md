@@ -254,6 +254,13 @@ post_install: |
 
 And then run `make post_install`.
 
-## Tools
+## Troubleshooting
 
-You can find tools helping to work with DSAL machines in `tools/dsal` directory.
+If installation fails, examine the Ansible logs for more information.
+Failures will usually occur early in the process or during the `tripleo_deploy` stage. If the latter, you can look at the logs in `/home/stack/standalone_deploy.log`.
+Once the issue has been addressed, you can resume the deployment by stopping `heat` and running the `openstack tripleo deploy` command again via the `tripleo_deploy.sh` script:
+
+```console
+sudo pkill -9 heat-all
+./triple_deploy.sh
+```
