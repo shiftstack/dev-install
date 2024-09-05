@@ -81,6 +81,8 @@
       - "DNS:{{ standalone_host }}"
       - "IP:{{ public_api }}"
       - "IP:{{ control_plane_ip }}"
+      - "IP:{{ hostonly_gateway }}"
+      - "IP:{{ hostonly_v6_gateway }}"
   register: user_csr
 
 - name: Sign the CSR for {{ cert_user }}
