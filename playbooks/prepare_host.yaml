@@ -65,7 +65,6 @@
             url: "https://certs.corp.redhat.com/certs/{{ item }}-IT-Root-CA.pem"
             mode: '640'
           loop:
-            - 2015
             - 2022
           register: rhca
 
