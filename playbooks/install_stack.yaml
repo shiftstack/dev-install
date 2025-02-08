@@ -280,7 +280,7 @@
       block:
         - name: Set fact for base_bridge_mappings when DPDK is disabled
           ansible.builtin.set_fact:
-            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
+            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly,storage_nfs:br-storage_nfs"
           when:
             - dpdk_interface is not defined
         - name: Set fact for base_bridge_mappings when DPDK is enabled
@@ -475,6 +475,7 @@
         mode: '644'
       become: true
       become_user: root
+      when: manila_enabled
 
     - name: Block to figure out if --standalone needs to be passed when deploying tripleo
       when:
@@ -491,6 +492,18 @@
         name: ceph
       when:
         - ceph_enabled
+
+    - name: Add StorageNFS into Network Data Undercloud
+      ansible.builtin.blockinfile:
+        dest: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
+        append_newline: true
+        prepend_newline: true
+        block: |
+          - name: StorageNFS
+            vip: true
+            name_lower: storage_nfs
+      become: true
+      become_user: root
 
     - name: Run TripleO deploy
       ansible.builtin.import_role:
