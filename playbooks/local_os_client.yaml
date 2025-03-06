@@ -116,9 +116,9 @@
         mode: '0755'
 
     - name: Install openstack client locally
-      ansible.builtin.pip:
+      become: true
+      ansible.builtin.package:
         name: python-openstackclient
-        extra_args: "{% if not is_local_virtualenv %} --user {% endif %}"
 
     - name: Create the scripts if it does not exist
       ansible.builtin.file:
