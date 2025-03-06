@@ -97,14 +97,14 @@
 
     - name: Merge standalone from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
       ansible.builtin.set_fact:
-        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: standalone}}, recursive=true) }}"
+        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '-admin': standalone}}, recursive=true) }}"
       vars:
         standalone: "{{ hostvars['standalone']['cloudsyaml']['clouds']['standalone'] | combine(set_cacert) }}"
       when: "'standalone' in hostvars['standalone']['cloudsyaml']['clouds']"
 
     - name: Merge openshift from remote clouds.yaml into local clouds.yaml entry {{ local_cloudname }}
       ansible.builtin.set_fact:
-        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname + '_openshift': openshift}}, set_cacert, recursive=true) }}"
+        cloudsyaml: "{{ cloudsyaml | combine({'clouds': {local_cloudname: openshift}}, set_cacert, recursive=true) }}"
       vars:
         openshift: "{{ hostvars['standalone']['cloudsyaml']['clouds']['openshift'] | combine(set_cacert) }}"
       when: "'openshift' in hostvars['standalone']['cloudsyaml']['clouds']"
