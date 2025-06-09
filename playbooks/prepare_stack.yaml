@@ -136,6 +136,22 @@
       environment:
         OS_CLOUD: standalone
 
+    - name: Create hostonly nfs network # noqa no-changed-when
+      when: manila_enabled
+      ansible.builtin.shell: |
+        if ! openstack network show StorageNFS; then
+            openstack network create --project openshift --share --external --provider-physical-network storage_nfs --provider-network-type flat StorageNFS
+        fi
+        if ! openstack subnet show StorageNFSSubnet; then
+            openstack subnet create --project openshift StorageNFSSubnet --subnet-range "{{ hostonly_nfs_cidr }}" \
+                --dhcp --gateway none \
+                --dns-nameserver "{{ network_info.dns | first }}" \
+                --allocation-pool "start={{ hostonly_nfs_fip_pool_start }},end={{ hostonly_nfs_fip_pool_end }}" \
+                --network StorageNFS
+        fi
+      environment:
+        OS_CLOUD: standalone
+
     - name: Create hostonly-sriov network # noqa no-changed-when
       when: sriov_interface is defined
       ansible.builtin.shell: |
