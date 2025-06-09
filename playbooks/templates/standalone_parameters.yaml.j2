@@ -46,6 +46,20 @@ resource_registry:
 {% endif %}
 parameter_defaults:
   CloudName: {{ hostname }}.{{ clouddomain }}
+  # Enable ganesha
+  EnableGanesha: true
+  # Enable StorageNFS network
+  StorageNFS: true
+  ServiceNetMap:
+    GaneshaNetwork: storage_nfs
+  # Define StorageNFSIPs
+  StorageNfsIp: {{ hostonly_nfs_cidr | nthhost(1) }}
+  StorageNfsVip: {{ hostonly_nfs_ganesha }}
+  # Define network configuration for StorageNFS
+  StorageNFSNetCidr: {{ hostonly_nfs_cidr }}
+  StorageNFSAllocationPools:
+    - start: {{ hostonly_nfs_fip_pool_start }}
+    - end: {{ hostonly_nfs_fip_pool_end }}
   ContainerCli: podman
   Debug: true
   DeploymentUser: {{ ansible_env.USER }}
@@ -183,9 +197,9 @@ parameter_defaults:
     oslo_messaging_rpc_use_ssl: false
 {% endif %}
 {% if manila_enabled %}
-    ganesha_vip: "{{ public_api }}"
+    ceph_nfs_bind_addr: "{{ hostonly_nfs_ganesha }}"
     # for cephadm support on OSP 17
-    tripleo_cephadm_ceph_nfs_bind_addr: "{{ public_api }}"
+    tripleo_cephadm_ceph_nfs_bind_addr: "{{ hostonly_nfs_ganesha }}"
 {% endif %}
 {% if standalone_extra_config|length > 0 %}
 {% for key, value in standalone_extra_config.items() %}

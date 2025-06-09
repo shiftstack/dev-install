@@ -280,7 +280,7 @@
       block:
         - name: Set fact for base_bridge_mappings when DPDK is disabled
           ansible.builtin.set_fact:
-            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly"
+            base_bridge_mappings: "external:br-ex,hostonly:br-hostonly,storage_nfs:br-storage_nfs"
           when:
             - dpdk_interface is not defined
         - name: Set fact for base_bridge_mappings when DPDK is enabled
@@ -485,6 +485,16 @@
             standalone_toggle: false
           when:
             - (tripleo_repos_branch is defined and tripleo_repos_branch not in ['train', 'ussuri', 'victoria']) or (tripleo_repos_branch is not defined)
+
+    - name: Add StorageNFS into Network Data Undercloud
+      ansible.builtin.blockinfile:
+        dest: /usr/share/openstack-tripleo-heat-templates/network_data_undercloud.yaml
+        block: |
+          - name: StorageNFS
+            vip: true
+            name_lower: storage_nfs
+      become: true
+      become_user: root
 
     - name: Deploy Ceph
       ansible.builtin.include_role:
