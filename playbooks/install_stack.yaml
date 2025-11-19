@@ -535,7 +535,7 @@
         - sriov_interface is defined or dpdk_interface is defined or kernel_args is defined
       block:
         - name: Reboot the node
-          become_user: root
+          become: true
           ansible.builtin.reboot:
         - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
           ansible.builtin.pause:

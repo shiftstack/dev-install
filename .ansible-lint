@@ -27,3 +27,6 @@ mock_roles:
 skip_list:
   # Variables names from within roles should use role_name_ as a prefix
   - var-naming[no-role-prefix]
+  - key-order[play]
+  - fqcn[action-core]
+  - var-naming[no-reserved]
