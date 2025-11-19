@@ -1,4 +1,5 @@
 ---
+
 - hosts: standalone
   become: true
   become_user: stack
