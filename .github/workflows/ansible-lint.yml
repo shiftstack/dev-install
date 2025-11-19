@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checks-out the repository under $GITHUB_WORKSPACE
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: run ansible-lint
-      uses: ansible/ansible-lint-action@main
+      uses: ansible-actions/ansible-lint-action@v1.1.0
       with:
-        path: playbooks/
+        target: playbooks/
