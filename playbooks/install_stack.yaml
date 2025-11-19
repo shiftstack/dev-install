@@ -151,6 +151,20 @@
           become_user: root
           ansible.builtin.command: update-ca-trust extract
 
+    - name: Login into registries
+      become: true
+      become_user: root
+      when:
+        - registers is defined
+        - (registers | length) > 0
+      block:
+        - name: Login to registry
+          containers.podman.podman_login:
+            username: "{{ item.username | ansible.builtin.mandatory }}"
+            password: "{{ item.password | ansible.builtin.mandatory }}"
+            registry: "{{ item.name }}"
+          loop: "{{ registers }}"
+
     - name: Install the tripleo client
       ansible.builtin.yum:
         name: python3-tripleoclient

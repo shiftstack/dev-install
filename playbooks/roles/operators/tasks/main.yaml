@@ -1,6 +1,19 @@
 ---
 # Install tripleo-operator in current user environment
 # and provide plugins and roles to local ansible env.
+- name: Ensure there are credentials for accessing registry
+  tags:
+    - always
+    - lab
+  ansible.builtin.assert:
+    that:
+      - registers is defined
+      - (registers|length) > 0
+      - registers.0.name is defined
+      - registers.0.username is defined
+      - registers.0.password is defined
+    msg: "It is expected to have defined at least one registry"
+
 - name: Ensure we have ~/.ansible
   tags:
     - always

@@ -229,10 +229,12 @@ rhsm_container_tools_version: '3.0'
 # Note: to install 16.1 on RHEL 8.2, you need virt_release set to "8.2"
 # For OSP 16.2 on RHEL 8.4, you need "av".
 virt_release: av
-# Red Hat Registry credentials have to be set when deploying OSP on RHEL
-# redhat_registry_credentials:
-#   username: joe
-#   password: secrete
+# Red Hat Registry credentials have to be set when deploying OSP on RHEL. Main
+# registry, and all additional one should be defined in a list:
+# registers:
+#   - name: registry.url
+#     username: joe
+#     password: secret
 
 # Edge parameters
 # The central site must be named "central", otherwise for other AZs it's up to the user.
