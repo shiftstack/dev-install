@@ -33,6 +33,22 @@ At present the deployment depends on a valid DHCP source for the external interf
 
 All other requirements should be configured automatically by Ansible. Note that `dev-install` does require root access (or passwordless sudo) on the machine it is invoked from to install certificate management tools (simpleca) in addition to the remote host.
 
+## Defining registry
+
+Recently, there were changed way for accessing RedHat registry. Now it's mandatory to provide credentials to `local-override.yaml` file in a form of a list:
+
+```yaml
+registers:
+  - name: registry1.url
+    username: joe
+    password: secret
+  - name: registry2.url
+    username: alice
+    password: supersecret
+```
+
+RedHat registry, is expected to be the first one.
+
 ## Running dev-install
 
 `dev-install` is invoked using its `Makefile`. The simplest invocation is:

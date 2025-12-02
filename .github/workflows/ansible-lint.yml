@@ -2,14 +2,22 @@ name: Ansible Lint
 on:
   pull_request:
     paths:
-    - playbooks/**.yaml
+      - playbooks/**.yaml
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: checks-out the repository under $GITHUB_WORKSPACE
-      uses: actions/checkout@v3
-    - name: run ansible-lint
-      uses: ansible/ansible-lint-action@main
-      with:
-        path: playbooks/
+
+      - name: Checks-out the repository under $GITHUB_WORKSPACE
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install ansible-lint
+        run: python3 -m pip install ansible-dev-tools --user
+
+      - name: Install dependency
+        run: ansible-galaxy collection install -r requirements.yaml
+
+      - name: Run lint
+        run: ansible-lint playbooks/**

@@ -151,6 +151,20 @@
           become_user: root
           ansible.builtin.command: update-ca-trust extract
 
+    - name: Login into registries
+      become: true
+      become_user: root
+      when:
+        - registers is defined
+        - (registers | length) > 0
+      block:
+        - name: Login to registry
+          containers.podman.podman_login:
+            username: "{{ item.username | ansible.builtin.mandatory }}"
+            password: "{{ item.password | ansible.builtin.mandatory }}"
+            registry: "{{ item.name }}"
+          loop: "{{ registers }}"
+
     - name: Install the tripleo client
       ansible.builtin.yum:
         name: python3-tripleoclient
@@ -535,7 +549,7 @@
         - sriov_interface is defined or dpdk_interface is defined or kernel_args is defined
       block:
         - name: Reboot the node
-          become_user: root
+          become: true
           ansible.builtin.reboot:
         - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
           ansible.builtin.pause:

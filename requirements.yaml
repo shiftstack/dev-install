@@ -1,0 +1,6 @@
+collections:
+  - ansible.posix
+  - community.general
+  - tripleo.operator
+  - containers.podman
+  - community.crypto
