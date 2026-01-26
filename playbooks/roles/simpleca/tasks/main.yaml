@@ -31,6 +31,11 @@
         common_name: "simpleca"
         basic_constraints:
           - "CA:TRUE"
+        basic_constraints_critical: true
+        key_usage:
+          - keyCertSign
+          - cRLSign
+        key_usage_critical: true
       register: ca_csr
 
     - name: Sign the CA CSR
@@ -83,6 +88,12 @@
       - "IP:{{ control_plane_ip }}"
       - "IP:{{ hostonly_gateway }}"
       - "IP:{{ hostonly_v6_gateway }}"
+    key_usage:
+      - digitalSignature
+      - keyEncipherment
+    key_usage_critical: true
+    extended_key_usage:
+      - serverAuth
   register: user_csr
 
 - name: Sign the CSR for {{ cert_user }}
