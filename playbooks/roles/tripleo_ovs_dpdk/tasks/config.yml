@@ -17,7 +17,7 @@
 - name: Check valid input for tripleo_ovs_dpdk_pmd_core_list
   ansible.builtin.fail:
     msg: "List of PMD cores cannot be empty - tripleo_ovs_dpdk_pmd_core_list"
-  when: not tripleo_ovs_dpdk_pmd_core_list|string or tripleo_ovs_dpdk_pmd_core_list == 'null'
+  when: tripleo_ovs_dpdk_pmd_core_list | default('', true) | length == 0 or tripleo_ovs_dpdk_pmd_core_list == 'null'
 
 - name: Apply PMD cores config
   openvswitch_db:
@@ -26,7 +26,7 @@
     col: other_config
     key: pmd-cpu-mask
     value: "{{ tripleo_ovs_dpdk_pmd_core_list | cpu_mask }}"
-  when: tripleo_ovs_dpdk_pmd_core_list|string
+  when: tripleo_ovs_dpdk_pmd_core_list | default('', true) | length > 0
 
 - name: Set DPDK lcores config
   openvswitch_db:
@@ -35,7 +35,7 @@
     col: other_config
     key: dpdk-lcore-mask
     value: "{{ tripleo_ovs_dpdk_lcore_list | cpu_mask }}"
-  when: tripleo_ovs_dpdk_lcore_list|string
+  when: tripleo_ovs_dpdk_lcore_list | default('', true) | length > 0
 
 - name: Remove DPDK lcores config
   openvswitch_db:
@@ -44,7 +44,7 @@
     record: .
     col: other_config
     key: dpdk-lcore-mask
-  when: not tripleo_ovs_dpdk_lcore_list|string or tripleo_ovs_dpdk_lcore_list == 'null'
+  when: tripleo_ovs_dpdk_lcore_list | default('', true) | length == 0 or tripleo_ovs_dpdk_lcore_list == 'null'
 
 - name: Add memory channels to dpdk extra
   ansible.builtin.set_fact:
@@ -73,7 +73,7 @@
         col: other_config
         key: dpdk-socket-limit
         value: "{{ tripleo_ovs_dpdk_socket_memory }}"
-  when: tripleo_ovs_dpdk_socket_memory|string
+  when: tripleo_ovs_dpdk_socket_memory | default('', true) | length > 0
 
 - name: Remove DPDK socket-mem and socket-limit config
   block:
@@ -90,7 +90,7 @@
         record: .
         col: other_config
         key: dpdk-socket-limit
-  when: not tripleo_ovs_dpdk_socket_memory|string or tripleo_ovs_dpdk_socket_memory == 'null'
+  when: tripleo_ovs_dpdk_socket_memory | default('', true) | length == 0 or tripleo_ovs_dpdk_socket_memory == 'null'
 
 - name: Apply Revalidator threads config
   openvswitch_db:
@@ -99,7 +99,7 @@
     col: other_config
     key: n-revalidator-threads
     value: "{{ tripleo_ovs_dpdk_revalidator_cores }}"
-  when: tripleo_ovs_dpdk_revalidator_cores|string
+  when: tripleo_ovs_dpdk_revalidator_cores | default('', true) | length > 0
 
 - name: Remove Revalidator threads config
   openvswitch_db:
@@ -108,7 +108,7 @@
     record: .
     col: other_config
     key: n-revalidator-threads
-  when: not tripleo_ovs_dpdk_revalidator_cores|string
+  when: tripleo_ovs_dpdk_revalidator_cores | default('', true) | length == 0
 
 - name: Set Handler threads config
   openvswitch_db:
@@ -117,7 +117,7 @@
     col: other_config
     key: n-handler-threads
     value: "{{ tripleo_ovs_dpdk_handler_cores }}"
-  when: tripleo_ovs_dpdk_handler_cores|string
+  when: tripleo_ovs_dpdk_handler_cores | default('', true) | length > 0
 
 - name: Remove Handler threads config
   openvswitch_db:
@@ -126,7 +126,7 @@
     record: .
     col: other_config
     key: n-handler-threads
-  when: not tripleo_ovs_dpdk_handler_cores|string
+  when: tripleo_ovs_dpdk_handler_cores | default('', true) | length == 0
 
 - name: Set EMC Insertion Probability config
   openvswitch_db:
@@ -135,7 +135,7 @@
     col: other_config
     key: emc-insert-inv-prob
     value: "{{ tripleo_ovs_dpdk_emc_insertion_probablity }}"
-  when: tripleo_ovs_dpdk_emc_insertion_probablity|string
+  when: tripleo_ovs_dpdk_emc_insertion_probablity | default('', true) | length > 0
 
 - name: Remove EMC Insertion Probability config
   openvswitch_db:
@@ -144,7 +144,7 @@
     record: .
     col: other_config
     key: emc-insert-inv-prob
-  when: not tripleo_ovs_dpdk_emc_insertion_probablity|string
+  when: tripleo_ovs_dpdk_emc_insertion_probablity | default('', true) | length == 0
 
 - name: Enable TSO in datapath
   openvswitch_db:
@@ -221,7 +221,7 @@
     col: other_config
     key: pmd-auto-lb-load-threshold
     value: "{{ tripleo_ovs_dpdk_pmd_load_threshold }}"
-  when: tripleo_ovs_dpdk_pmd_load_threshold|string
+  when: tripleo_ovs_dpdk_pmd_load_threshold | default('', true) | length > 0
 
 - name: Remove minimum PMD thread load threshold
   openvswitch_db:
@@ -230,7 +230,7 @@
     record: .
     col: other_config
     key: pmd-auto-lb-load-threshold
-  when: not tripleo_ovs_dpdk_pmd_load_threshold|string
+  when: tripleo_ovs_dpdk_pmd_load_threshold | default('', true) | length == 0
 
 - name: Set PMD load variance improvement threshold
   openvswitch_db:
@@ -239,7 +239,7 @@
     col: other_config
     key: pmd-auto-lb-improvement-threshold
     value: "{{ tripleo_ovs_dpdk_pmd_improvement_threshold }}"
-  when: tripleo_ovs_dpdk_pmd_improvement_threshold|string
+  when: tripleo_ovs_dpdk_pmd_improvement_threshold | default('', true) | length > 0
 
 - name: Remove PMD load variance improvement threshold
   openvswitch_db:
@@ -248,7 +248,7 @@
     record: .
     col: other_config
     key: pmd-auto-lb-improvement-threshold
-  when: not tripleo_ovs_dpdk_pmd_improvement_threshold|string
+  when: tripleo_ovs_dpdk_pmd_improvement_threshold | default('', true) | length == 0
 
 - name: Set PMD auto load balancing interval
   openvswitch_db:
@@ -257,7 +257,7 @@
     col: other_config
     key: pmd-auto-lb-rebal-interval
     value: "{{ tripleo_ovs_dpdk_pmd_rebal_interval }}"
-  when: tripleo_ovs_dpdk_pmd_rebal_interval|string
+  when: tripleo_ovs_dpdk_pmd_rebal_interval | default('', true) | length > 0
 
 - name: Remove PMD auto load balancing interval
   openvswitch_db:
@@ -266,4 +266,4 @@
     record: .
     col: other_config
     key: pmd-auto-lb-rebal-interval
-  when: not tripleo_ovs_dpdk_pmd_rebal_interval|string
+  when: tripleo_ovs_dpdk_pmd_rebal_interval | default('', true) | length == 0
