@@ -143,6 +143,8 @@ parameter_defaults:
 {% if ntp_server is defined %}
   NtpServer: {{ ntp_server }}
 {% endif %}
+{% endif %}
+{% if registers is defined and registers | length > 0 %}
   ContainerImageRegistryCredentials:
     # assume first registry
     {{ registers.0.name | ansible.builtin.mandatory}}:
