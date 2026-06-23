@@ -539,7 +539,7 @@
         - rhsm_ephemeral
       block:
         - name: Unregister Red Hat Subscription Manager
-          ansible.builtin.import_role:
+          ansible.builtin.include_role:
             name: redhat-subscription
             tasks_from: unregister.yml
 
