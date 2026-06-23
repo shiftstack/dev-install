@@ -550,6 +550,7 @@
       block:
         - name: Reboot the node
           become: true
+          become_user: root
           ansible.builtin.reboot:
         - name: Pause for 2 minutes to let all containers to start and OpenStack to be ready
           ansible.builtin.pause:
