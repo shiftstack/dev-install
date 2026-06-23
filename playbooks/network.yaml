@@ -35,7 +35,7 @@
       when:
         - dpdk_interface is not defined
       ansible.builtin.set_fact:
-        nmstate_ifs: |
+        nmstate_ifs:
           - name: dummy0
             type: dummy
             state: up
@@ -55,15 +55,15 @@
       when:
         - dpdk_interface is defined
       ansible.builtin.set_fact:
-        nmstate_ifs: |
+        nmstate_ifs:
           - name: dummy0
             type: dummy
             state: up
             ipv4:
               enabled: true
               address:
-                - ip: {{ local_ip }}
-                  prefix-length: {{ control_plane_prefix | int }}
+                - ip: "{{ local_ip }}"
+                  prefix-length: "{{ control_plane_prefix | int }}"
             ipv6:
               enabled: false
 
@@ -96,7 +96,7 @@
     # * We need it for installation
     - name: Remove all physical nics from NM control except the public interface
       ansible.builtin.set_fact:
-        nmstate_ifs: "{{ nmstate_ifs | from_yaml + [{'name': item} | combine(removed)] }}"
+        nmstate_ifs: "{{ nmstate_ifs + [{'name': item} | combine(removed)] }}"
       loop: "{{ physical_nics | difference(primary_nic) }}"
       vars:
         primary_nic: "{{ [network_info.public_ipv4.interface] }}"

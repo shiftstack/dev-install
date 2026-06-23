@@ -25,8 +25,8 @@ openshift_password: password
 # You probably won't need to change this.
 control_plane_cidr: 192.168.24.0/24
 control_plane_prefix: "{{ control_plane_cidr | ansible.utils.ipaddr('prefix') }}"
-local_ip: "{{ control_plane_cidr | nthhost(1) }}"
-control_plane_ip: "{{ control_plane_cidr | nthhost(2) }}"
+local_ip: "{{ control_plane_cidr | ansible.utils.nthhost(1) }}"
+control_plane_ip: "{{ control_plane_cidr | ansible.utils.nthhost(2) }}"
 
 # The IP address of the public openstack endpoints
 # By default we use the default IP of the host
@@ -63,22 +63,22 @@ external_gateway: "{{ network_info.public_ipv4.gateway }}"
 hostonly_cidr: 192.168.25.0/24
 # The IP of the gateway used by the hostonly provider network, which must be
 # within hostonly_cidr.
-hostonly_gateway: "{{ hostonly_cidr | nthhost(1) }}"
+hostonly_gateway: "{{ hostonly_cidr | ansible.utils.nthhost(1) }}"
 # The range of allocatable FIPs within hostonly_cidr
-hostonly_fip_pool_start: "{{ hostonly_cidr | nthhost(2) }}"
-hostonly_fip_pool_end: "{{ hostonly_cidr | nthhost(-2) }}"
+hostonly_fip_pool_start: "{{ hostonly_cidr | ansible.utils.nthhost(2) }}"
+hostonly_fip_pool_end: "{{ hostonly_cidr | ansible.utils.nthhost(-2) }}"
 # Same for IPv6
 hostonly_v6_cidr: 2001:db8::/64
-hostonly_v6_gateway: "{{ hostonly_v6_cidr | nthhost(1) }}"
-hostonly_v6_fip_pool_start: "{{ hostonly_v6_cidr | nthhost(2) }}"
-hostonly_v6_fip_pool_end: "{{ hostonly_v6_cidr | nthhost(-2) }}"
+hostonly_v6_gateway: "{{ hostonly_v6_cidr | ansible.utils.nthhost(1) }}"
+hostonly_v6_fip_pool_start: "{{ hostonly_v6_cidr | ansible.utils.nthhost(2) }}"
+hostonly_v6_fip_pool_end: "{{ hostonly_v6_cidr | ansible.utils.nthhost(-2) }}"
 
 # `hostonly` variants
 hostonly_sriov_cidr: 192.168.26.0/24
-hostonly_sriov_gateway: "{{ hostonly_sriov_cidr | nthhost(1) }}"
+hostonly_sriov_gateway: "{{ hostonly_sriov_cidr | ansible.utils.nthhost(1) }}"
 hostonly_sriov_prefix: "{{ hostonly_sriov_cidr | ansible.utils.ipaddr('prefix') }}"
-hostonly_sriov_fip_pool_start: "{{ hostonly_sriov_cidr | nthhost(2) }}"
-hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | nthhost(-2) }}"
+hostonly_sriov_fip_pool_start: "{{ hostonly_sriov_cidr | ansible.utils.nthhost(2) }}"
+hostonly_sriov_fip_pool_end: "{{ hostonly_sriov_cidr | ansible.utils.nthhost(-2) }}"
 
 # Configuration used only by prepare_stack_testconfig, which is not run by
 # default.
