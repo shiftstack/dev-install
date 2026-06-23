@@ -67,19 +67,6 @@
             ipv6:
               enabled: false
 
-    # this saves the static route configuration including the default route
-    # prior to filtering later
-
-    - name: Save route info # noqa no-changed-when
-      ansible.builtin.command: nmstatectl show --json
-      register: pre
-
-    - name: Create fact for nmstate_routes
-      ansible.builtin.set_fact:
-        nmstate_routes: "{{ pre.stdout | from_json | json_query(q) }}"
-      vars:
-        q: "routes.config"
-
     # This works round a TripleO installation failure caused by NM-managed
     # interfaces 'failing' because:
     # * The default NM configuration specifies DHCP
@@ -112,24 +99,22 @@
       args:
         stdin: "{{ network_state | to_nice_json }}"
       vars:
+        # Do not include routes in the desired state. nmstatectl apply
+        # without a routes section leaves existing routes untouched.
+        # Previously we captured and replayed routes, but on re-run
+        # (idempotency) the captured routes reference interfaces that
+        # nmstate cannot manage (e.g. eno1 enslaved to br-ex, or
+        # br-hostonly which nmstate considers an unsupported tun type),
+        # causing VerificationError failures.
         network_state:
           interfaces: "{{ nmstate_ifs }}"
-          # add saved static routes
-          routes:
-            config: "{{ nmstate_routes }}"
       register: nmstateset
 
-    - name: Set fact for nmstate checkpoing on RHEL8
-      when:
-        - ansible_facts.distribution_major_version == "8"
+    - name: Extract nmstate checkpoint from output
       ansible.builtin.set_fact:
-        checkpoint: "{{ (nmstateset.stdout_lines | last).split()[1] }}"
-
-    - name: Set fact for nmstate checkpoing on RHEL9
-      when:
-        - ansible_facts.distribution_major_version == "9"
-      ansible.builtin.set_fact:
-        checkpoint: "{{ (nmstateset.stderr_lines | last).split()[-1] }}"
+        checkpoint: >-
+          {{ (nmstateset.stdout + nmstateset.stderr)
+             | regex_search('/org/freedesktop/NetworkManager/Checkpoint/\d+') }}
 
     - name: Fail if the checkpoint has not been found or is incorrect
       when:
