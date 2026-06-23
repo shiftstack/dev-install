@@ -506,7 +506,48 @@
       when:
         - ceph_enabled
 
+    - name: Check if TripleO has already been deployed
+      ansible.builtin.stat:
+        path: /etc/openstack/clouds.yaml
+      register: tripleo_deployed
+      become: true
+      become_user: root
+
+    - name: Clean up stale heat processes from previous deploy
+      become: true
+      become_user: root
+      when: not tripleo_deployed.stat.exists
+      block:
+        - name: Check if heat-all is already running (previous deploy with --keep-running)
+          ansible.builtin.command: pgrep -f heat-all
+          register: heat_running
+          failed_when: false
+          changed_when: false
+
+        - name: Kill stale heat-all processes
+          # Each tripleo deploy forks a new heat-all without killing old ones.
+          # Multiple heat-all processes sharing port 8006 via SO_REUSEPORT
+          # causes API requests to be randomly routed to the wrong instance,
+          # resulting in 'Stack create failed'.
+          ansible.builtin.command: pkill -9 -f heat-all
+          when: heat_running.rc == 0
+
+        - name: Wait for heat processes to terminate
+          ansible.builtin.command: pgrep -f heat-all
+          register: heat_check
+          failed_when: false
+          changed_when: false
+          retries: 10
+          delay: 1
+          until: heat_check.rc != 0
+
+        - name: Remove stack update mark to ensure a clean stack create
+          ansible.builtin.file:
+            path: /var/lib/tripleo-heat-installer/update_mark_standalone
+            state: absent
+
     - name: Run TripleO deploy
+      when: not tripleo_deployed.stat.exists
       ansible.builtin.import_role:
         name: tripleo.operator.tripleo_deploy
       vars:
