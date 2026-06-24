@@ -3,9 +3,6 @@ rhos_release: 17.1
 hostname: standalone
 clouddomain: shiftstack
 
-# is ansible running in a virtualenv on the control node
-is_local_virtualenv: "{{ lookup('env', 'VIRTUAL_ENV') | default('', true) }}"
-
 # The name of the cloud in *local* clouds.yaml. On the host it will always be
 # called `standalone`.
 local_cloudname: standalone
