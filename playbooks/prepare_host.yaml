@@ -249,9 +249,11 @@
               [Unit]
               Description=Ceph OSD losetup
               After=syslog.target
+              Before=ceph.target
               [Service]
               Type=oneshot
               ExecStart=/bin/bash -c '/sbin/losetup /dev/loop1 || /sbin/losetup --direct-io=on /dev/loop1 /var/lib/ceph-osd.img'
+              ExecStartPost=/sbin/vgchange -ay vg_ceph
               ExecStop=/sbin/losetup -d /dev/loop1
               RemainAfterExit=yes
               [Install]
