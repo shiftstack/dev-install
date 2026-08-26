@@ -270,3 +270,12 @@ public_mtu: "{{ ctlplane_mtu | int + 100 }}"
 # Usually people don't use RHSM when deploying from the internal RH network, but use
 # the puddles; so they'll get our internal NTP server.
 ntp_server: "{{ rhsm_enabled | ternary('0.pool.ntp.org', 'clock.redhat.com') }}"
+
+# Dummy interfaces may have max mtu = 0, which causes failure when os-net-config tries to apply
+# the specified mtu. This allows disabling setting mtu for dummy interfaces.
+enable_dummy_mtu: true
+
+# If external_fip_pool_start and external_fip_pool_end are not defined, network `external`
+# will not be created. `hostonly` can be used as the external network for the router when
+# running `prepare_stack_testconfig.yaml`
+external_network: external
