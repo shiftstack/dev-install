@@ -56,7 +56,7 @@
         # Create a router for private<->external
         if ! openstack router show private-subnet-external >/dev/null; then
             openstack router create private-subnet-external
-            openstack router set private-subnet-external --external-gateway external
+            openstack router set private-subnet-external --external-gateway {{ external_network }}
             openstack router add subnet private-subnet-external private-subnet
         fi
       environment:
