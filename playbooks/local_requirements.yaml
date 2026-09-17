@@ -7,3 +7,14 @@
   roles:
     - operators
     - rhsm
+- hosts: localhost
+  connection: local
+  become: true
+  name: Install dependencies for other playbooks
+  tasks:
+    - name: Install packages
+      ansible.builtin.package:
+        name:
+          - python3-jmespath
+          - python3-netaddr
+        state: installed

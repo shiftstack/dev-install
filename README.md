@@ -9,7 +9,7 @@
 * An appropriate OS has already been installed
 * EPEL repositories aren't deployed, they aren't compatible with OpenStack repositories
 * The machine running `dev-install` can SSH to the standalone host as either root or a user with passwordless sudo access
-* This machine has Ansible installed, and some dependencies like `python3-netaddr`.
+* This machine has Ansible installed. Additional dependencies like `python3-netaddr` will be installed automatically.
 
 You need to deploy the right RHEL version depending on which OSP version you want:
 
