@@ -1,0 +1,32 @@
+---
+# Regenerate only the simpleca CA + standalone server certificate on localhost.
+# This mirrors the SSL generation block in install_stack.yaml without deploying
+# TripleO or touching the remote host.
+- name: Regenerate simpleca and standalone certs on localhost
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: vars/defaults.yaml
+  tasks:
+    - name: Create temporary directory for SSL files
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: dev-install-ssl
+      register: ssl_dir
+
+    - name: Generate standalone SSL certificates
+      ansible.builtin.include_role:
+        name: simpleca
+      vars:
+        cert_user: standalone
+        cert_name: standalone
+        ca_dir: "{{ ssl_dir.path }}/ssl/ca"
+        cert_dir: "{{ ssl_dir.path }}/ssl"
+
+    - name: Show where certs were written
+      ansible.builtin.debug:
+        msg:
+          - "CA cert:     {{ ssl_dir.path }}/ssl/ca/simpleca.crt"
+          - "CA key:      {{ ssl_dir.path }}/ssl/ca/simpleca.key"
+          - "Server cert: {{ ssl_dir.path }}/ssl/standalone.crt"
+          - "Server key:  {{ ssl_dir.path }}/ssl/standalone.key"
